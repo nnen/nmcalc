@@ -9,6 +9,7 @@ import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  *
@@ -20,7 +21,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     @Override
     public String getRepr() {
-        return "#" + getName();
+        return "$" + getName();
     }
     
     @Override
@@ -45,9 +46,65 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
+    public static class QuoteValue extends BuiltinCalcValue {
+
+        private final ICalcValue quotedValue;
+        
+        public QuoteValue(ICalcValue quotedValue) {
+            this.quotedValue = quotedValue;
+        }
+        
+        @Override
+        public String getName() {
+            return "quote";
+        }
+        
+        @Override
+        public String getRepr() {
+            return "'(" + quotedValue.getRepr() + ")";
+        }
+        
+        @Override
+        public Context eval(Context ctx) {
+            ctx.setReturnedValue(quotedValue);
+            return ctx;
+        }
+        
+    }
+    
+    
     public static final ICalcValue LET = new BuiltinCalcValue() {
         @Override
         public String getName() { return "let"; }
+
+        @Override
+        public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            
+            IMonad<String> symbol = arguments.get(0).getStringValue();
+            ICalcValue value = arguments.get(1);
+            
+            symbol.bind(symbolValue -> {
+                System.err.printf("Symbol value: %s\n", symbolValue);
+                ctx.getEnvironment().setVariable(symbolValue, value);
+                /*
+                if (ctx.getParent() == null) {
+                    ctx.getEnvironment().setVariable(symbolValue, value);
+                } else {
+                    ctx.getParent().setVariable(symbolValue, value);
+                }
+                */
+                //ctx.setVariable(symbolValue, value);
+            });
+            
+            ctx.getEnvironment().dump(System.err);
+            
+            ctx.setReturnedValue(value);
+            
+            return ctx;
+        }
     };
     
     
@@ -110,6 +167,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
         
     };
+    
     
     public static abstract class CollectBuiltin extends BuiltinCalcValue {
 
@@ -187,6 +245,40 @@ public abstract class BuiltinCalcValue extends CalcValue {
             return lhs.divide(rhs);
         }
         
+    };
+    
+    
+    
+    public static final BuiltinCalcValue SQRT = new BuiltinCalcValue() {
+        @Override
+        public String getName() {
+            return "sqrt";
+        }
+        
+        @Override
+        public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+            if (!checkArguments(ctx, arguments, 1)) {
+                return ctx;
+            }
+            
+            Float value = arguments.get(0).getFloatValue().unwrap();
+            
+            if (value == null) {
+                ctx.setReturnedValue(ErrorValue.formatted("Cannot convert %s to float.", arguments.get(0).getFloatValue()));
+            } else {
+                ctx.setReturnedValue(CalcValue.make((float)Math.sqrt(value)));
+            }
+            
+            /*
+            ctx.<ICalcValue>setReturnedValue(value.unwrap(fltValue -> {
+                return CalcValue.make((float)Math.sqrt(fltValue));
+            }, (Supplier<ICalcValue>)(() -> { 
+                return ErrorValue.formatted("Cannot convert %s to float.", arguments.get(0).getFloatValue());
+            }));
+                    */
+            
+            return ctx;
+        }
     };
     
 }

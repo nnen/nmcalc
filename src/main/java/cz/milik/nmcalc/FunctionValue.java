@@ -50,20 +50,62 @@ public class FunctionValue extends CalcValue {
     public String getRepr() {
         StringBuilder sb = new StringBuilder();
         
+        /*
         if (functionName == null) {
+            sb.append("def ");
             sb.append(StringUtils.join(" ", argumentNames.stream().map(arg -> "\"" + arg.getValue())));
             sb.append(" -> ");
             sb.append(functionBody.getRepr());
             return sb.toString();
         }
+        */
         
         sb.append("def ");
-        sb.append(functionName.getValue());
+        if (functionName != null) {
+            sb.append(functionName.getValue());
+        }
         sb.append("(");
         sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
         sb.append(") ");
         sb.append(functionBody.getRepr());
         return sb.toString();
+    }
+    
+    @Override
+    public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+        final List<SymbolValue> argNames = getArgumentNames();
+        return new Context(ctx, ctx.getEnvironment().createChild(), getFunctionBody()) {
+            @Override
+            public ExecResult execute(Interpreter interpreter) {
+                int pc = getPC();
+                switch (pc) {
+                    case 0:
+                        Environment env = ctx.getEnvironment();
+                        for (int i = 0; i < argNames.size(); i++) {
+                            env.setVariable(argNames.get(i).getValue(), arguments.get(i));
+                        }
+                        setPC(pc + 1);
+                        return new ExecResult(
+                                ExecResult.ExitCodes.CONTINUE,
+                                getFunctionBody().eval(this),
+                                null
+                        );
+                    case 1:
+                        setPC(pc + 1);
+                        return new ExecResult(
+                                ExecResult.ExitCodes.RETURN,
+                                this,
+                                getReturnedValue()
+                        );
+                    default:
+                        return new ExecResult(
+                                ExecResult.ExitCodes.ERROR,
+                                this,
+                                ErrorValue.formatted("Invalid value of PC counter (%d) in %s.", pc, toString())
+                        );
+                }
+            }  
+        };
     }
     
     @Override

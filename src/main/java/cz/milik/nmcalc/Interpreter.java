@@ -21,6 +21,7 @@ public class Interpreter {
     private final CalcParser parser = new CalcParser();
     
     private Context defaultContext = Context.createRoot();
+    private Environment defaultEnvironment = new Environment();
     
     
     public ICalcValue evaluate(String input) {
@@ -194,7 +195,7 @@ public class Interpreter {
     }
     
     public ICalcValue eval(ICalcValue value) {
-        Context current = value.eval(Context.createRoot());
+        Context current = value.eval(Context.createRoot(defaultEnvironment));
         ICalcValue returnValue = null;
         boolean continueEval = true;
         
@@ -216,5 +217,13 @@ public class Interpreter {
         
         return returnValue;
     }
+ 
     
+    public Context eval(ICalcValue value, Context ctx) {
+        return value.eval(ctx);
+    }
+    
+    public Context apply(ICalcValue value, Context ctx, List<? extends ICalcValue> arguments) {
+        return value.apply(ctx, arguments);
+    }
 }

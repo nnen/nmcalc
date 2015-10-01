@@ -17,6 +17,8 @@ public class Token {
         
         FLOAT,
         IDENTIFIER,
+        SYMBOL,
+        STRING,
         
         EQUALS,
         
@@ -29,6 +31,7 @@ public class Token {
         RPAR,
         LBRA,
         RBRA,
+        QUOTE,
         COMMA,
         
         KW_DEF,

@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import java.util.Collection;
@@ -42,6 +43,10 @@ public abstract class CalcValue implements ICalcValue {
         return new ListValue(head, tail);
     }
 
+    public static ICalcValue quote(ICalcValue value) {
+        return new QuoteValue(value);
+    }
+    
     
     @Override
     public String getRepr() {
@@ -146,5 +151,15 @@ public abstract class CalcValue implements ICalcValue {
            return function.apply(this, otherNonError);
         });
     }
+ 
     
+    protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, int expectedCount) {
+        if (arguments.size() != expectedCount) {
+            ctx.setReturnedValue(ErrorValue.formatted(
+                    "%s cannot be applied to %d argument(s). Exactly %d argument(s) are expected.",
+                    getRepr(), arguments.size(), expectedCount));
+            return false;
+        }
+        return true;
+    }
 }

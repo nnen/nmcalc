@@ -35,6 +35,7 @@ public class Scanner {
     
     
     public Scanner() {
+        singleCharacterTokens.put('\'', Token.Types.QUOTE);
         keywords.put("def", Token.Types.KW_DEF);
     }
     
@@ -84,7 +85,7 @@ public class Scanner {
     
     private Token finishUnknownToken()
     {
-        while (hasNext() && isDelimiter(peek()))
+        while (hasNext() && !isDelimiter(peek()))
         {
             value.append(next());
         }
@@ -127,6 +128,19 @@ public class Scanner {
         }
         
         tokenOffset = offset;
+        
+        // Symbols
+        if (peek() == '$') {
+            value.append(next());
+            while (hasNext() && !Character.isWhitespace(peek())) {
+                value.append(next());
+            }
+            return new Token(
+                    Token.Types.SYMBOL,
+                    tokenOffset,
+                    value.toString()
+            );
+        }
         
         // Identifiers
         if (Character.isJavaIdentifierStart(peek())) {

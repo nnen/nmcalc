@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -83,7 +84,15 @@ public class ErrorValue extends CalcValue {
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function) {
         return this;
     }
-
+    
+    
+    @Override
+    public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+        ctx.setReturnedValue(this);
+        return ctx;
+    }
+    
+    
     @Override
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {
         return visitor.visitError(this, context);

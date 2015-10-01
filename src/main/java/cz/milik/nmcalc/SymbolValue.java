@@ -19,7 +19,7 @@ public class SymbolValue extends StringValue {
     
     @Override
     public String getRepr() {
-        return getValue();
+        return "$" + getValue();
     }
     
     @Override

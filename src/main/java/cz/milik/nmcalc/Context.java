@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  *
@@ -76,28 +75,17 @@ public class Context {
     }
     
     
-    private Map<String, ICalcValue> variables;
-    
     public IMonad<ICalcValue> getVariable(String name) {
-        if (variables == null) {
-            return getEnvironment().getVariable(name);
-        }
-        ICalcValue value = variables.get(name);
-        if (value == null) {
-            return getEnvironment().getVariable(name);
-        }
-        return Monad.just(value);
+        return getEnvironment().getVariable(name);
     }
     
     public void setVariable(String aName, ICalcValue aValue) {
-        if (variables == null) {
-            variables = new HashMap();
-        }
-        variables.put(aName, aValue);
+        getEnvironment().setVariable(aName, aValue);
     }
     
     
-    public static Context createRoot() { return new ReturnContext(new Environment()); }
+    public static Context createRoot() { return createRoot(new Environment()); }
+    public static Context createRoot(Environment env) { return new ReturnContext(env); }
      
     
     public static class ReturnContext extends Context {
