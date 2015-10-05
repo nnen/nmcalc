@@ -17,10 +17,15 @@ import java.util.List;
  */
 public class FunctionValue extends CalcValue {
     
+    private final Context staticContext;
     private final SymbolValue functionName;
     private final List<SymbolValue> argumentNames = new ArrayList();
     private final ICalcValue functionBody;
 
+    public Context getStaticContext() {
+        return staticContext;
+    }
+    
     public SymbolValue getFunctionName() {
         return functionName;
     }
@@ -34,15 +39,17 @@ public class FunctionValue extends CalcValue {
     }
     
     
-    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody) {
+    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Context aStaticContext) {
         functionName = aName;
         functionBody = aFunctionBody;
+        staticContext = aStaticContext;
     }
     
-    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Collection<? extends SymbolValue> someArgumentNames) {
+    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Context aStaticContext, Collection<? extends SymbolValue> someArgumentNames) {
         functionName = aName;
         functionBody = aFunctionBody;
         argumentNames.addAll(someArgumentNames);
+        staticContext = aStaticContext;
     }
     
     
@@ -67,20 +74,20 @@ public class FunctionValue extends CalcValue {
         sb.append("(");
         sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
         sb.append(") ");
-        sb.append(functionBody.getRepr());
+        sb.append(functionBody.getExprRepr());
         return sb.toString();
     }
     
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
         final List<SymbolValue> argNames = getArgumentNames();
-        return new Context(ctx, ctx.getEnvironment().createChild(), getFunctionBody()) {
+        return new Context(ctx, getStaticContext().getEnvironment().createChild(), getFunctionBody()) {
             @Override
             public ExecResult execute(Interpreter interpreter) {
                 int pc = getPC();
                 switch (pc) {
                     case 0:
-                        Environment env = ctx.getEnvironment();
+                        Environment env = this.getEnvironment();
                         for (int i = 0; i < argNames.size(); i++) {
                             env.setVariable(argNames.get(i).getValue(), arguments.get(i));
                         }

@@ -44,15 +44,27 @@ public class Environment {
         variables.put(name, value);
     }
     
+    public void setVariable(BuiltinCalcValue value) {
+        setVariable(value.getName(), value);
+    }
+    
     
     public Environment() {
         this.parent = null;
         setVariable("let", BuiltinCalcValue.LET);
+        setVariable(BuiltinCalcValue.DEF.getName(), BuiltinCalcValue.DEF);
+        
+        setVariable(BuiltinCalcValue.IF_ELSE);
+        
+        setVariable(BuiltinCalcValue.LEN);
+        
         setVariable(BuiltinCalcValue.LIST.getName(), BuiltinCalcValue.LIST);
         setVariable(BuiltinCalcValue.APPLY.getName(), BuiltinCalcValue.APPLY);
         setVariable(BuiltinCalcValue.EVAL.getName(), BuiltinCalcValue.EVAL);
         
         setVariable(BuiltinCalcValue.SQRT.getName(), BuiltinCalcValue.SQRT);
+        
+        MathBuiltins.initialize(this);
     }
     
     public Environment(Environment parent) {

@@ -16,7 +16,7 @@
 
   <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
   <SubComponents>
-    <Container class="javax.swing.JScrollPane" name="jScrollPane1">
+    <Container class="javax.swing.JScrollPane" name="scrollPane">
       <AuxValues>
         <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
       </AuxValues>
@@ -28,12 +28,11 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JTextPane" name="textPane">
+        <Component class="cz.milik.nmcalc.gui.HighlightedCodePane" name="textPane">
           <Properties>
             <Property name="font" type="java.awt.Font" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-              <Connection code="new Font(Font.MONOSPACED, Font.PLAIN, 24)" type="code"/>
+              <Connection code="GUIUtils.getCodeFont(24)&#xd;&#xa;" type="code"/>
             </Property>
-            <Property name="text" type="java.lang.String" value="Result"/>
           </Properties>
         </Component>
       </SubComponents>

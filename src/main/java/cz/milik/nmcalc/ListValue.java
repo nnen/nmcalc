@@ -39,6 +39,11 @@ public class ListValue extends CalcValue {
     }
     
     
+    public List<ICalcValue> getValues() {
+        return Collections.unmodifiableList(values);
+    }
+    
+    
     @Override
     public String toString() {
         return "ListValue{" + "values=" + values + '}';
@@ -52,13 +57,45 @@ public class ListValue extends CalcValue {
         sb.append("[");
         
         sb.append(StringUtils.join(
-                " ",
+                ", ",
                 values.stream().map(val -> val.getRepr())
         ));
         
         sb.append("]");
         
         return sb.toString();
+    }
+    
+    @Override
+    public String getExprRepr() {
+        if (values.isEmpty()) {
+            return "[]";
+        }
+        ICalcValue head = values.get(0);
+        return head.getApplyRepr(values.subList(1, values.size()));
+    }
+    
+    
+    @Override
+    public boolean getBooleanValue() {
+        return length() > 0;
+    }
+
+    
+    @Override
+    public ICalcValue add(ICalcValue other) {
+        if (other.isError()) {
+            return other;
+        }
+        if (!other.hasLength()) {
+            return super.add(other);
+        }
+        List<ICalcValue> newValues = new ArrayList();
+        newValues.addAll(values);
+        for (int i = 0; i < other.length(); i++) {
+            newValues.add(other.getItem(i));
+        }
+        return CalcValue.list(newValues);
     }
     
     

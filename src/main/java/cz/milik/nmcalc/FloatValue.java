@@ -14,22 +14,27 @@ import cz.milik.nmcalc.utils.Monad;
  */
 public class FloatValue extends CalcValue {
     
-    private float value;
+    private final double value;
     
     public FloatValue(float value)
     {
         this.value = value;
     }
     
+    public FloatValue(double value)
+    {
+        this.value = value;
+    }
+    
     @Override
     public String toString() {
-        return Float.toString(value);
+        return Double.toString(value);
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 13 * hash + Float.floatToIntBits(this.value);
+        hash = 13 * hash + Long.hashCode(Double.doubleToLongBits(value));
         return hash;
     }
     
@@ -42,7 +47,7 @@ public class FloatValue extends CalcValue {
             return false;
         }
         final FloatValue other = (FloatValue) obj;
-        if (Float.floatToIntBits(this.value) != Float.floatToIntBits(other.value)) {
+        if (Double.doubleToLongBits(value) != Double.doubleToLongBits(other.value)) {
             return false;
         }
         return true;
@@ -50,19 +55,30 @@ public class FloatValue extends CalcValue {
 
     @Override
     public String getRepr() {
-        return Float.toString(value);
+        return Double.toString(value);
+    }
+
+    @Override
+    public boolean getBooleanValue() {
+        return value != 0.0f;
     }
     
     @Override
     public IMonad<Float> getFloatValue() {
-        return Monad.just(value);
+        return Monad.just((float)value);
     }
+    
+    @Override
+    public double getDoubleValue() {
+        return value;
+    }
+    
     
     @Override
     public ICalcValue toFloat() {
         return this;
     }
-
+    
     @Override
     public ICalcValue negate() {
         return new FloatValue(-value);

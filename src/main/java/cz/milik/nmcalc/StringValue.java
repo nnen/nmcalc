@@ -23,6 +23,12 @@ public class StringValue extends PrimitiveValueBase<String> {
     public String getRepr() {
         return "\"" + getValue() + "\"";
     }
+
+    
+    @Override
+    public boolean getBooleanValue() {
+        return !getValue().isEmpty();
+    }
     
     
     @Override
@@ -54,12 +60,12 @@ public class StringValue extends PrimitiveValueBase<String> {
         }
         return new StringValue(Character.toString(getValue().charAt(index)));
     }
-
+    
     @Override
     public int length() {
         return getValue().length();
     }
-
+    
     @Override
     public boolean hasLength() {
         return true;

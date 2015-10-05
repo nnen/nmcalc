@@ -6,7 +6,11 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ErrorValue;
+import cz.milik.nmcalc.parser.Scanner;
+import cz.milik.nmcalc.peg.ITokenSequence;
+import cz.milik.nmcalc.peg.TokenList;
 import cz.milik.nmcalc.utils.ListenerCollection;
+import java.awt.event.KeyEvent;
 
 /**
  *
@@ -15,6 +19,9 @@ import cz.milik.nmcalc.utils.ListenerCollection;
 public class SimpleCalcInput extends javax.swing.JPanel implements IInputView {
 
     private ErrorValue error;
+    private ITokenSequence tokens;
+    
+    private Scanner scanner = new Scanner();
     
     @Override
     public ErrorValue getError() {
@@ -47,7 +54,17 @@ public class SimpleCalcInput extends javax.swing.JPanel implements IInputView {
     public String getInput() {
         return input.getText();
     }
+    
+    @Override
+    public void clearInput() {
+        input.setText("");
+    }
 
+    @Override
+    public ITokenSequence getTokens() {
+        return tokens;
+    }
+    
     
     private final ListenerCollection<IInputViewListener> listeners = new ListenerCollection(new IInputViewListener[] {});
     
@@ -67,6 +84,11 @@ public class SimpleCalcInput extends javax.swing.JPanel implements IInputView {
         });
     }
     
+    protected void fireOnInputCommited(final String input) {
+        listeners.handleEvent(listener -> {
+            listener.onInputCommited(this, input);
+        });
+    }
     
     /**
      * Creates new form SimpleCalcInput
@@ -84,40 +106,49 @@ public class SimpleCalcInput extends javax.swing.JPanel implements IInputView {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        input = new javax.swing.JTextPane();
         statusLabel = new javax.swing.JLabel();
+        inputScrollPane = new javax.swing.JScrollPane();
+        input = new cz.milik.nmcalc.gui.HighlightedCodePane();
 
         setLayout(new java.awt.BorderLayout());
 
+        statusLabel.setText("jLabel1");
+        add(statusLabel, java.awt.BorderLayout.PAGE_END);
+
         input.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyPressed(java.awt.event.KeyEvent evt) {
-                inputKeyPressed(evt);
-            }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 inputKeyReleased(evt);
             }
         });
-        jScrollPane1.setViewportView(input);
+        inputScrollPane.setViewportView(input);
 
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
-
-        statusLabel.setText("jLabel1");
-        add(statusLabel, java.awt.BorderLayout.PAGE_END);
+        add(inputScrollPane, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void inputKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_inputKeyPressed
-    
-    }//GEN-LAST:event_inputKeyPressed
-
     private void inputKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_inputKeyReleased
+        scanner.reset(getInput());
+        tokens = new TokenList(scanner.readTokens());
+        input.setSyntax(tokens);
+        
         this.fireOnInput(getInput());
+        
+        if ((evt.getKeyCode() == KeyEvent.VK_ENTER) && evt.isControlDown()) {
+            fireOnInputCommited(getInput());
+        }
     }//GEN-LAST:event_inputKeyReleased
 
-
+    /*
+    this.fireOnInput(getInput());
+        
+        if ((evt.getKeyCode() == KeyEvent.VK_ENTER) && evt.isControlDown()) {
+            fireOnInputCommited(getInput());
+        }
+    */
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextPane input;
-    private javax.swing.JScrollPane jScrollPane1;
+    private cz.milik.nmcalc.gui.HighlightedCodePane input;
+    private javax.swing.JScrollPane inputScrollPane;
     private javax.swing.JLabel statusLabel;
     // End of variables declaration//GEN-END:variables
 }

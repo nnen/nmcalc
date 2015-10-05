@@ -86,7 +86,36 @@ public class Context {
     
     public static Context createRoot() { return createRoot(new Environment()); }
     public static Context createRoot(Environment env) { return new ReturnContext(env); }
-     
+    
+    
+    protected ExecResult invalidPC(int value) {
+        return new ExecResult(
+                ExecResult.ExitCodes.ERROR,
+                this,
+                ErrorValue.formatted(
+                        "Invalid PC value in %s: %d.",
+                        this.toString(),
+                        pc
+                )
+        );
+    }
+    
+    protected ExecResult eval(Interpreter interpreter, ICalcValue expr) {
+        return new ExecResult(
+                ExecResult.ExitCodes.CONTINUE,
+                interpreter.eval(expr, this),
+                null
+        );
+    }
+    
+    protected ExecResult ctxReturn(ICalcValue value) {
+        return new ExecResult(
+                ExecResult.ExitCodes.RETURN,
+                this,
+                value
+        );
+    }
+    
     
     public static class ReturnContext extends Context {
         
@@ -109,61 +138,75 @@ public class Context {
     public static abstract class ApplyContext extends Context {
         
         private final List<? extends ICalcValue> arguments;
-        private final List<ICalcValue> results = new ArrayList();
+        
+        private final List<ICalcValue> evaluated = new ArrayList();
         
         public ApplyContext(Context parent, Environment env, ICalcValue method, List<? extends ICalcValue> arguments) {
             super(parent, env, method);
             this.arguments = arguments;
         }
+
+        @Override
+        public void setReturnedValue(ICalcValue returnedValue) {
+            super.setReturnedValue(returnedValue);
+            evaluated.add(returnedValue);
+        }
         
         @Override
         public ExecResult execute(Interpreter interpreter) {
             int pc = getPC();
+            Context newCtx;
             
-            if (pc < arguments.size()) {
-                if (pc > 0) {
-                   results.add(getReturnedValue());
-                }
-                Context newCtx = arguments.get(pc).eval(this);
-                setPC(pc + 1);
-                return new ExecResult(
-                        ExecResult.ExitCodes.CONTINUE,
-                        newCtx,
-                        null
-                );
-            } else if (pc == arguments.size()) {
-                if (pc > 0) {
-                   results.add(getReturnedValue());
-                }
-                setPC(pc + 1);
-                Context newCtx = getMethod().eval(this);
-                return new ExecResult(
-                        ExecResult.ExitCodes.CONTINUE,
-                        newCtx,
-                        null
-                );
-            } else if (pc == arguments.size() + 1) {
-                ICalcValue head = getReturnedValue();
-                setPC(pc + 1);
-                return innerApply(head, results);
-            } else if (pc == arguments.size() + 2) {
-                setPC(pc + 1);
-                return new ExecResult(
-                        ExecResult.ExitCodes.RETURN,
-                        this,
-                        getReturnedValue()
-                );
-            } else {
-                return new ExecResult(
-                        ExecResult.ExitCodes.ERROR,
-                        this,
-                        ErrorValue.formatted(
-                                "Invalid PC value in %s: %d.",
-                                this.toString(),
-                                pc
-                        )
-                );
+            switch (pc) {
+                case 0:
+                    setPC(pc + 1);
+                    return eval(interpreter, getMethod());
+                case 1:
+                    ICalcValue head = getReturnedValue();
+                    if (head.isSpecialForm()) {
+                        newCtx = interpreter.applySpecial(head, this, arguments);
+                        setPC(4);
+                        return new ExecResult(
+                                ExecResult.ExitCodes.CONTINUE,
+                                newCtx,
+                                null
+                        );
+                    } else if (arguments.size() == 1) {
+                        setPC(3);
+                        return evalArgument(interpreter);
+                    } else if (arguments.size() > 1) {
+                        setPC(pc + 1);
+                        return evalArgument(interpreter);
+                    } else {
+                        setPC(4);
+                        return new ExecResult(
+                                ExecResult.ExitCodes.CONTINUE,
+                                interpreter.apply(head, this, arguments),
+                                null
+                        );
+                    }
+                case 2:
+                    if (evaluated.size() == arguments.size()) {
+                        setPC(pc + 1);
+                    }
+                    return evalArgument(interpreter);
+                case 3:
+                    setPC(pc + 1);
+                    return new ExecResult(
+                            ExecResult.ExitCodes.CONTINUE,
+                            interpreter.apply(evaluated.get(0), this, evaluated.subList(1, evaluated.size())),
+                            null
+                    );
+                case 4:
+                    return ctxReturn(getReturnedValue());
+                default:
+                    return invalidPC(pc);
             }
+        }
+        
+        protected ExecResult evalArgument(Interpreter interpreter) {
+            ICalcValue arg = arguments.get(evaluated.size() - 1);
+            return eval(interpreter, arg);
         }
         
         protected abstract ExecResult innerApply(ICalcValue function, List<ICalcValue> arguments);

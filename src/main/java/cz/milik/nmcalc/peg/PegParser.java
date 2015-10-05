@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -37,6 +36,11 @@ public abstract class PegParser<T> {
     
     public String getName() {
         return null;
+    }
+    
+    
+    public boolean isIgnored() {
+        return false;
     }
     
     
@@ -167,6 +171,10 @@ public abstract class PegParser<T> {
     
     public PegParser<T> end() {
         return new EndParser(this);
+    }
+    
+    public <U> PegParser<U> ignore() {
+        return new IgnoreParser(this);
     }
     
     
@@ -357,6 +365,22 @@ public abstract class PegParser<T> {
         
     }
     
+    public static class IgnoreParser<T, U> extends UnaryParser<T, U> {
+        public IgnoreParser(PegParser<U> anInnerParser) {
+            super(anInnerParser);
+        }
+        
+        @Override
+        public boolean isIgnored() {
+            return true;
+        }
+        
+        @Override
+        public ParseResult<T> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
+            return innerParse(input, ctx).ignore();
+        }
+    }
+    
     
     public static abstract class NaryParser<T, U> extends PegParser<T> {
 
@@ -407,7 +431,7 @@ public abstract class PegParser<T> {
     }
     
     public static class SequenceParser<T> extends NaryParser<List<T>, T> {
-
+        
         public SequenceParser(List<PegParser<T>> innerParsers) {
             super(innerParsers);
         }
@@ -415,7 +439,7 @@ public abstract class PegParser<T> {
         public SequenceParser(PegParser<T>... parsers) {
             super(parsers);
         }
-
+        
         @Override
         public ParseResult<List<T>> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
             ParseResult<T> item;
@@ -427,7 +451,9 @@ public abstract class PegParser<T> {
                 if (!item.isSuccess()) {
                     return item.castFailure();
                 }
-                result.add(item.getValue());
+                if (!item.isIgnored()) {
+                    result.add(item.getValue());
+                }
                 rest = item.getRest();
             }
             

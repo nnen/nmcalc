@@ -5,7 +5,6 @@
  */
 package cz.milik.nmcalc;
 
-import cz.milik.nmcalc.peg.PegException;
 import cz.milik.nmcalc.utils.IMonad;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -18,14 +17,22 @@ import java.util.function.Function;
 public interface ICalcValue {
     
     public String getRepr();
+    public String getExprRepr();
+    public String getApplyRepr(List<? extends ICalcValue> arguments);
     
     public boolean isError();
+    public boolean isSpecialForm();
+    
+    public boolean getBooleanValue();
     
     public ICalcValue toFloat();
     public IMonad<Float> getFloatValue();
+    public double getDoubleValue();
     
     public ICalcValue toStringValue();
     public IMonad<String> getStringValue();
+    
+    public ICalcValue toSymbolValue();
     
     public ICalcValue negate();
     public ICalcValue add(ICalcValue other);
@@ -39,6 +46,7 @@ public interface ICalcValue {
     
     public Context eval(Context ctx);
     public Context apply(Context ctx, List<? extends ICalcValue> arguments);
+    public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments);
     
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function);
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function);

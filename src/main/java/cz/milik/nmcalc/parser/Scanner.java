@@ -5,8 +5,8 @@
  */
 package cz.milik.nmcalc.parser;
 
-import cz.milik.nmcalc.utils.Pair;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +37,9 @@ public class Scanner {
     public Scanner() {
         singleCharacterTokens.put('\'', Token.Types.QUOTE);
         keywords.put("def", Token.Types.KW_DEF);
+        keywords.put("if", Token.Types.KW_IF);
+        keywords.put("then", Token.Types.KW_THEN);
+        keywords.put("else", Token.Types.KW_ELSE);
     }
     
     
@@ -83,6 +86,10 @@ public class Scanner {
         return false;
     }
     
+    private boolean isSymbolChar(char c) {
+        return !Character.isWhitespace(c) && (c != ',') && (c != ')');
+    }
+    
     private Token finishUnknownToken()
     {
         while (hasNext() && !isDelimiter(peek()))
@@ -106,6 +113,10 @@ public class Scanner {
     public void reset(Reader reader, String fileName)
     {
         reset(new ReaderInput(reader, fileName));
+    }
+    
+    public void reset(String input) {
+        reset(new StringReader(input), "<string>");
     }
     
     public Token nextToken()
@@ -132,7 +143,7 @@ public class Scanner {
         // Symbols
         if (peek() == '$') {
             value.append(next());
-            while (hasNext() && !Character.isWhitespace(peek())) {
+            while (hasNext() && isSymbolChar(peek())) {
                 value.append(next());
             }
             return new Token(
@@ -161,6 +172,33 @@ public class Scanner {
                     tokenOffset,
                     identifier
             );
+        }
+        
+        // Strings
+        if (peek() == '"') {
+            value.append(next());
+            boolean escaped = false;
+            while (hasNext() && (escaped || (peek() != '"'))) {
+                escaped = false;
+                if (peek() == '\\') {
+                    escaped = true;
+                }
+                value.append(next());
+            }
+            if (hasNext() && peek() == '"') {
+                value.append(next());
+                return new Token(
+                        Token.Types.STRING,
+                        tokenOffset,
+                        value.toString()
+                );
+            } else {
+                return new Token(
+                        Token.Types.UNKNOWN,
+                        tokenOffset,
+                        value.toString()
+                );
+            }
         }
         
         // Real numbers in forms d+, d+.d*

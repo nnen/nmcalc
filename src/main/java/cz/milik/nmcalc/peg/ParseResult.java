@@ -8,6 +8,7 @@ package cz.milik.nmcalc.peg;
 import cz.milik.nmcalc.parser.Token;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  *
@@ -24,6 +25,13 @@ public class ParseResult<T> {
     private final boolean error;
     
     public boolean isError() { return error; }
+    
+    
+    private final boolean ignored;
+    
+    public boolean isIgnored() {
+        return ignored;
+    }
     
     
     private final T value;
@@ -71,19 +79,34 @@ public class ParseResult<T> {
     {
         success = true;
         error = false;
+        ignored = false;
         value = aValue;
         rest = aRest;
         errorMessage = "Ok.";
         errorToken = aRest.get(0);
         cause = null;
         context = aContext;
-    }    
+    }
+    
+    public ParseResult(IPegContext aContext, ITokenSequence aRest)
+    {
+        success = true;
+        error = false;
+        ignored = true;
+        value = null;
+        rest = aRest;
+        errorMessage = "Ok.";
+        errorToken = aRest.get(0);
+        cause = null;
+        context = aContext;
+    }
     
     public ParseResult(IPegContext ctx, boolean anError, ITokenSequence aRest, String anErrorMessage, Token anErrorToken)
     {
         success = false;
         error = anError;
         value = null;
+        ignored = false;
         rest = aRest;
         errorToken = anErrorToken;
         if (anErrorMessage == null) {
@@ -101,6 +124,7 @@ public class ParseResult<T> {
     {
         success = false;
         error = anError;
+        ignored = false;
         value = null;
         rest = aRest;
         errorToken = anErrorToken;
@@ -113,6 +137,7 @@ public class ParseResult<T> {
     {
         success = false;
         error = anError;
+        ignored = false;
         value = null;
         rest = aRest;
         errorToken = anErrorToken;
@@ -175,6 +200,27 @@ public class ParseResult<T> {
         return sb.toString();
     }
     
+    
+    public <U> ParseResult<U> map(Function<T, U> fn) {
+        if (!isSuccess()) {
+            return castFailure();
+        }
+        return new ParseResult<>(
+                getContext(),
+                fn.apply(getValue()),
+                getRest()
+        );
+    }
+    
+    public <U> ParseResult<U> ignore() {
+        if (!isSuccess()) {
+            return castFailure();
+        }
+        return new ParseResult<>(
+                getContext(),
+                getRest()
+        );
+    }
     
     public <U> ParseResult<U> castFailure() {
         return new ParseResult<>(

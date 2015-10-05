@@ -8,8 +8,10 @@ package cz.milik.nmcalc;
 import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import cz.milik.nmcalc.utils.StringUtils;
+import cz.milik.nmcalc.utils.Utils;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  *
@@ -21,7 +23,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     @Override
     public String getRepr() {
-        return "$" + getName();
+        //return "$" + getName();
+        return "<builtin " + getName() + ">";
     }
     
     @Override
@@ -108,6 +111,66 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
+    public static final BuiltinCalcValue DEF = new BuiltinCalcValue() {
+        @Override
+        public String getName() {
+            return "def";
+        }
+
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments) {
+            ListValue argNames = (ListValue)arguments.get(1);
+            return String.format(
+                    "def %s(%s) %s",
+                    arguments.get(0).getExprRepr(),
+                    StringUtils.join(", ", argNames.getValues().stream().map(arg -> arg.getExprRepr())),
+                    arguments.get(2).getExprRepr()
+            );
+        }
+        
+        @Override
+        public boolean isSpecialForm() {
+            return true;
+        }
+        
+        @Override
+        public Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            SymbolValue symbol = asSymbol(arguments.get(0));
+            Collection<? extends SymbolValue> argumentNames = asSymbolList(arguments.get(1));
+            ICalcValue body = arguments.get(2);
+            
+            FunctionValue fn = new FunctionValue(symbol, body, ctx, argumentNames);
+            ctx.setVariable(symbol.getValue(), fn);
+            ctx.setReturnedValue(fn);
+            
+            return ctx;
+        }
+        
+        /*
+        @Override
+        public Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            SymbolValue symbol = asSymbol(arguments.get(0));
+            Collection<? extends SymbolValue> argumentNames = asSymbolList(arguments.get(1));
+            ICalcValue body = arguments.get(2);
+            
+            FunctionValue fn = new FunctionValue(symbol, body, ctx, argumentNames);
+            ctx.setVariable(symbol.getValue(), fn);
+            ctx.setReturnedValue(fn);
+            
+            return ctx;
+        }
+        */
+    };
+    
+            
     public static final BuiltinCalcValue LIST = new BuiltinCalcValue() {
         
         @Override
@@ -169,8 +232,97 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
-    public static abstract class CollectBuiltin extends BuiltinCalcValue {
+    public static final BuiltinCalcValue IF_ELSE = new BuiltinCalcValue() {
 
+        @Override
+        public String getName() {
+            return "if_else";
+        }
+        
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments) {
+            ICalcValue cond = arguments.get(0);
+            ICalcValue trueExpr = arguments.get(1);
+            ICalcValue falseExpr = arguments.get(2);
+            return String.format("if %s then %s else %s", cond.getExprRepr(), trueExpr.getExprRepr(), falseExpr.getExprRepr());
+        }
+        
+        @Override
+        public boolean isSpecialForm() { return true; }
+        
+        @Override
+        public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments) {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            final ICalcValue condition = arguments.get(0);
+            final ICalcValue trueExpr = arguments.get(1);
+            final ICalcValue falseExpr = arguments.get(2);
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Interpreter interpreter) {
+                    int pc = getPC();
+                    
+                    switch (pc) {
+                        case 0:
+                            setPC(pc + 1);
+                            return eval(interpreter, condition);
+                        case 1:
+                            setPC(pc + 1);
+                            if (getReturnedValue().getBooleanValue()) {
+                                return eval(interpreter, trueExpr);
+                            } else {
+                                return eval(interpreter, falseExpr);
+                            }
+                        case 2:
+                            return ctxReturn(getReturnedValue());
+                        default:
+                            return invalidPC(pc);
+                    }
+                }
+            };
+        }
+        
+    };
+    
+    
+    
+    public static final BuiltinCalcValue LEN = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "len"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 1)) {
+                return ctx;
+            }
+            ICalcValue val = arguments.get(0);
+            if (val.hasLength()) {
+                ctx.setReturnedValue(CalcValue.make(val.length()));
+            } else {
+                ctx.setReturnedValue(ErrorValue.formatted(ctx, "%s doesn't have length.", val.getRepr()));
+            }
+            return ctx;
+        }
+    };
+    
+    
+    
+    public static abstract class CollectBuiltin extends BuiltinCalcValue {
+        
+        private final String operator;
+
+        public CollectBuiltin(String operator) {
+            this.operator = operator;
+        }
+        
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments) {
+            return StringUtils.join(" " + operator + " ", arguments.stream().map(arg -> arg.getExprRepr())).toString();
+        }
+        
         @Override
         public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
             if (arguments.size() < 1) {
@@ -196,7 +348,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
-    public static final ICalcValue ADD = new CollectBuiltin() {
+    public static final ICalcValue ADD = new CollectBuiltin("+") {
         
         @Override
         public String getName() { return "+"; }
@@ -209,7 +361,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
-    public static final ICalcValue SUB = new CollectBuiltin() {
+    public static final ICalcValue SUB = new CollectBuiltin("-") {
         
         @Override
         public String getName() { return "-"; }
@@ -222,7 +374,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
-    public static final ICalcValue MULT = new CollectBuiltin() {
+    public static final ICalcValue MULT = new CollectBuiltin("*") {
         
         @Override
         public String getName() { return "*"; }
@@ -235,7 +387,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
-    public static final ICalcValue DIV = new CollectBuiltin() {
+    public static final ICalcValue DIV = new CollectBuiltin("/") {
         
         @Override
         public String getName() { return "/"; }
@@ -246,7 +398,6 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
         
     };
-    
     
     
     public static final BuiltinCalcValue SQRT = new BuiltinCalcValue() {

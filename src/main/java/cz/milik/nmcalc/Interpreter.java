@@ -70,9 +70,10 @@ public class Interpreter {
         String varName = node.getLiteralValue().getValue();
         IMonad<ICalcValue> value = context.getVariable(varName);
         return value.unwrap(() -> {
-           return new ErrorValue(String.format(
-                   "Undefined variable: %s.",
-                   varName));
+           return new ErrorValue(
+                   String.format("Undefined variable: %s.", varName),
+                   context
+           );
         });
     }
         
@@ -109,9 +110,11 @@ public class Interpreter {
         ASTNode rhs = node.getChildren().get(1);
         
         if (lhs.getType() != ASTNodeTypes.VARIABLE) {
-            return new ErrorValue(String.format(
+            return ErrorValue.formatted(
+                    context,
                     "Internal error: cannot assign to %s.",
-                    lhs.getType().toString()));
+                    lhs.getType().toString()
+            );
         }
         
         ICalcValue value = evaluate(rhs, context);
@@ -121,76 +124,66 @@ public class Interpreter {
     
     
     private ExecResult execute(Context aContext) {
-        Context current = aContext;
-        Context parent;
-        ExecResult result;
-        ICalcValue method;
-        List<? extends ICalcValue> arguments;
-        
-        while (true) {
-            result = current.execute(this);
-            
-            if (result.getNewContext() != null) {
-                current = result.getNewContext();
-            }
-            
-            switch (result.getExitCode()) {
-                case CONTINUE:
-                    break;
-                    
-                case ERROR:
-                case EXIT:
-                case YIELD:
-                    return result;
-                    
-                case RETURN:
-                    parent = current.getParent();
-                    if (parent == null) {
+        try {
+            Context current = aContext;
+            Context parent;
+            ExecResult result;
+            ICalcValue method;
+            List<? extends ICalcValue> arguments;
+
+            while (true) {
+                result = current.execute(this);
+
+                if (result.getNewContext() != null) {
+                    current = result.getNewContext();
+                }
+
+                switch (result.getExitCode()) {
+                    case CONTINUE:
+                        break;
+
+                    case ERROR:
+                    case EXIT:
+                    case YIELD:
                         return result;
-                    }
-                    parent.setReturnedValue(result.getReturnValue());
-                    current = parent;
-                    break;
-                
-                case CALL:
-                    method = result.getReturnValue();
-                    arguments = result.getArguments();
-                    current = method.apply(current, arguments);
-                    break;
-                
-                default:
-                    throw new AssertionError(String.format(
-                            "Unknown exit code: %s.",
-                            result.getExitCode().toString()
-                    ));
+
+                    case RETURN:
+                        parent = current.getParent();
+                        if (parent == null) {
+                            return result;
+                        }
+                        parent.setReturnedValue(result.getReturnValue());
+                        current = parent;
+                        break;
+
+                    case CALL:
+                        method = result.getReturnValue();
+                        arguments = result.getArguments();
+                        current = method.apply(current, arguments);
+                        break;
+
+                    default:
+                        throw new AssertionError(String.format(
+                                "Unknown exit code: %s.",
+                                result.getExitCode().toString()
+                        ));
+                }
             }
-            
-            /*
-            switch (result.getMode()) {   
-                case ERROR:
-                    return result;
-                case EXIT:
-                    return result;
-                case CONTINUE:
-                    break;
-                case RETURN:
-                    parent = current.getParent();
-                    if (parent == null) {
-                        return result;
-                    }
-                    parent.setReturnedValue(result.getReturnValue());
-                    current = parent;
-                    break;
-                case CALL:
-                    method = result.getReturnValue();
-                    //current = method.ap
-                    break;
-                case YIELD:
-                    return result;
-                default:
-                    throw new AssertionError(result.getMode().name());
-            }
-                    */
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ExecResult(
+                    ExecResult.ExitCodes.ERROR,
+                    aContext,
+                    new ErrorValue(
+                            String.format(
+                                    "Internal error (%s: %s).",
+                                    e.getClass().getSimpleName(),
+                                    e.getMessage()
+                            ),
+                            aContext,
+                            e
+                    )
+            );
         }
     }
     
@@ -225,5 +218,9 @@ public class Interpreter {
     
     public Context apply(ICalcValue value, Context ctx, List<? extends ICalcValue> arguments) {
         return value.apply(ctx, arguments);
+    }
+    
+    public Context applySpecial(ICalcValue value, Context ctx, List<? extends ICalcValue> arguments) {
+        return value.applySpecial(ctx, arguments);
     }
 }

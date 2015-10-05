@@ -8,7 +8,6 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
-import java.awt.Font;
 
 /**
  *
@@ -34,6 +33,7 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     
     protected void onModelChanged(IMonad<ICalcValue> oldModel, IMonad<ICalcValue> newModel) {
         textPane.setText(newModel.unwrap(value -> value.getRepr(), "null"));
+        textPane.updateSyntax();
     }
     
     
@@ -53,21 +53,21 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane1 = new javax.swing.JScrollPane();
-        textPane = new javax.swing.JTextPane();
+        scrollPane = new javax.swing.JScrollPane();
+        textPane = new cz.milik.nmcalc.gui.HighlightedCodePane();
 
         setLayout(new java.awt.BorderLayout());
 
-        textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 24));
-        textPane.setText("Result");
-        jScrollPane1.setViewportView(textPane);
+        textPane.setFont(GUIUtils.getCodeFont(24)
+        );
+        scrollPane.setViewportView(textPane);
 
-        add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        add(scrollPane, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextPane textPane;
+    private javax.swing.JScrollPane scrollPane;
+    private cz.milik.nmcalc.gui.HighlightedCodePane textPane;
     // End of variables declaration//GEN-END:variables
 }

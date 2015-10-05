@@ -21,12 +21,45 @@ public class ErrorValue extends CalcValue {
         return message;
     }
 
+    
+    private final Context origin;
+    
+    public Context getOrigin() { return origin; }
+    
+    
+    private final Exception cause;
+    
+    public Exception getCause() { return cause; }
+    
+    
     public ErrorValue() {
         this.message = "Unknown Error";
+        this.origin = null;
+        this.cause = null;
     }
     
     public ErrorValue(String message) {
         this.message = message;
+        this.origin = null;
+        this.cause = null;
+    }
+    
+    public ErrorValue(String message, Context origin) {
+        this.message = message;
+        this.origin = origin;
+        this.cause = null;
+    }
+    
+    public ErrorValue(String message, Exception cause) {
+        this.message = message;
+        this.origin = null;
+        this.cause = cause;
+    }
+
+    public ErrorValue(String message, Context origin, Exception cause) {
+        this.message = message;
+        this.origin = origin;
+        this.cause = cause;
     }
     
     
@@ -34,16 +67,35 @@ public class ErrorValue extends CalcValue {
         return new ErrorValue(String.format(format, args));
     }
     
+    public static ErrorValue formatted(Context origin, String format, Object... args) {
+        return new ErrorValue(String.format(format, args), origin);
+    }
+    
     
     @Override
     public String toString() {
         return getMessage();
+    }
+
+    @Override
+    public String getRepr() {
+        if (getCause() != null) {
+            return String.format("error(\"%s\", %s)", getMessage(), getCause().getClass().getSimpleName());
+        }
+        return "error(\"" + getMessage() + "\")";
     }
     
     @Override
     public boolean isError() {
         return true;
     }
+
+    
+    @Override
+    public boolean getBooleanValue() {
+        return false;
+    }
+    
     
     @Override
     public ICalcValue toFloat() {
@@ -99,3 +151,4 @@ public class ErrorValue extends CalcValue {
     }
     
 }
+

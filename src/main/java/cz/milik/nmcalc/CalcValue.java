@@ -8,6 +8,8 @@ package cz.milik.nmcalc;
 import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import cz.milik.nmcalc.utils.StringUtils;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -20,6 +22,10 @@ import java.util.function.Function;
 public abstract class CalcValue implements ICalcValue {
 
     public static ICalcValue make(float value) {
+        return new FloatValue(value);
+    }
+    
+    public static ICalcValue make(double value) {
         return new FloatValue(value);
     }
     
@@ -53,15 +59,35 @@ public abstract class CalcValue implements ICalcValue {
         return getClass().getSimpleName();
     }
     
+    @Override
+    public String getExprRepr() {
+        return getRepr();
+    }
+
+    @Override
+    public String getApplyRepr(List<? extends ICalcValue> arguments) {
+        return getExprRepr() + "(" + StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr())) + ")";
+    }
+    
     
     @Override
     public boolean isError() {
         return false;
     }
+
+    @Override
+    public boolean isSpecialForm() {
+        return false;
+    }
+    
+    
+    @Override
+    public boolean getBooleanValue() { return true; }
+    
     
     @Override
     public ICalcValue toFloat() {
-        return new ErrorValue();
+        return ErrorValue.formatted("Cannot convert %s to float.", getRepr());
     }
     
     @Override
@@ -69,15 +95,26 @@ public abstract class CalcValue implements ICalcValue {
         return Monad.nothing();
     }
 
+    @Override
+    public double getDoubleValue() {
+        return 0.0;
+    }
+    
     
     @Override
     public ICalcValue toStringValue() {
-        return new StringValue(toString());
+        return new StringValue(getRepr());
     }
-
+    
     @Override
     public IMonad<String> getStringValue() {
-        return Monad.just(toString());
+        return Monad.just(getRepr());
+    }
+
+    
+    @Override
+    public ICalcValue toSymbolValue() {
+        return ErrorValue.formatted("%s cannot be converted to a symbol.", getRepr());
     }
     
     
@@ -88,7 +125,10 @@ public abstract class CalcValue implements ICalcValue {
     
     @Override
     public ICalcValue add(ICalcValue other) {
-        return new ErrorValue();
+        if (other.isError()) {
+            return other;
+        }
+        return ErrorValue.formatted("%s cannot be added to %s.", getRepr(), other.getRepr());
     }
     
     @Override
@@ -135,8 +175,41 @@ public abstract class CalcValue implements ICalcValue {
     
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+        try {
+            return applyInner(ctx, arguments);
+        } catch (NMCalcException e) {
+            ctx.setReturnedValue(ErrorValue.formatted(
+                    e.getContext(),
+                    "%s: %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            ));
+            return ctx;
+        }
+    }
+    
+    protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
         ctx.setReturnedValue(ErrorValue.formatted("%s %s cannot be applied.", getClass().getSimpleName(), getRepr()));
         return ctx;
+    }
+    
+    @Override
+    public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments) {
+        try {
+            return applySpecialInner(ctx, arguments);
+        } catch (NMCalcException e) {
+            ctx.setReturnedValue(ErrorValue.formatted(
+                    e.getContext(),
+                    "%s: %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            ));
+            return ctx;
+        }
+    }
+    
+    protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+        return applyInner(ctx, arguments);
     }
     
     
@@ -153,6 +226,10 @@ public abstract class CalcValue implements ICalcValue {
     }
  
     
+    protected void invalidArgumentCount(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+        throw new NMCalcException(String.format("Invalid argument count: %d.", arguments.size()), ctx);
+    }
+    
     protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, int expectedCount) {
         if (arguments.size() != expectedCount) {
             ctx.setReturnedValue(ErrorValue.formatted(
@@ -161,5 +238,34 @@ public abstract class CalcValue implements ICalcValue {
             return false;
         }
         return true;
+    }
+    
+    public static SymbolValue asSymbol(ICalcValue value) throws NMCalcException {
+        if (value == null) {
+            throw new NMCalcException("Expected a symbol, got null.");
+        }
+        
+        if (value instanceof SymbolValue) {
+            return (SymbolValue)value;
+        }
+        
+        throw new NMCalcException(String.format("Expected a symbol, got: %s.", value.getRepr()));
+    }
+    
+    public static List<? extends SymbolValue> asSymbolList(ICalcValue value) throws NMCalcException {
+        if (value == null) {
+            throw new NMCalcException("Expected a list of symbols, got null.");
+        }
+        
+        if (value instanceof ListValue) {
+            ListValue listValue = (ListValue)value;
+            List<SymbolValue> result = new ArrayList();
+            for (ICalcValue item : listValue.getValues()) {
+                result.add(asSymbol(item));
+            }
+            return result;
+        }
+        
+        throw new NMCalcException(String.format("Expected a list of symbols, got: %s.", value.getRepr()));
     }
 }

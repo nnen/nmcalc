@@ -8,12 +8,9 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ErrorValue;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.Interpreter;
-import cz.milik.nmcalc.ast.ASTNode;
 import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 /**
  *
@@ -23,6 +20,9 @@ public class SimpleForm extends javax.swing.JFrame {
 
     private final CalcParser parser = new CalcParser();
     private final Interpreter interpreter = new Interpreter();
+    
+    private ICalcValue result;
+    private ParseResult<ICalcValue> parsed;
     
     /**
      * Creates new form SimpleForm
@@ -37,15 +37,21 @@ public class SimpleForm extends javax.swing.JFrame {
                 evaluate();
             }
             
+            @Override
+            public void onInputCommited(IInputView view, String input) {
+                commitInput();
+                inputPane.clearError();
+                inputPane.clearInput();
+            }
+            
         });
     }
     
-    public void evaluate()
-    {
+    public boolean evaluate() {
         try {
-            ParseResult<ICalcValue> parsed = parser.parseList(inputPane.getInput());
+            parsed = parser.parseList(inputPane.getInput());
             if (parsed.isSuccess()) {
-                ICalcValue result = interpreter.eval(parsed.getValue());
+                result = interpreter.eval(parsed.getValue());
                 //outputPane.setModel(parsed.getValue());
                 if (result.isError()) {
                     inputPane.setError((ErrorValue)result);
@@ -53,36 +59,30 @@ public class SimpleForm extends javax.swing.JFrame {
                     outputPane.setModel(result);
                     inputPane.clearError();
                 }
+                return true;
             } else {
-                inputPane.setError(new ErrorValue(parsed.getErrorMessage()));
+                ErrorValue err = ErrorValue.formatted(parsed.getErrorMessage());
+                inputPane.setError(err);
+                return false;
             }
         } catch (Exception e) {
-            outputPane.setModel(new ErrorValue(e.getMessage()));
+            e.printStackTrace();
+            ErrorValue err = new ErrorValue(e.getMessage(), e);
+            result = err;
+            outputPane.setModel(err);
+            return true;
         }
-        /*
-        try {
-            ParseResult<ASTNode> parsed = parser.parse(inputPane.getInput());
-            System.err.println("Parsed: " + parsed.toString());
-            if (parsed.isSuccess()) {
-                ICalcValue result = interpreter.evaluate(parsed.getValue());
-                System.err.println("Result: " + result.toString());
-                if (result.isError()) {
-                    inputPane.setError((ErrorValue)result);
-                } else {
-                    inputPane.clearError();
-                    SimpleForm.this.outputPane.setModel(result);
-                    //SimpleForm.this.outputPane.setText(result.toString());
-                }
-            } else {
-                inputPane.setError(new ErrorValue(parsed.getErrorMessage()));
-            }
-        } catch (Exception e) {
-            inputPane.clearError();
-            outputPane.setModel(new ErrorValue(e.getMessage()));
-        }
-        */
     }
-
+    
+    public void commitInput() {
+        if (evaluate()) {
+            historyView.append(inputPane.getInput(), result);
+        } else {
+            historyView.append(inputPane.getInput(), parsed);
+        }
+    }
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -92,11 +92,17 @@ public class SimpleForm extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jSplitPane2 = new javax.swing.JSplitPane();
         jSplitPane1 = new javax.swing.JSplitPane();
         outputPane = new cz.milik.nmcalc.gui.SimpleCalcValueView();
         inputPane = new cz.milik.nmcalc.gui.SimpleCalcInput();
+        historyView = new cz.milik.nmcalc.gui.HistoryView();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jSplitPane2.setDividerLocation(100);
+        jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        jSplitPane2.setResizeWeight(1.0);
 
         jSplitPane1.setDividerLocation(250);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
@@ -106,21 +112,18 @@ public class SimpleForm extends javax.swing.JFrame {
         jSplitPane1.setRightComponent(outputPane);
         jSplitPane1.setLeftComponent(inputPane);
 
+        jSplitPane2.setBottomComponent(jSplitPane1);
+        jSplitPane2.setLeftComponent(historyView);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jSplitPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jSplitPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE)
         );
 
         pack();
@@ -162,8 +165,10 @@ public class SimpleForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private cz.milik.nmcalc.gui.HistoryView historyView;
     private cz.milik.nmcalc.gui.SimpleCalcInput inputPane;
     private javax.swing.JSplitPane jSplitPane1;
+    private javax.swing.JSplitPane jSplitPane2;
     private cz.milik.nmcalc.gui.SimpleCalcValueView outputPane;
     // End of variables declaration//GEN-END:variables
 }

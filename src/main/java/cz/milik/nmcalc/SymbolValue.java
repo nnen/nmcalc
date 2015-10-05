@@ -17,10 +17,17 @@ public class SymbolValue extends StringValue {
         super(value);
     }
     
+    
     @Override
     public String getRepr() {
+        return "'$" + getValue();
+    }
+
+    @Override
+    public String getExprRepr() {
         return "$" + getValue();
     }
+    
     
     @Override
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {

@@ -34,9 +34,23 @@ public class Token {
         QUOTE,
         COMMA,
         
-        KW_DEF,
+        KW_DEF(true),
+        KW_IF(true),
+        KW_THEN(true),
+        KW_ELSE(true),
         
-        EOF,
+        EOF;
+        
+        public final boolean isKeyword;
+
+        private Types(boolean isKeyword) {
+            this.isKeyword = isKeyword;
+        }
+        
+        private Types() {
+            isKeyword = false;
+        }
+        
     }
     
     private Types type;
@@ -65,4 +79,24 @@ public class Token {
     public String toString() {
         return "Token{" + "type=" + type + ", offset=" + offset + ", value=" + value + '}';
     }
+
+    public String parseStringLiteral() {
+        StringBuilder sb = new StringBuilder();
+        boolean escaped = false;
+        
+        for (int i = 0; i < value.length() - 2; i++) {
+            char c = value.charAt(1 + i);
+            if (escaped) {
+                sb.append(c);
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else {
+                sb.append(c);
+            }
+        }
+        
+        return sb.toString();
+    }
+    
 }

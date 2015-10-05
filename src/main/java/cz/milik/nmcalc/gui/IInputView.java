@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ErrorValue;
+import cz.milik.nmcalc.peg.ITokenSequence;
 
 /**
  *
@@ -18,6 +19,9 @@ public interface IInputView {
     public void clearError();
     
     public String getInput();
+    public void clearInput();
+    
+    public ITokenSequence getTokens();
     
     public void addListener(IInputViewListener listener);
     public void removeListener(IInputViewListener listener);
@@ -25,6 +29,7 @@ public interface IInputView {
     public static interface IInputViewListener {
         
         public void onInput(IInputView view, String input);
+        public void onInputCommited(IInputView view, String input);
         
     }
     

@@ -7,7 +7,6 @@ package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.BuiltinCalcValue;
 import cz.milik.nmcalc.CalcValue;
-import cz.milik.nmcalc.FunctionValue;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.SymbolValue;
 import cz.milik.nmcalc.ast.ASTBuilder;
@@ -146,7 +145,25 @@ public class CalcParser extends PegParser<ASTNode> {
     private final PegGrammar<ICalcValue> listGrammar = new PegGrammar<ICalcValue>() {
         @Override
         protected void initializeGrammar() {
-            nt("expr", s("assignment"));
+            nt("expr", or(s("ifElse"), s("assignment")));
+            
+            nt("ifElse",
+                    concatAny(
+                            s(Token.Types.KW_IF),
+                            s("expr", "cond"),
+                            s(Token.Types.KW_THEN),
+                            s("expr", "true"),
+                            s(Token.Types.KW_ELSE),
+                            s("expr", "false")
+                    ).map(ctx -> {
+                        return CalcValue.list(
+                                BuiltinCalcValue.IF_ELSE,
+                                ctx.getNamedValue("cond", ICalcValue.class),
+                                ctx.getNamedValue("true", ICalcValue.class),
+                                ctx.getNamedValue("false", ICalcValue.class)
+                        );
+                    })
+            );
             
             nt("assignment",
                 concatAny(
@@ -230,7 +247,7 @@ public class CalcParser extends PegParser<ASTNode> {
                                             s(Token.Types.COMMA),
                                             s("expr", "args")
                                     ).repeat()
-                            ),
+                            ).maybe(),
                             s(Token.Types.RPAR)
                     ).named("call").maybe()
             ).map(ctx -> {
@@ -256,11 +273,13 @@ public class CalcParser extends PegParser<ASTNode> {
                             s(Token.Types.IDENTIFIER, "name").maybe(),
                             concatAny(
                                     s(Token.Types.LPAR),
-                                    s(Token.Types.IDENTIFIER, "args"),
                                     concatAny(
-                                            s(Token.Types.COMMA),
-                                            s(Token.Types.IDENTIFIER, "args")
-                                    ).repeat(),
+                                        s(Token.Types.IDENTIFIER, "args"),
+                                        concatAny(
+                                                s(Token.Types.COMMA),
+                                                s(Token.Types.IDENTIFIER, "args")
+                                        ).repeat()
+                                    ).maybe(),
                                     s(Token.Types.RPAR)
                             ).maybe(),
                             s("expr", "body")
@@ -269,17 +288,34 @@ public class CalcParser extends PegParser<ASTNode> {
                         List<Token> args = ctx.getNamedValues("args", Token.class);
                         ICalcValue body = ctx.getNamedValue("body", ICalcValue.class);
                         if (name == null) {
+                            return CalcValue.list(
+                                BuiltinCalcValue.DEF,
+                                new SymbolValue("_fn"),
+                                CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue()))),
+                                body
+                            );
+                            /*
                             return new FunctionValue(null, body, Utils.mapList(args, t -> new SymbolValue(t.getValue())));
+                            */
                         }
                         SymbolValue symbol = new SymbolValue(name.getValue());
                         return CalcValue.list(
+                                BuiltinCalcValue.DEF,
+                                symbol,
+                                CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue()))),
+                                body
+                        );
+                        /*
+                        return CalcValue.list(
                                 BuiltinCalcValue.LET,
                                 CalcValue.quote(symbol),
+                                
                                 new FunctionValue(
                                         symbol,
                                         body,
                                         Utils.mapList(args, t -> new SymbolValue(t.getValue())))
                         );
+                                */
                     }),
                     concatAny(
                             s(Token.Types.LPAR),
@@ -307,7 +343,8 @@ public class CalcParser extends PegParser<ASTNode> {
                     }),
                     nt("real"),
                     nt("var"),
-                    nt("symbol")
+                    nt("symbol"),
+                    nt("str")
             ));
             
             nt("real", s(Token.Types.FLOAT).map(
@@ -319,7 +356,11 @@ public class CalcParser extends PegParser<ASTNode> {
             ));
             
             nt("symbol", s(Token.Types.SYMBOL).map(
-                    t -> CalcValue.quote(CalcValue.makeSymbol(t.getValue().substring(1)))
+                    t -> CalcValue.makeSymbol(t.getValue().substring(1))
+            ));
+            
+            nt("str", s(Token.Types.STRING).map(
+                    t -> CalcValue.make(t.parseStringLiteral())
             ));
         }
     };
