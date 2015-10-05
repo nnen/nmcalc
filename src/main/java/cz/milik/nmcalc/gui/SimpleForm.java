@@ -99,6 +99,7 @@ public class SimpleForm extends javax.swing.JFrame {
         historyView = new cz.milik.nmcalc.gui.HistoryView();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("NMCalc");
 
         jSplitPane2.setDividerLocation(100);
         jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
@@ -113,7 +114,7 @@ public class SimpleForm extends javax.swing.JFrame {
         jSplitPane1.setLeftComponent(inputPane);
 
         jSplitPane2.setBottomComponent(jSplitPane1);
-        jSplitPane2.setLeftComponent(historyView);
+        jSplitPane2.setTopComponent(historyView);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);

@@ -145,7 +145,7 @@ public class CalcParser extends PegParser<ASTNode> {
     private final PegGrammar<ICalcValue> listGrammar = new PegGrammar<ICalcValue>() {
         @Override
         protected void initializeGrammar() {
-            nt("expr", or(s("ifElse"), s("assignment")));
+            nt("expr", or(s("ifElse"), s("comparison")));
             
             nt("ifElse",
                     concatAny(
@@ -162,6 +162,28 @@ public class CalcParser extends PegParser<ASTNode> {
                                 ctx.getNamedValue("true", ICalcValue.class),
                                 ctx.getNamedValue("false", ICalcValue.class)
                         );
+                    })
+            );
+            
+            nt("comparison",
+                    concatAny(
+                            s("assignment", "first"),
+                            concatAny(
+                                    s(Token.Types.EQUALS).ignore(),
+                                    s(Token.Types.EQUALS).ignore(),
+                                    s("comparison", "rest")
+                            ).repeat()
+                    ).map(ctx -> {
+                        ICalcValue result = ctx.getNamedValue("first", ICalcValue.class);
+                        List<ICalcValue> rest = ctx.getNamedValues("rest", ICalcValue.class);
+                        for (ICalcValue rhs : rest) {
+                            result = CalcValue.list(
+                                    BuiltinCalcValue.EQUALS,
+                                    result,
+                                    rhs
+                            );
+                        }
+                        return result;
                     })
             );
             

@@ -348,6 +348,20 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
+    public static final BuiltinCalcValue EQUALS = new CollectBuiltin("==") {
+        @Override
+        public String getName() { return "equals"; }
+        
+        @Override
+        protected ICalcValue collect(ICalcValue lhs, ICalcValue rhs) {
+            if (lhs.isValueEqual(rhs)) {
+                return CalcValue.make(1.0);
+            }
+            return CalcValue.make(0.0);
+        }
+    };
+    
+            
     public static final ICalcValue ADD = new CollectBuiltin("+") {
         
         @Override

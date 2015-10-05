@@ -12,6 +12,7 @@ import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -115,6 +116,12 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public ICalcValue toSymbolValue() {
         return ErrorValue.formatted("%s cannot be converted to a symbol.", getRepr());
+    }
+    
+    
+    @Override
+    public boolean isValueEqual(ICalcValue other) {
+        return Objects.equals(this, other);
     }
     
     

@@ -62,6 +62,8 @@ public class Environment {
         setVariable(BuiltinCalcValue.APPLY.getName(), BuiltinCalcValue.APPLY);
         setVariable(BuiltinCalcValue.EVAL.getName(), BuiltinCalcValue.EVAL);
         
+        setVariable(BuiltinCalcValue.EQUALS);
+        
         setVariable(BuiltinCalcValue.SQRT.getName(), BuiltinCalcValue.SQRT);
         
         MathBuiltins.initialize(this);

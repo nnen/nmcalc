@@ -34,6 +34,8 @@ public interface ICalcValue {
     
     public ICalcValue toSymbolValue();
     
+    public boolean isValueEqual(ICalcValue other);
+    
     public ICalcValue negate();
     public ICalcValue add(ICalcValue other);
     public ICalcValue subtract(ICalcValue other);
