@@ -288,7 +288,123 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
+    public static final BuiltinCalcValue SEQUENCE = new BuiltinCalcValue() {
+        
+        @Override
+        public String getName() { return "sequence"; }
+        
+        @Override
+        public boolean isSpecialForm() { return true; }
+        
+        @Override
+        protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Interpreter interpreter) {
+                    int pc = getPC();
+                    
+                    if (pc < arguments.size()) {
+                        setPC(pc + 1);
+                        if ((pc > 0) && getReturnedValue().isError()) {
+                            return ctxReturn(getReturnedValue());
+                        }
+                        return ctxContinue(arguments.get(pc).eval(this));
+                    } else if (pc == arguments.size()) {
+                        setPC(pc + 1);
+                        return ctxReturn(getReturnedValue());
+                    } else {
+                        return invalidPC(pc);
+                    }
+                }
+            };
+        }
+        
+    };
     
+    
+    public static final BuiltinCalcValue GETATTR = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "getattr"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            ICalcValue obj = arguments.get(0);
+            ICalcValue name = arguments.get(1);
+            String nameStr = name.getStringValue().unwrap();
+            if (nameStr == null) {
+                ctx.setReturnedValue(ErrorValue.formatted(
+                        ctx,
+                        "%s expected a string as second argument.",
+                        getName()));
+                return ctx;
+            }
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Interpreter interpreter) {
+                    int pc = getPC();
+                    
+                    switch (pc) {
+                        case 0:
+                            setPC(pc + 1);
+                            return ctxContinue(obj.getAttribute(name.toString(), this));
+                        case 1:
+                            setPC(pc + 1);
+                            return ctxReturn(getReturnedValue());
+                        default:
+                            return invalidPC(pc);
+                    }
+                }
+            };
+        }
+    };
+    
+    public static final BuiltinCalcValue SETATTR = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "setattr"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            ICalcValue obj = arguments.get(0);
+            ICalcValue name = arguments.get(1);
+            ICalcValue value = arguments.get(2);
+            String nameStr = name.getStringValue().unwrap();
+            if (nameStr == null) {
+                ctx.setReturnedValue(ErrorValue.formatted(
+                        ctx,
+                        "%s expected a string as second argument.",
+                        getName()));
+                return ctx;
+            }
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Interpreter interpreter) {
+                    int pc = getPC();
+                    
+                    switch (pc) {
+                        case 0:
+                            setPC(pc + 1);
+                            return ctxContinue(obj.setAttribute(nameStr, value, this));
+                        case 1:
+                            setPC(pc + 1);
+                            return ctxReturn(getReturnedValue());
+                        default:
+                            return invalidPC(pc);
+                    }
+                }
+            };
+        }
+    };
+    
+    
+            
     public static final BuiltinCalcValue LEN = new BuiltinCalcValue() {
         @Override
         public String getName() { return "len"; }
@@ -348,16 +464,84 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
+    public static abstract class BinaryOperator extends BuiltinCalcValue {
+        private final String name;
+        private final String operator;
+        
+        public BinaryOperator(String name, String operator) {
+            this.name = name;
+            this.operator = operator;
+        }
+        
+        @Override
+        public String getName() { return name; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            ctx.setReturnedValue(applyInner(arguments.get(0), arguments.get(1)));
+            return ctx;
+        }
+        
+        protected abstract ICalcValue applyInner(ICalcValue a, ICalcValue b);
+        
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments) {
+            return StringUtils.join(" " + operator + " ", arguments.stream().map(arg -> arg.getExprRepr())).toString();
+        }
+    }
+    
+    
     public static final BuiltinCalcValue EQUALS = new CollectBuiltin("==") {
         @Override
         public String getName() { return "equals"; }
         
         @Override
         protected ICalcValue collect(ICalcValue lhs, ICalcValue rhs) {
-            if (lhs.isValueEqual(rhs)) {
-                return CalcValue.make(1.0);
+            return CalcValue.make(lhs.isValueEqual(rhs));
+        }
+    };
+
+    
+    public static final BuiltinCalcValue LT = new BinaryOperator("lt", "<") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b) {
+            if (a.compareValue(b) < 0) {
+                return CalcValue.make(true);
             }
-            return CalcValue.make(0.0);
+            return CalcValue.make(false);
+        }
+    };
+    
+    public static final BuiltinCalcValue LTE = new BinaryOperator("lte", "<=") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b) {
+            if (a.compareValue(b) <= 0) {
+                return CalcValue.make(true);
+            }
+            return CalcValue.make(false);
+        }
+    };
+    
+    public static final BuiltinCalcValue GT = new BinaryOperator("gt", ">") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b) {
+            if (a.compareValue(b) > 0) {
+                return CalcValue.make(true);
+            }
+            return CalcValue.make(false);
+        }
+    };
+    
+    public static final BuiltinCalcValue GTE = new BinaryOperator("gte", ">=") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b) {
+            if (a.compareValue(b) >= 0) {
+                return CalcValue.make(true);
+            }
+            return CalcValue.make(false);
         }
     };
     

@@ -55,6 +55,10 @@ public class Environment {
         setVariable(BuiltinCalcValue.DEF.getName(), BuiltinCalcValue.DEF);
         
         setVariable(BuiltinCalcValue.IF_ELSE);
+        setVariable(BuiltinCalcValue.SEQUENCE);
+        
+        setVariable(BuiltinCalcValue.GETATTR);
+        setVariable(BuiltinCalcValue.SETATTR);
         
         setVariable(BuiltinCalcValue.LEN);
         
@@ -63,6 +67,10 @@ public class Environment {
         setVariable(BuiltinCalcValue.EVAL.getName(), BuiltinCalcValue.EVAL);
         
         setVariable(BuiltinCalcValue.EQUALS);
+        setVariable(BuiltinCalcValue.LT);
+        setVariable(BuiltinCalcValue.LTE);
+        setVariable(BuiltinCalcValue.GT);
+        setVariable(BuiltinCalcValue.GTE);
         
         setVariable(BuiltinCalcValue.SQRT.getName(), BuiltinCalcValue.SQRT);
         

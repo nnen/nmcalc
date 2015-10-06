@@ -7,6 +7,8 @@ package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import java.math.BigDecimal;
+import java.util.function.Function;
 
 /**
  *
@@ -14,27 +16,34 @@ import cz.milik.nmcalc.utils.Monad;
  */
 public class FloatValue extends CalcValue {
     
-    private final double value;
+    private final BigDecimal value;
+    
     
     public FloatValue(float value)
     {
-        this.value = value;
+        this.value = BigDecimal.valueOf((double)value);
     }
     
     public FloatValue(double value)
     {
+        this.value = BigDecimal.valueOf(value);
+    }
+    
+    public FloatValue(BigDecimal value)
+    {
         this.value = value;
     }
     
+    
     @Override
     public String toString() {
-        return Double.toString(value);
+        return value.toString();
     }
-
+    
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 13 * hash + Long.hashCode(Double.doubleToLongBits(value));
+        hash = 13 * hash + value.hashCode();
         return hash;
     }
     
@@ -47,29 +56,31 @@ public class FloatValue extends CalcValue {
             return false;
         }
         final FloatValue other = (FloatValue) obj;
-        if (Double.doubleToLongBits(value) != Double.doubleToLongBits(other.value)) {
-            return false;
-        }
-        return true;
+        return value.compareTo(other.value) == 0;
     }
 
     @Override
     public String getRepr() {
-        return Double.toString(value);
+        return value.toString();
     }
-
+    
     @Override
     public boolean getBooleanValue() {
-        return value != 0.0f;
+        return value.compareTo(BigDecimal.ZERO) != 0;
     }
     
     @Override
     public IMonad<Float> getFloatValue() {
-        return Monad.just((float)value);
+        return Monad.just(value.floatValue());
     }
     
     @Override
     public double getDoubleValue() {
+        return value.doubleValue();
+    }
+
+    @Override
+    public BigDecimal getDecimalValue() {
         return value;
     }
     
@@ -78,39 +89,57 @@ public class FloatValue extends CalcValue {
     public ICalcValue toFloat() {
         return this;
     }
+
+    
+    @Override
+    public boolean isValueEqual(ICalcValue other) {
+        ICalcValue otherFloat = other.toFloat();
+        if (otherFloat.isError()) {
+            return false;
+        }
+        return value.compareTo(otherFloat.getDecimalValue()) == 0;
+    }
+    
+    @Override
+    public int compareValue(ICalcValue other) {
+        ICalcValue otherFloat = other.toFloat();
+        return value.compareTo(otherFloat.getDecimalValue());
+    }
+    
     
     @Override
     public ICalcValue negate() {
-        return new FloatValue(-value);
+        return new FloatValue(value.negate());
+    }
+    
+    protected ICalcValue binaryOp(ICalcValue other, Function<BigDecimal, BigDecimal> fn) {
+        ICalcValue casted = other.toFloat();
+        if (casted.isError()) {
+            return casted;
+        }
+        return new FloatValue(fn.apply(casted.getDecimalValue()));
     }
     
     @Override
     public ICalcValue add(ICalcValue other) {
-        return other.withNonError(otherSafe -> {
-           return new FloatValue(value + other.getFloatValue().unwrap()) ;
-        });
+        return binaryOp(other, decimal -> value.add(decimal));
     }
     
     @Override
     public ICalcValue subtract(ICalcValue other) {
-        return other.withNonError(otherSafe -> {
-           return new FloatValue(value - other.getFloatValue().unwrap());
-        });
+        return binaryOp(other, decimal -> value.subtract(decimal));
     }
     
     @Override
     public ICalcValue divide(ICalcValue other) {
-        return other.withNonError(otherSafe -> {
-           return new FloatValue(value / other.getFloatValue().unwrap());
-        });
+        return binaryOp(other, decimal -> value.divide(decimal));
     }
     
     @Override
     public ICalcValue multiply(ICalcValue other) {
-        return other.withNonError(otherSafe -> {
-           return new FloatValue(value * other.getFloatValue().unwrap());
-        });
+        return binaryOp(other, decimal -> value.multiply(decimal));
     }
+    
     
     @Override
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {

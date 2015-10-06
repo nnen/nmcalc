@@ -35,7 +35,10 @@ public class Scanner {
     
     
     public Scanner() {
+        singleCharacterTokens.put('<', Token.Types.LT_COMP);
+        singleCharacterTokens.put('>', Token.Types.GT_COMP);
         singleCharacterTokens.put('\'', Token.Types.QUOTE);
+        
         keywords.put("def", Token.Types.KW_DEF);
         keywords.put("if", Token.Types.KW_IF);
         keywords.put("then", Token.Types.KW_THEN);
@@ -87,7 +90,16 @@ public class Scanner {
     }
     
     private boolean isSymbolChar(char c) {
-        return !Character.isWhitespace(c) && (c != ',') && (c != ')');
+        if (Character.isWhitespace(c)) {
+            return false;
+        }
+        switch (c) {
+            case ',':
+            case '(':
+            case ')':
+                return false;
+        }
+        return true;
     }
     
     private Token finishUnknownToken()
@@ -237,7 +249,22 @@ public class Scanner {
         switch (peek())
         {
             case '=':
-                return new Token(Token.Types.EQUALS, tokenOffset, next());
+            {
+                value.append(next());
+                if (peek() == '=') {
+                    value.append(next());
+                    return new Token(
+                            Token.Types.EQUALS_COMP,
+                            tokenOffset,
+                            value.toString()
+                    );
+                }
+                return new Token(
+                        Token.Types.EQUALS,
+                        tokenOffset,
+                        value.toString()
+                );
+            }
                 
             case '+':
                 return new Token(Token.Types.PLUS, tokenOffset, next());

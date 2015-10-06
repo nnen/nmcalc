@@ -6,6 +6,7 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -23,11 +24,15 @@ public interface ICalcValue {
     public boolean isError();
     public boolean isSpecialForm();
     
+    public Context getAttribute(String attrName, Context ctx);
+    public Context setAttribute(String attrName, ICalcValue value, Context ctx);
+    
     public boolean getBooleanValue();
     
     public ICalcValue toFloat();
     public IMonad<Float> getFloatValue();
     public double getDoubleValue();
+    public BigDecimal getDecimalValue();
     
     public ICalcValue toStringValue();
     public IMonad<String> getStringValue();
@@ -35,6 +40,8 @@ public interface ICalcValue {
     public ICalcValue toSymbolValue();
     
     public boolean isValueEqual(ICalcValue other);
+    public int compareValue(ICalcValue other);
+    //public boolean isValueGreater(ICalcValue other);
     
     public ICalcValue negate();
     public ICalcValue add(ICalcValue other);

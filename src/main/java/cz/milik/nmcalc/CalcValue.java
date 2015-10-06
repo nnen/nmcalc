@@ -9,6 +9,7 @@ import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,6 +35,13 @@ public abstract class CalcValue implements ICalcValue {
         return new StringValue(value);
     }
     
+    public static ICalcValue make(boolean value) {
+        if (value) {
+            return BoolValue.TRUE;
+        }
+        return BoolValue.FALSE;
+    }
+    
     public static ICalcValue makeSymbol(String name) {
         return new SymbolValue(name);
     }
@@ -52,6 +60,27 @@ public abstract class CalcValue implements ICalcValue {
 
     public static ICalcValue quote(ICalcValue value) {
         return new QuoteValue(value);
+    }
+    
+    
+    public static boolean areValuesEqual(ICalcValue a, ICalcValue b) {
+        if (a.isError()) {
+            return false;
+        }
+        if (b.isError()) {
+            return false;
+        }
+        return a.isValueEqual(b);
+    }
+    
+    public static ICalcValue binaryOp(ICalcValue a, ICalcValue b, BiFunction<ICalcValue, ICalcValue, ICalcValue> fn) {
+        if (a.isError()) { 
+            return a;
+        }
+        if (b.isError()) {
+            return b;
+        }
+        return fn.apply(a, b);
     }
     
     
@@ -83,6 +112,19 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
+    public Context getAttribute(String attrName, Context ctx) {
+        ctx.setReturnedValue(ErrorValue.formatted(ctx, "%s doesn't have attribute '%s'.", getRepr(), attrName));
+        return ctx;
+    }
+    
+    @Override
+    public Context setAttribute(String attrName, ICalcValue value, Context ctx) {
+        ctx.setReturnedValue(ErrorValue.formatted(ctx, "Cannot assign attribute '%s' to %s.", attrName, getRepr()));
+        return ctx;
+    }
+    
+    
+    @Override
     public boolean getBooleanValue() { return true; }
     
     
@@ -99,6 +141,11 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public double getDoubleValue() {
         return 0.0;
+    }
+    
+    @Override
+    public BigDecimal getDecimalValue() {
+        return BigDecimal.ZERO;
     }
     
     
@@ -122,6 +169,11 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public boolean isValueEqual(ICalcValue other) {
         return Objects.equals(this, other);
+    }
+    
+    @Override
+    public int compareValue(ICalcValue other) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
     

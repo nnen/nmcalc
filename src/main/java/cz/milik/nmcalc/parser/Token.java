@@ -21,6 +21,9 @@ public class Token {
         STRING,
         
         EQUALS,
+        EQUALS_COMP,
+        LT_COMP,
+        GT_COMP,
         
         PLUS,
         MINUS,

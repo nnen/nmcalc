@@ -108,6 +108,14 @@ public class Context {
         );
     }
     
+    protected ExecResult ctxContinue(Context ctx) {
+        return new ExecResult(
+                ExecResult.ExitCodes.CONTINUE,
+                ctx,
+                null
+        );
+    }
+    
     protected ExecResult ctxReturn(ICalcValue value) {
         return new ExecResult(
                 ExecResult.ExitCodes.RETURN,

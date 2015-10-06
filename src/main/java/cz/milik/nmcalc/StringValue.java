@@ -7,6 +7,7 @@ package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import java.util.Objects;
 
 /**
  *
@@ -50,6 +51,25 @@ public class StringValue extends PrimitiveValueBase<String> {
     @Override
     public ICalcValue toStringValue() {
         return this;
+    }
+    
+
+    @Override
+    public boolean isValueEqual(ICalcValue other) {
+        ICalcValue otherStr = other.toStringValue();
+        return otherStr.getStringValue().unwrap(
+                str -> Objects.equals(getValue(), str),
+                false
+        );
+    }
+    
+    @Override
+    public int compareValue(ICalcValue other) {
+        ICalcValue otherStr = other.toStringValue();
+        return otherStr.getStringValue().unwrap(
+                str -> getValue().compareTo(str),
+                1
+        );
     }
     
     

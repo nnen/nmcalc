@@ -169,16 +169,34 @@ public class CalcParser extends PegParser<ASTNode> {
                     concatAny(
                             s("assignment", "first"),
                             concatAny(
-                                    s(Token.Types.EQUALS).ignore(),
-                                    s(Token.Types.EQUALS).ignore(),
+                                    or(
+                                        s(Token.Types.EQUALS_COMP),
+                                        s(Token.Types.LT_COMP),
+                                        s(Token.Types.GT_COMP)
+                                    ).named("operators"),    
                                     s("comparison", "rest")
                             ).repeat()
                     ).map(ctx -> {
                         ICalcValue result = ctx.getNamedValue("first", ICalcValue.class);
+                        List<Token> operators = ctx.getNamedValues("operators", Token.class);
                         List<ICalcValue> rest = ctx.getNamedValues("rest", ICalcValue.class);
-                        for (ICalcValue rhs : rest) {
+                        for (int i = 0; i < rest.size(); i++) {
+                            Token op = operators.get(i);
+                            ICalcValue rhs = rest.get(i);
+                            BuiltinCalcValue primitive;
+                            switch (op.getType()) {
+                                case LT_COMP:
+                                    primitive = BuiltinCalcValue.LT;
+                                    break;
+                                case GT_COMP:
+                                    primitive = BuiltinCalcValue.GT;
+                                    break;
+                                default:
+                                    primitive = BuiltinCalcValue.EQUALS;
+                                    break;
+                            }
                             result = CalcValue.list(
-                                    BuiltinCalcValue.EQUALS,
+                                    primitive,
                                     result,
                                     rhs
                             );
