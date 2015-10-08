@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 
@@ -32,7 +33,7 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     }
     
     protected void onModelChanged(IMonad<ICalcValue> oldModel, IMonad<ICalcValue> newModel) {
-        textPane.setText(newModel.unwrap(value -> value.getRepr(), "null"));
+        textPane.setText(newModel.unwrap(value -> value.getRepr(ReprContext.getDefault()), "null"));
         textPane.updateSyntax();
     }
     

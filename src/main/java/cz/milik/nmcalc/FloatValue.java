@@ -60,8 +60,8 @@ public class FloatValue extends CalcValue {
     }
 
     @Override
-    public String getRepr() {
-        return value.toString();
+    public String getRepr(ReprContext ctx) {
+        return ctx.formatFloat(value);
     }
     
     @Override
@@ -86,14 +86,14 @@ public class FloatValue extends CalcValue {
     
     
     @Override
-    public ICalcValue toFloat() {
+    public ICalcValue toFloat(Context ctx) {
         return this;
     }
 
     
     @Override
-    public boolean isValueEqual(ICalcValue other) {
-        ICalcValue otherFloat = other.toFloat();
+    public boolean isValueEqual(ICalcValue other, Context ctx) {
+        ICalcValue otherFloat = other.toFloat(ctx);
         if (otherFloat.isError()) {
             return false;
         }
@@ -101,19 +101,19 @@ public class FloatValue extends CalcValue {
     }
     
     @Override
-    public int compareValue(ICalcValue other) {
-        ICalcValue otherFloat = other.toFloat();
+    public int compareValue(ICalcValue other, Context ctx) {
+        ICalcValue otherFloat = other.toFloat(ctx);
         return value.compareTo(otherFloat.getDecimalValue());
     }
     
     
     @Override
-    public ICalcValue negate() {
+    public ICalcValue negate(Context ctx) {
         return new FloatValue(value.negate());
     }
     
-    protected ICalcValue binaryOp(ICalcValue other, Function<BigDecimal, BigDecimal> fn) {
-        ICalcValue casted = other.toFloat();
+    protected ICalcValue binaryOp(ICalcValue other, Context ctx, Function<BigDecimal, BigDecimal> fn) {
+        ICalcValue casted = other.toFloat(ctx);
         if (casted.isError()) {
             return casted;
         }
@@ -121,23 +121,23 @@ public class FloatValue extends CalcValue {
     }
     
     @Override
-    public ICalcValue add(ICalcValue other) {
-        return binaryOp(other, decimal -> value.add(decimal));
+    public ICalcValue add(ICalcValue other, Context ctx) {
+        return binaryOp(other, ctx, decimal -> value.add(decimal));
     }
     
     @Override
-    public ICalcValue subtract(ICalcValue other) {
-        return binaryOp(other, decimal -> value.subtract(decimal));
+    public ICalcValue subtract(ICalcValue other, Context ctx) {
+        return binaryOp(other, ctx, decimal -> value.subtract(decimal));
     }
     
     @Override
-    public ICalcValue divide(ICalcValue other) {
-        return binaryOp(other, decimal -> value.divide(decimal));
+    public ICalcValue divide(ICalcValue other, Context ctx) {
+        return binaryOp(other, ctx, decimal -> value.divide(decimal));
     }
     
     @Override
-    public ICalcValue multiply(ICalcValue other) {
-        return binaryOp(other, decimal -> value.multiply(decimal));
+    public ICalcValue multiply(ICalcValue other, Context ctx) {
+        return binaryOp(other, ctx, decimal -> value.multiply(decimal));
     }
     
     

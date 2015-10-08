@@ -51,29 +51,8 @@ public class Environment {
     
     public Environment() {
         this.parent = null;
-        setVariable("let", BuiltinCalcValue.LET);
-        setVariable(BuiltinCalcValue.DEF.getName(), BuiltinCalcValue.DEF);
         
-        setVariable(BuiltinCalcValue.IF_ELSE);
-        setVariable(BuiltinCalcValue.SEQUENCE);
-        
-        setVariable(BuiltinCalcValue.GETATTR);
-        setVariable(BuiltinCalcValue.SETATTR);
-        
-        setVariable(BuiltinCalcValue.LEN);
-        
-        setVariable(BuiltinCalcValue.LIST.getName(), BuiltinCalcValue.LIST);
-        setVariable(BuiltinCalcValue.APPLY.getName(), BuiltinCalcValue.APPLY);
-        setVariable(BuiltinCalcValue.EVAL.getName(), BuiltinCalcValue.EVAL);
-        
-        setVariable(BuiltinCalcValue.EQUALS);
-        setVariable(BuiltinCalcValue.LT);
-        setVariable(BuiltinCalcValue.LTE);
-        setVariable(BuiltinCalcValue.GT);
-        setVariable(BuiltinCalcValue.GTE);
-        
-        setVariable(BuiltinCalcValue.SQRT.getName(), BuiltinCalcValue.SQRT);
-        
+        BuiltinCalcValue.initialize(this);
         MathBuiltins.initialize(this);
     }
     
@@ -96,13 +75,15 @@ public class Environment {
             }
         });
         
+        ReprContext ctx = new ReprContext();
+        
         out.printf("%d variables.", variables.size());
         out.println();
         for (String name : names) {
             out.print(name);
             out.print(": ");
             ICalcValue value = variables.get(name);
-            out.println(value.getRepr());
+            out.println(value.getRepr(ctx));
         }
     }
     

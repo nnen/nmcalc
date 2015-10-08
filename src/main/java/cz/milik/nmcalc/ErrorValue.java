@@ -78,7 +78,7 @@ public class ErrorValue extends CalcValue {
     }
 
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         if (getCause() != null) {
             return String.format("error(\"%s\", %s)", getMessage(), getCause().getClass().getSimpleName());
         }
@@ -98,32 +98,32 @@ public class ErrorValue extends CalcValue {
     
     
     @Override
-    public ICalcValue toFloat() {
+    public ICalcValue toFloat(Context ctx) {
         return this;
     }
     
     @Override
-    public ICalcValue divide(ICalcValue other) {
+    public ICalcValue divide(ICalcValue other, Context ctx) {
         return this;
     }
 
     @Override
-    public ICalcValue multiply(ICalcValue other) {
+    public ICalcValue multiply(ICalcValue other, Context ctx) {
         return this;
     }
 
     @Override
-    public ICalcValue subtract(ICalcValue other) {
+    public ICalcValue subtract(ICalcValue other, Context ctx) {
         return this;
     }
 
     @Override
-    public ICalcValue add(ICalcValue other) {
+    public ICalcValue add(ICalcValue other, Context ctx) {
         return this;
     }
     
     @Override
-    public ICalcValue negate() {
+    public ICalcValue negate(Context ctx) {
         return this;
     }
     

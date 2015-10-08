@@ -25,9 +25,9 @@ public class Interpreter {
     
     
     public ICalcValue evaluate(String input) {
-        ParseResult<ASTNode> node = parser.parse(input);
+        ParseResult<ICalcValue> node = parser.parseList(input);
         if (node.isSuccess()) {
-            return evaluate(node.getValue());
+            return eval(node.getValue());
         }
         return new ErrorValue("Syntax error: " + node.toString());
     }
@@ -86,16 +86,16 @@ public class Interpreter {
             
             switch (nodeType) {
                 case ADDITION:
-                    result = result.add(other);
+                    result = result.add(other, context);
                     break;
                 case SUBTRACTION:
-                    result = result.subtract(other);
+                    result = result.subtract(other, context);
                     break;
                 case MULTIPLICATION:
-                    result = result.multiply(other);
+                    result = result.multiply(other, context);
                     break;
                 case DIVISION:
-                    result = result.divide(other);
+                    result = result.divide(other, context);
                     break;
                 default:
                     result = new ErrorValue();

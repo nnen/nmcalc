@@ -32,31 +32,31 @@ public class BoolValue extends CalcValue {
     
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         return value ? "true" : "false";
     }
 
     
     @Override
-    public ICalcValue toSymbolValue() {
-        return CalcValue.makeSymbol(getRepr());
-    }
-
-    @Override
-    public ICalcValue toStringValue() {
-        return CalcValue.make(getRepr());
+    public ICalcValue toSymbolValue(Context ctx) {
+        return CalcValue.makeSymbol(getRepr(ctx.getReprContext()));
     }
     
     @Override
-    public IMonad<String> getStringValue() {
-        return Monad.just(getRepr());
+    public ICalcValue toStringValue(Context ctx) {
+        return CalcValue.make(getRepr(ctx.getReprContext()));
     }
     
     @Override
-    public ICalcValue toFloat() {
+    public String getStringValue(Context ctx) {
+        return getRepr(ctx.getReprContext());
+    }
+    
+    @Override
+    public ICalcValue toFloat(Context ctx) {
         return CalcValue.make(value ? 1.0 : 0.0);
     }
-
+    
     @Override
     public BigDecimal getDecimalValue() {
         return value ? BigDecimal.ONE : BigDecimal.ZERO;

@@ -54,11 +54,35 @@ public class Context {
     }
     
     
+    private ReprContext reprContext;
+    
+    public ReprContext getReprContext() {
+        return reprContext;
+    }
+    
+    public void setReprContext(ReprContext reprContext) {
+        this.reprContext = reprContext;
+    }
+    
+    
     public Context(Context parent, Environment env, ICalcValue method) {
         this.parent = parent;
         this.environment = env;
         this.method = method;
         this.pc = 0;
+        if (parent == null) {
+            this.reprContext = ReprContext.getDefault();
+        } else {
+            this.reprContext = parent.getReprContext();
+        }
+    }
+    
+    public Context(Context parent, Environment env, ICalcValue method, ReprContext reprContext) {
+        this.parent = parent;
+        this.environment = env;
+        this.method = method;
+        this.pc = 0;
+        this.reprContext = reprContext;
     }
     
     

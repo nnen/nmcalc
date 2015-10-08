@@ -94,6 +94,7 @@ public abstract class PegParser<T> {
             childContext.setResult(r);
             return r;
         } catch (PegSyntaxError e) {
+            e.printStackTrace();
             return new ParseResult(
                 childContext,
                 false,
@@ -102,6 +103,7 @@ public abstract class PegParser<T> {
                 input.get(0)
             );
         } catch (Exception e) {
+            e.printStackTrace();
             return new ParseResult(
                 childContext,
                 true,

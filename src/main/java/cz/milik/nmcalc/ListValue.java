@@ -51,14 +51,14 @@ public class ListValue extends CalcValue {
 
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         StringBuilder sb = new StringBuilder();
         
         sb.append("[");
         
         sb.append(StringUtils.join(
                 ", ",
-                values.stream().map(val -> val.getRepr())
+                values.stream().map(val -> val.getRepr(ctx))
         ));
         
         sb.append("]");
@@ -67,12 +67,12 @@ public class ListValue extends CalcValue {
     }
     
     @Override
-    public String getExprRepr() {
+    public String getExprRepr(ReprContext ctx) {
         if (values.isEmpty()) {
             return "[]";
         }
         ICalcValue head = values.get(0);
-        return head.getApplyRepr(values.subList(1, values.size()));
+        return head.getApplyRepr(values.subList(1, values.size()), ctx);
     }
     
     
@@ -83,12 +83,12 @@ public class ListValue extends CalcValue {
 
     
     @Override
-    public ICalcValue add(ICalcValue other) {
+    public ICalcValue add(ICalcValue other, Context ctx) {
         if (other.isError()) {
             return other;
         }
         if (!other.hasLength()) {
-            return super.add(other);
+            return super.add(other, ctx);
         }
         List<ICalcValue> newValues = new ArrayList();
         newValues.addAll(values);
@@ -139,7 +139,9 @@ public class ListValue extends CalcValue {
     @Override
     public Context eval(Context ctx) {
         if (values.size() == 0) {
-            ctx.setReturnedValue(ErrorValue.formatted("Cannot eval %s.", getRepr()));
+            ctx.setReturnedValue(ErrorValue.formatted(
+                    "Cannot eval %s.",
+                    getRepr(ctx.getReprContext())));
             return ctx;
         }
         return new Context.ApplyContext(ctx, ctx.getEnvironment(), getHead(), getTail()) {  

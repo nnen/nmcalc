@@ -56,7 +56,7 @@ public abstract class PrimitiveValueBase<T> extends CalcValue {
     
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         return Objects.toString(value);
     }
     

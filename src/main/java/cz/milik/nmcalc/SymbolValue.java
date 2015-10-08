@@ -19,12 +19,12 @@ public class SymbolValue extends StringValue {
     
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         return "'$" + getValue();
     }
 
     @Override
-    public String getExprRepr() {
+    public String getExprRepr(ReprContext ctx) {
         return "$" + getValue();
     }
     

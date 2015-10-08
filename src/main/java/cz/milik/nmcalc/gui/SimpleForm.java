@@ -55,12 +55,22 @@ public class SimpleForm extends javax.swing.JFrame {
                 //outputPane.setModel(parsed.getValue());
                 if (result.isError()) {
                     inputPane.setError((ErrorValue)result);
+                    if (result instanceof ErrorValue) {
+                        ErrorValue err = (ErrorValue)result;
+                        if (err.getCause() != null) {
+                            err.getCause().printStackTrace();
+                        }
+                    }
                 } else {
                     outputPane.setModel(result);
                     inputPane.clearError();
                 }
                 return true;
             } else {
+                if (parsed.getCause() != null) {
+                    parsed.getCause().printStackTrace();
+                }
+                parsed.getContext().printStack(System.err);
                 ErrorValue err = ErrorValue.formatted(parsed.getErrorMessage());
                 inputPane.setError(err);
                 return false;

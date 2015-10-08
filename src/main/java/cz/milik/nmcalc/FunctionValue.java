@@ -54,7 +54,7 @@ public class FunctionValue extends CalcValue {
     
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         StringBuilder sb = new StringBuilder();
         
         /*
@@ -74,7 +74,7 @@ public class FunctionValue extends CalcValue {
         sb.append("(");
         sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
         sb.append(") ");
-        sb.append(functionBody.getExprRepr());
+        sb.append(functionBody.getExprRepr(ctx));
         return sb.toString();
     }
     

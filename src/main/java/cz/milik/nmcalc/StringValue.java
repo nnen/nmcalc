@@ -21,10 +21,10 @@ public class StringValue extends PrimitiveValueBase<String> {
 
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         return "\"" + getValue() + "\"";
     }
-
+    
     
     @Override
     public boolean getBooleanValue() {
@@ -38,38 +38,41 @@ public class StringValue extends PrimitiveValueBase<String> {
     }
 
     @Override
-    public ICalcValue toFloat() {
-        return new FloatValue(Float.parseFloat(getValue()));
+    public ICalcValue toFloat(Context ctx) {
+        try {
+            return new FloatValue(Float.parseFloat(getValue()));
+        } catch (NumberFormatException e) {
+            return CalcValue.error(
+                    ctx,
+                    e,
+                    "Cannot convert %s to float, invalid format.",
+                    getRepr(ctx.getReprContext())
+            );
+        }
     }
     
     
     @Override
-    public IMonad<String> getStringValue() {
-        return Monad.just(getValue());
+    public String getStringValue(Context ctx) {
+        return getValue();
     }
     
     @Override
-    public ICalcValue toStringValue() {
+    public ICalcValue toStringValue(Context ctx) {
         return this;
     }
     
 
     @Override
-    public boolean isValueEqual(ICalcValue other) {
-        ICalcValue otherStr = other.toStringValue();
-        return otherStr.getStringValue().unwrap(
-                str -> Objects.equals(getValue(), str),
-                false
-        );
+    public boolean isValueEqual(ICalcValue other, Context ctx) {
+        ICalcValue otherStr = other.toStringValue(ctx);
+        return Objects.equals(getValue(), otherStr.getStringValue(ctx));
     }
     
     @Override
-    public int compareValue(ICalcValue other) {
-        ICalcValue otherStr = other.toStringValue();
-        return otherStr.getStringValue().unwrap(
-                str -> getValue().compareTo(str),
-                1
-        );
+    public int compareValue(ICalcValue other, Context ctx) {
+        ICalcValue otherStr = other.toStringValue(ctx);
+        return getValue().compareTo(otherStr.getStringValue(ctx));
     }
     
     
@@ -93,16 +96,12 @@ public class StringValue extends PrimitiveValueBase<String> {
     
     
     @Override
-    public ICalcValue add(ICalcValue other) {
+    public ICalcValue add(ICalcValue other, Context ctx) {
         if (other.isError()) {
             return other;
         }
         
-        return other.getStringValue().bind(otherStr -> {
-            return Monad.<ICalcValue>just(
-                    new StringValue(getValue() + otherStr)
-            );
-        }).unwrap(() -> { return new ErrorValue(); });
+        return new StringValue(getValue() + other.getStringValue(ctx));
     }
 
     

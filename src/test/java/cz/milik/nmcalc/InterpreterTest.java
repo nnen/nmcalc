@@ -59,5 +59,26 @@ public class InterpreterTest {
         testEvaluate("3 - 2 - 1", CalcValue.make(0));
         testEvaluate("40 / 4 / 2", CalcValue.make(5));
     }
-    
+ 
+    @Test
+    public void testEvaluateDef() {
+        ICalcValue result = interpreter.evaluate("def fn(x) x * x");
+        assertNotNull(result);
+        System.err.println(result.getClass().getSimpleName());
+        System.err.println(result.getRepr(ReprContext.getDefault()));
+        assertTrue(result instanceof FunctionValue);
+        
+        FunctionValue fn = (FunctionValue)result;
+        assertEquals(
+                CalcValue.makeSymbol("fn"),
+                fn.getFunctionName());
+        /*
+        assertEquals(
+                CalcValue.list(
+                        BuiltinCalcValue.MULT,
+                        CalcValue.makeSymbol("x"),
+                        CalcValue.makeSymbol("x")),
+                fn.getFunctionBody());
+                */
+    }
 }

@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import java.awt.Font;
 import java.util.logging.Level;
@@ -58,11 +59,11 @@ public class HistoryView extends javax.swing.JPanel {
     }
     
     public void append(ICalcValue expr, ICalcValue value) {
-        append(expr.getRepr(), value);
+        append(expr.getRepr(ReprContext.getDefault()), value);
     }
     
     public void append(String expr, ICalcValue value) {
-        append(expr, value.getRepr());
+        append(expr, value.getRepr(ReprContext.getDefault()));
     }
     
     public void append(String expr, String value) {

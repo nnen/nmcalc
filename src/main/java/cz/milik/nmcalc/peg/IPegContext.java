@@ -124,7 +124,7 @@ public interface IPegContext {
         
         @Override
         public int getDepthLimit() {
-            return 100;
+            return 1000;
         }
         
         public AbstractPegContext(IPegContext aParent, PegParser<?> aParser, int depth) {

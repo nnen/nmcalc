@@ -62,15 +62,31 @@ public abstract class CalcValue implements ICalcValue {
         return new QuoteValue(value);
     }
     
+    public static ICalcValue error(Context ctx, Exception e) {
+        return error(ctx, e, e.getMessage());
+    }
     
-    public static boolean areValuesEqual(ICalcValue a, ICalcValue b) {
+    public static ICalcValue error(Context ctx, String fmt, Object... args) {
+        return error(ctx, null, fmt, args);
+    }
+    
+    public static ICalcValue error(Context ctx, Exception e, String fmt, Object... args) {
+        return new ErrorValue(
+                String.format(fmt, args),
+                ctx,
+                e
+        );
+    }
+    
+    
+    public static boolean areValuesEqual(ICalcValue a, ICalcValue b, Context ctx) {
         if (a.isError()) {
             return false;
         }
         if (b.isError()) {
             return false;
         }
-        return a.isValueEqual(b);
+        return a.isValueEqual(b, ctx);
     }
     
     public static ICalcValue binaryOp(ICalcValue a, ICalcValue b, BiFunction<ICalcValue, ICalcValue, ICalcValue> fn) {
@@ -85,18 +101,18 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
-    public String getRepr() {
+    public String getRepr(ReprContext ctx) {
         return getClass().getSimpleName();
     }
     
     @Override
-    public String getExprRepr() {
-        return getRepr();
+    public String getExprRepr(ReprContext ctx) {
+        return getRepr(ctx);
     }
 
     @Override
-    public String getApplyRepr(List<? extends ICalcValue> arguments) {
-        return getExprRepr() + "(" + StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr())) + ")";
+    public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
+        return getExprRepr(ctx) + "(" + StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr(ctx))) + ")";
     }
     
     
@@ -113,13 +129,13 @@ public abstract class CalcValue implements ICalcValue {
     
     @Override
     public Context getAttribute(String attrName, Context ctx) {
-        ctx.setReturnedValue(ErrorValue.formatted(ctx, "%s doesn't have attribute '%s'.", getRepr(), attrName));
+        ctx.setReturnedValue(ErrorValue.formatted(ctx, "%s doesn't have attribute '%s'.", getRepr(ctx.getReprContext()), attrName));
         return ctx;
     }
     
     @Override
     public Context setAttribute(String attrName, ICalcValue value, Context ctx) {
-        ctx.setReturnedValue(ErrorValue.formatted(ctx, "Cannot assign attribute '%s' to %s.", attrName, getRepr()));
+        ctx.setReturnedValue(ErrorValue.formatted(ctx, "Cannot assign attribute '%s' to %s.", attrName, getRepr(ctx.getReprContext())));
         return ctx;
     }
     
@@ -129,8 +145,8 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
-    public ICalcValue toFloat() {
-        return ErrorValue.formatted("Cannot convert %s to float.", getRepr());
+    public ICalcValue toFloat(Context ctx) {
+        return ErrorValue.formatted("Cannot convert %s to float.", getRepr(ctx.getReprContext()));
     }
     
     @Override
@@ -150,59 +166,83 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
-    public ICalcValue toStringValue() {
-        return new StringValue(getRepr());
+    public ICalcValue toStringValue(Context ctx) {
+        return new StringValue(getRepr(ctx.getReprContext()));
     }
     
     @Override
-    public IMonad<String> getStringValue() {
-        return Monad.just(getRepr());
+    public String getStringValue(Context ctx) {
+        return getRepr(ctx.getReprContext());
     }
 
     
     @Override
-    public ICalcValue toSymbolValue() {
-        return ErrorValue.formatted("%s cannot be converted to a symbol.", getRepr());
+    public ICalcValue toSymbolValue(Context ctx) {
+        return ErrorValue.formatted(
+                "%s cannot be converted to a symbol.",
+                getRepr(ctx.getReprContext())
+        );
     }
     
     
     @Override
-    public boolean isValueEqual(ICalcValue other) {
+    public boolean isValueEqual(ICalcValue other, Context ctx) {
         return Objects.equals(this, other);
     }
     
     @Override
-    public int compareValue(ICalcValue other) {
+    public int compareValue(ICalcValue other, Context ctx) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
     
     @Override
-    public ICalcValue negate() {
-        return new ErrorValue();
+    public ICalcValue negate(Context ctx) {
+        return CalcValue.error(
+                ctx,
+                "Cannot negate %s.",
+                getRepr(ctx.getReprContext())
+        );
     }
     
     @Override
-    public ICalcValue add(ICalcValue other) {
+    public ICalcValue add(ICalcValue other, Context ctx) {
         if (other.isError()) {
             return other;
         }
-        return ErrorValue.formatted("%s cannot be added to %s.", getRepr(), other.getRepr());
+        return CalcValue.error(
+                ctx,
+                "%s cannot be added to %s.",
+                getRepr(ctx.getReprContext()),
+                other.getRepr(ctx.getReprContext())
+        );
     }
     
     @Override
-    public ICalcValue subtract(ICalcValue other) {
-        return new ErrorValue();
+    public ICalcValue subtract(ICalcValue other, Context ctx) {
+        return CalcValue.error(
+                ctx,
+                "Cannot subtract from %s.",
+                getRepr(ctx.getReprContext())
+        );
     }
     
     @Override
-    public ICalcValue multiply(ICalcValue other) {
-        return new ErrorValue();
+    public ICalcValue multiply(ICalcValue other, Context ctx) {
+        return CalcValue.error(
+                ctx,
+                "Cannot multiply %s.",
+                getRepr(ctx.getReprContext())
+        );
     }
     
     @Override
-    public ICalcValue divide(ICalcValue other) {
-        return new ErrorValue();
+    public ICalcValue divide(ICalcValue other, Context ctx) {
+        return CalcValue.error(
+                ctx,
+                "Cannot divide %s.",
+                getRepr(ctx.getReprContext())
+        );
     }
     
     
@@ -223,6 +263,16 @@ public abstract class CalcValue implements ICalcValue {
                 getClass().getSimpleName(),
                 index
         ));
+    }
+    
+    @Override
+    public Context unpack(Context ctx) {
+        ctx.setReturnedValue(CalcValue.error(
+                ctx,
+                "Cannot unpack %s.",
+                getRepr(ctx.getReprContext())
+        ));
+        return ctx;
     }
     
     
@@ -248,7 +298,7 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
-        ctx.setReturnedValue(ErrorValue.formatted("%s %s cannot be applied.", getClass().getSimpleName(), getRepr()));
+        ctx.setReturnedValue(ErrorValue.formatted("%s %s cannot be applied.", getClass().getSimpleName(), getRepr(ctx.getReprContext())));
         return ctx;
     }
     
@@ -269,6 +319,37 @@ public abstract class CalcValue implements ICalcValue {
     
     protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
         return applyInner(ctx, arguments);
+    }
+
+    @Override
+    public Context unapply(Context ctx, ICalcValue value) {
+        try {
+            return unapplyInner(ctx, value);
+        } catch (NMCalcException e) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    e,
+                    e.getMessage()
+            ));
+            return ctx;
+        } catch (Exception e) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    e,
+                    "Internal error: " + e.getMessage()
+            ));
+            return ctx;
+        }
+    }
+    
+    protected Context unapplyInner(Context ctx, ICalcValue value) throws NMCalcException {
+        ctx.setReturnedValue(CalcValue.error(
+                ctx,
+                "Cannot unapply %s to %s.",
+                value.getRepr(ctx.getReprContext()),
+                getRepr(ctx.getReprContext())
+        ));
+        return ctx;
     }
     
     
@@ -293,13 +374,13 @@ public abstract class CalcValue implements ICalcValue {
         if (arguments.size() != expectedCount) {
             ctx.setReturnedValue(ErrorValue.formatted(
                     "%s cannot be applied to %d argument(s). Exactly %d argument(s) are expected.",
-                    getRepr(), arguments.size(), expectedCount));
+                    getRepr(ctx.getReprContext()), arguments.size(), expectedCount));
             return false;
         }
         return true;
     }
     
-    public static SymbolValue asSymbol(ICalcValue value) throws NMCalcException {
+    public static SymbolValue asSymbol(ICalcValue value, Context ctx) throws NMCalcException {
         if (value == null) {
             throw new NMCalcException("Expected a symbol, got null.");
         }
@@ -308,10 +389,13 @@ public abstract class CalcValue implements ICalcValue {
             return (SymbolValue)value;
         }
         
-        throw new NMCalcException(String.format("Expected a symbol, got: %s.", value.getRepr()));
+        throw new NMCalcException(String.format(
+                "Expected a symbol, got: %s.",
+                value.getRepr(ctx.getReprContext())
+        ));
     }
     
-    public static List<? extends SymbolValue> asSymbolList(ICalcValue value) throws NMCalcException {
+    public static List<? extends SymbolValue> asSymbolList(ICalcValue value, Context ctx) throws NMCalcException {
         if (value == null) {
             throw new NMCalcException("Expected a list of symbols, got null.");
         }
@@ -320,11 +404,14 @@ public abstract class CalcValue implements ICalcValue {
             ListValue listValue = (ListValue)value;
             List<SymbolValue> result = new ArrayList();
             for (ICalcValue item : listValue.getValues()) {
-                result.add(asSymbol(item));
+                result.add(asSymbol(item, ctx));
             }
             return result;
         }
         
-        throw new NMCalcException(String.format("Expected a list of symbols, got: %s.", value.getRepr()));
+        throw new NMCalcException(String.format(
+                "Expected a list of symbols, got: %s.",
+                value.getRepr(ctx.getReprContext())
+        ));
     }
 }
