@@ -45,6 +45,11 @@ public class SimpleForm extends javax.swing.JFrame {
             }
             
         });
+        
+        inputPane.clearError();
+        
+        //int minHeight = outputPane.getMinimumSize().height;
+        //jSplitPane1.setDividerLocation(jSplitPane1.getHeight() - minHeight);
     }
     
     public boolean evaluate() {
@@ -111,17 +116,20 @@ public class SimpleForm extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("NMCalc");
 
+        jSplitPane2.setBorder(null);
         jSplitPane2.setDividerLocation(100);
         jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane2.setResizeWeight(1.0);
 
-        jSplitPane1.setDividerLocation(250);
+        jSplitPane1.setBorder(null);
+        jSplitPane1.setDividerLocation(40);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane1.setResizeWeight(1.0);
 
         outputPane.setMinimumSize(new java.awt.Dimension(41, 41));
         jSplitPane1.setRightComponent(outputPane);
         jSplitPane1.setLeftComponent(inputPane);
+        inputPane.getAccessibleContext().setAccessibleDescription("");
 
         jSplitPane2.setBottomComponent(jSplitPane1);
         jSplitPane2.setTopComponent(historyView);
@@ -134,7 +142,7 @@ public class SimpleForm extends javax.swing.JFrame {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 248, Short.MAX_VALUE)
+            .addComponent(jSplitPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
         );
 
         pack();

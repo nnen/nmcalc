@@ -5,8 +5,11 @@
  */
 package cz.milik.nmcalc;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -19,23 +22,42 @@ public final class MathBuiltins {
         env.setVariable("pi", CalcValue.make(Math.PI));
         env.setVariable("e", CalcValue.make(Math.E));
         
-        env.setVariable(makeFloatFunction("abs", x -> Math.abs(x)));
-        env.setVariable(makeFloatFunction("ceil", x -> Math.ceil(x)));
-        env.setVariable(makeFloatFunction("floor", x -> Math.floor(x)));
+        env.setVariable(makeFloatFunction("abs", x -> x.abs()));
+        env.setVariable(makeFloatFunction("ceil", x -> x.setScale(0, RoundingMode.CEILING)));
+        env.setVariable(makeFloatFunction("floor", x -> x.setScale(0, RoundingMode.FLOOR)));
         
-        env.setVariable(makeFloatFunction("sin", x -> Math.sin(x)));
-        env.setVariable(makeFloatFunction("cos", x -> Math.cos(x)));
-        env.setVariable(makeFloatFunction("tan", x -> Math.tan(x)));
+        env.setVariable(makeDoubleFunction("sin", x -> Math.sin(x.doubleValue())));
+        env.setVariable(makeDoubleFunction("cos", x -> Math.cos(x.doubleValue())));
+        env.setVariable(makeDoubleFunction("tan", x -> Math.tan(x.doubleValue())));
         
-        env.setVariable(makeFloatFunction("ln", x -> Math.log(x)));
+        env.setVariable(makeDoubleFunction("ln", x -> Math.log(x.doubleValue())));
     }
     
-    public static BuiltinCalcValue makeFloatFunction(String name, Function<Double, Double> fn) {
+    
+    public static BuiltinCalcValue makeFloatFunction(String name, Function<BigDecimal, BigDecimal> fn) {
         return new FloatFunction1(name) {
             @Override
-            protected double apply(double value) throws NMCalcException {
+            protected BigDecimal apply(BigDecimal value) throws NMCalcException {
                 return fn.apply(value);
-            }  
+            }
+        };
+    }
+    
+    public static BuiltinCalcValue makeDoubleFunction(String name, Function<BigDecimal, Double> fn) {
+        return new FloatFunction1(name) {
+            @Override
+            protected BigDecimal apply(BigDecimal value) throws NMCalcException {
+                return new BigDecimal(fn.apply(value));
+            }
+        };
+    }
+
+    public static BuiltinCalcValue makeFloatFunction(String name, BiFunction<BigDecimal, BigDecimal, BigDecimal> fn) {
+        return new FloatFunction2(name) {
+            @Override
+            protected BigDecimal apply(Context ctx, BigDecimal a, BigDecimal b) throws NMCalcException {
+                return fn.apply(a, b);
+            }
         };
     }
     
@@ -60,59 +82,68 @@ public final class MathBuiltins {
             if (input.hasLength()) {
                 List<ICalcValue> result = new ArrayList();
                 for (int i = 0; i < input.length(); i++) {
-                    result.add(apply(input.getItem(i)));
+                    result.add(apply(ctx, input.getItem(i)));
                 }
                 ctx.setReturnedValue(CalcValue.list(result));
             } else {
-                ctx.setReturnedValue(apply(input));
+                ctx.setReturnedValue(apply(ctx, input));
             }
             return ctx;
         }
         
-        protected abstract ICalcValue apply(ICalcValue item) throws NMCalcException;
+        protected abstract ICalcValue apply(Context ctx, ICalcValue item) throws NMCalcException;
         
     }
     
-    public static abstract class FloatFunction1 extends MathFunction1 {
+    public static abstract class FloatFunction1 extends BuiltinCalcValue.UnaryFunction {
+
         public FloatFunction1(String name) {
             super(name);
         }
         
         @Override
-        protected ICalcValue apply(ICalcValue item) throws NMCalcException {
-            ICalcValue floatValue = item.toFloat();
-            if (floatValue.isError()) {
-                return floatValue;
-            }
-            double value = floatValue.getDoubleValue();
-            return CalcValue.make(apply(value));
+        protected Context applyInner(Context ctx, ICalcValue argument) throws NMCalcException {
+            ctx.setReturnedValue(
+                    CalcValue.make(apply(argument.getDecimalValue())));
+            return ctx;
         }
         
-        protected abstract double apply(double value) throws NMCalcException;
+        protected abstract BigDecimal apply(BigDecimal value) throws NMCalcException;
     }
     
-    
-    /*
-    public static final BuiltinCalcValue SIN = new FloatFunction1("sin") {
-        @Override
-        protected double apply(double value) throws NMCalcException {
-            return Math.sin(value);
+    public static abstract class FloatFunction2 extends BuiltinCalcValue {
+        
+        private final String name;
+
+        public String getName() {
+            return name;
         }
-    };
-    
-    public static final BuiltinCalcValue COS = new FloatFunction1("cos") {
-        @Override
-        protected double apply(double value) throws NMCalcException {
-            return Math.sin(value);
+
+        public FloatFunction2(String name) {
+            this.name = name;
         }
-    };
-    
-    public static final BuiltinCalcValue TAN = new FloatFunction1("tan") {
+        
         @Override
-        protected double apply(double value) throws NMCalcException {
-            return Math.sin(value);
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            ICalcValue a = arguments.get(0);
+            ICalcValue b = arguments.get(1);
+            if (a.isError()) {
+                ctx.setReturnedValue(a);
+                return ctx;
+            }
+            if (b.isError()) {
+                ctx.setReturnedValue(b);
+                return ctx;
+            }
+            ctx.setReturnedValue(CalcValue.make(apply(ctx, a.getDecimalValue(), b.getDecimalValue())));
+            return ctx;
         }
-    };
-    */
+        
+        protected abstract BigDecimal apply(Context ctx, BigDecimal a, BigDecimal b) throws NMCalcException;
+        
+    }
     
 }

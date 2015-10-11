@@ -25,33 +25,59 @@ public class Token {
         LT_COMP,
         GT_COMP,
         
-        PLUS,
-        MINUS,
-        ASTERISK,
-        SLASH,
+        CONS,
+        ARROW,
         
-        LPAR,
-        RPAR,
-        LBRA,
-        RBRA,
-        QUOTE,
-        COMMA,
+        PLUS('+'),
+        MINUS('-'),
+        ASTERISK('*'),
+        SLASH('/'),
         
-        KW_DEF(true),
-        KW_IF(true),
-        KW_THEN(true),
-        KW_ELSE(true),
+        LPAR('('),
+        RPAR(')'),
+        LBRA('['),
+        RBRA(']'),
+        LBRACE('{'),
+        RBRACE('}'),
+        QUOTE('\''),
+        COMMA(','),
+        
+        KW_DEF("def"),
+        KW_IF("if"),
+        KW_THEN("then"),
+        KW_ELSE("else"),
+        KW_MATCH("match"),
+        KW_CASE("case"),
+        KW_TRUE("true"),
+        KW_FALSE("false"),
+        KW_NOTHING("nothing"),
         
         EOF;
         
         public final boolean isKeyword;
-
-        private Types(boolean isKeyword) {
-            this.isKeyword = isKeyword;
+        public final String keyword;
+        public final boolean isSingleCharacter;
+        public final char singleCharacter;
+        
+        private Types(char c) {
+            this.keyword = null;
+            this.isKeyword = false;
+            isSingleCharacter = true;
+            singleCharacter = c;
+        }
+        
+        private Types(String keyword) {
+            this.keyword = keyword;
+            this.isKeyword = (keyword != null);
+            isSingleCharacter = false;
+            singleCharacter = ' ';
         }
         
         private Types() {
             isKeyword = false;
+            keyword = null;
+            isSingleCharacter = false;
+            singleCharacter = ' ';
         }
         
     }

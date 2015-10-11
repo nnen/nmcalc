@@ -61,6 +61,7 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
 
         textPane.setFont(GUIUtils.getCodeFont(24)
         );
+        textPane.setText("Value");
         scrollPane.setViewportView(textPane);
 
         add(scrollPane, java.awt.BorderLayout.CENTER);

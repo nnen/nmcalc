@@ -5,8 +5,6 @@
  */
 package cz.milik.nmcalc;
 
-import cz.milik.nmcalc.utils.IMonad;
-import cz.milik.nmcalc.utils.Monad;
 import java.math.BigDecimal;
 
 /**
@@ -61,16 +59,7 @@ public class BoolValue extends CalcValue {
     public BigDecimal getDecimalValue() {
         return value ? BigDecimal.ONE : BigDecimal.ZERO;
     }
-
-    @Override
-    public double getDoubleValue() {
-        return value ? 1.0 : 0.0;
-    }
     
-    @Override
-    public IMonad<Float> getFloatValue() {
-        return Monad.just(value ? 1.0f : 0.0f);
-    }
     
     @Override
     public boolean getBooleanValue() { return value; }

@@ -6,6 +6,7 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
+import java.util.Objects;
 
 /**
  *
@@ -15,6 +16,12 @@ public class SymbolValue extends StringValue {
 
     public SymbolValue(String value) {
         super(value);
+    }
+
+    
+    @Override
+    public boolean isSymbol() {
+        return true;
     }
     
     
@@ -43,6 +50,21 @@ public class SymbolValue extends StringValue {
             ctx.setReturnedValue(val);
         });
         return ctx;
+    }
+    
+    @Override
+    protected Context unapplyInner(Context ctx, ICalcValue value) throws NMCalcException {
+        if (Objects.equals(getValue(), "_")) {
+            ctx.setReturnedValue(CalcValue.some(CalcValue.list()));
+            return ctx;
+        }
+        ICalcValue varValue = ctx.getVariable(getValue()).unwrap();
+        if (varValue == null) {
+            ctx.setVariable(getValue(), value);
+            ctx.setReturnedValue(CalcValue.some(CalcValue.list()));
+            return ctx;
+        }
+        return varValue.unapply(ctx, value);
     }
     
 }

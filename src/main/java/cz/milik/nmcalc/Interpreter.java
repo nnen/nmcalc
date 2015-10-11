@@ -24,6 +24,11 @@ public class Interpreter {
     private Environment defaultEnvironment = new Environment();
     
     
+    private ListBuilder listBuilder = new ListBuilder();
+    
+    public ListBuilder getListBuilder() { return listBuilder; }
+    
+    
     public ICalcValue evaluate(String input) {
         ParseResult<ICalcValue> node = parser.parseList(input);
         if (node.isSuccess()) {

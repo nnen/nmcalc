@@ -5,8 +5,7 @@
  */
 package cz.milik.nmcalc;
 
-import cz.milik.nmcalc.utils.IMonad;
-import cz.milik.nmcalc.utils.Monad;
+import java.math.BigDecimal;
 import java.util.Objects;
 
 /**
@@ -33,14 +32,19 @@ public class StringValue extends PrimitiveValueBase<String> {
     
     
     @Override
-    public IMonad<Float> getFloatValue() {
-        return Monad.just(Float.parseFloat(getValue()));
+    public BigDecimal getDecimalValue() {
+        try {
+            return new BigDecimal(getValue());
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
     }
+    
 
     @Override
     public ICalcValue toFloat(Context ctx) {
         try {
-            return new FloatValue(Float.parseFloat(getValue()));
+            return CalcValue.make(new BigDecimal(getValue()));
         } catch (NumberFormatException e) {
             return CalcValue.error(
                     ctx,

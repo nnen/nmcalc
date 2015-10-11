@@ -39,10 +39,14 @@ public class Scanner {
         singleCharacterTokens.put('>', Token.Types.GT_COMP);
         singleCharacterTokens.put('\'', Token.Types.QUOTE);
         
-        keywords.put("def", Token.Types.KW_DEF);
-        keywords.put("if", Token.Types.KW_IF);
-        keywords.put("then", Token.Types.KW_THEN);
-        keywords.put("else", Token.Types.KW_ELSE);
+        for (Token.Types tt : Token.Types.values()) {
+            if (tt.isKeyword) {
+                keywords.put(tt.keyword, tt);
+            }
+            if (tt.isSingleCharacter) {
+                singleCharacterTokens.put(tt.singleCharacter, tt);
+            }
+        }
     }
     
     
@@ -97,6 +101,8 @@ public class Scanner {
             case ',':
             case '(':
             case ')':
+            case '[':
+            case ']':
                 return false;
         }
         return true;
@@ -269,11 +275,26 @@ public class Scanner {
             case '+':
                 return new Token(Token.Types.PLUS, tokenOffset, next());
             case '-':
-                return new Token(Token.Types.MINUS, tokenOffset, next());
+                value.append(next());
+                if (peek() == '>') {
+                    value.append(next());
+                    return new Token(Token.Types.ARROW, tokenOffset, value.toString());
+                }
+                return new Token(Token.Types.MINUS, tokenOffset, value.toString());
             case '*':
                 return new Token(Token.Types.ASTERISK, tokenOffset, next());
             case '/':
                 return new Token(Token.Types.SLASH, tokenOffset, next());
+            
+            case ':':
+            {
+                value.append(next());
+                if (peek() != ':') {
+                    return finishUnknownToken();
+                }
+                value.append(next());
+                return new Token(Token.Types.CONS, tokenOffset, value.toString());
+            }
             
             case '(':
                 return new Token(Token.Types.LPAR, tokenOffset, next());

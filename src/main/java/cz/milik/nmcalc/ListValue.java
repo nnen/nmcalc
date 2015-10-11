@@ -17,23 +17,35 @@ import java.util.List;
  */
 public class ListValue extends CalcValue {
 
-    private final List<ICalcValue> values = new ArrayList();
+    private final List<ICalcValue> values;
 
     
     public ListValue() {
+        values = new ArrayList();
     }
 
     public ListValue(ICalcValue[] items) {
+        values = new ArrayList();
         for (ICalcValue item : items) {
             values.add(item);
         }
     }
     
     public ListValue(Collection<? extends ICalcValue> items) {
+        values = new ArrayList();
         values.addAll(items);
     }
-
+    
+    public ListValue(List<ICalcValue> items, boolean takeOwnership) {
+        if (takeOwnership) {
+            values = items;
+        } else {
+            values = new ArrayList(items);
+        }
+    }
+    
     public ListValue(ICalcValue head, Collection<? extends ICalcValue> tail) {
+        values = new ArrayList();
         values.add(head);
         values.addAll(tail);
     }
@@ -41,6 +53,12 @@ public class ListValue extends CalcValue {
     
     public List<ICalcValue> getValues() {
         return Collections.unmodifiableList(values);
+    }
+
+    
+    @Override
+    public boolean isList() {
+        return true;
     }
     
     
@@ -156,6 +174,84 @@ public class ListValue extends CalcValue {
             }
         };
         //return getHead().apply(ctx, getTail());
+    }
+
+    @Override
+    protected Context unapplyInner(Context ctx, ICalcValue value) throws NMCalcException {
+        return new Context(ctx, ctx.getEnvironment(), this) {
+            private ICalcValue unapplyResult;
+            
+            @Override
+            public ExecResult execute(Interpreter interpreter) {
+                int pc = getPC();
+                ICalcValue returned;
+                
+                if (values.isEmpty()) {
+                    // Matched list is empty.
+                    return ctxReturn(CalcValue.nothing());
+                }
+                
+                if (pc == 0) {
+                    ICalcValue head = values.get(0);
+                    setPC(pc + 1);
+                    return ctxContinue(head.unapply(this, value));
+                } else if (pc == 1) {
+                    unapplyResult = getReturnedValue();
+                    if (unapplyResult.isError() || unapplyResult.isNothing()) {
+                        setPC(1 + values.size());
+                        return ctxReturn(unapplyResult);
+                    }
+                    if (!unapplyResult.isSome()) {
+                        setPC(1 + values.size());
+                        return ctxReturn(CalcValue.error(
+                                this,
+                                "Expected the unapply operation of %s to return a 'some' or 'nothing'. %s was returned.",
+                                values.get(0).getRepr(getReprContext()),
+                                unapplyResult.getRepr(getReprContext())
+                        ));
+                    }
+                    unapplyResult = unapplyResult.unwrap(this);
+                    if (!unapplyResult.isList()) {
+                        setPC(1 + values.size());
+                        return ctxReturn(CalcValue.error(
+                                this,
+                                "Expected the unapply operation of %s to return some list. %s was returned.",
+                                values.get(0).getRepr(getReprContext()),
+                                unapplyResult.getRepr(getReprContext())
+                        ));
+                    }
+                    if (unapplyResult.length() != (values.size() - 1)) {
+                        setPC(1 + values.size());
+                        // Invlaid number of arguments.
+                        return ctxReturn(CalcValue.nothing());
+                    }
+                    setPC(pc + 1);
+                    if (values.size() > 1) {
+                        return ctxContinue(values.get(pc).unapply(this, unapplyResult.getItem(pc - 1)));
+                    } else {
+                        return ctxReturn(CalcValue.some(CalcValue.list()));
+                    }
+                } else if (pc < values.size()) {
+                    returned = getReturnedValue();
+                    if (returned.isError() || returned.isNothing()) {
+                        setPC(1 + values.size());
+                        return ctxReturn(returned);
+                    }
+                    setPC(pc + 1);
+                    return ctxContinue(values.get(pc).unapply(this, unapplyResult.getItem(pc - 1)));
+                } else if (pc == values.size()) {
+                    returned = getReturnedValue();
+                    if (returned.isError() || returned.isNothing()) {
+                        setPC(1 + values.size());
+                        return ctxReturn(returned);
+                    }
+                    setPC(pc + 1);
+                    return ctxReturn(CalcValue.some(CalcValue.list()));
+                } else {
+                    return invalidPC(pc);
+                }
+            }
+        };
     }
     
     

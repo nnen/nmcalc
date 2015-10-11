@@ -6,11 +6,10 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
-import cz.milik.nmcalc.utils.Monad;
+import java.math.MathContext;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Stack;
 
 /**
  *
@@ -26,11 +25,22 @@ public class Context {
     private Environment environment;
     
     public Environment getEnvironment() { return environment; }
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+    }
     
     
     private final ICalcValue method;
     
     public ICalcValue getMethod() { return method; }
+    
+    
+    private MathContext mathContext = MathContext.DECIMAL128;
+    
+    public MathContext getMathContext() {
+        return mathContext;
+    }
     
     
     private int pc;
@@ -51,6 +61,11 @@ public class Context {
     
     public void setReturnedValue(ICalcValue returnedValue) {
         this.returnedValue = returnedValue;
+    }
+
+    public Context setReturnedError(String message, Object... args) {
+        setReturnedValue(CalcValue.error(this, message, args));
+        return this;
     }
     
     
@@ -146,6 +161,14 @@ public class Context {
                 this,
                 value
         );
+    }
+    
+    protected ExecResult error(String message, Object... args) {
+        return ctxReturn(CalcValue.error(
+                this,
+                message,
+                args
+        ));
     }
     
     
@@ -245,4 +268,67 @@ public class Context {
         
     }
     
+    
+    public static abstract class StackContext extends Context {
+        
+        public StackContext(Context parent, Environment env, ICalcValue method) {
+            super(parent, env, method);
+        }
+
+        public StackContext(Context parent, Environment env, ICalcValue method, ReprContext reprContext) {
+            super(parent, env, method, reprContext);
+        }
+        
+        public StackContext(Context parent, ICalcValue method) {
+            this(parent, parent.getEnvironment(), method);
+        }
+        
+        
+        private final List<ICalcValue> stack = new ArrayList();
+        
+        public ICalcValue push(ICalcValue value) {
+            stack.add(value);
+            return value;
+        }
+        
+        public ICalcValue top() {
+            int i = stack.size() - 1;
+            ICalcValue top = stack.get(i);
+            return top;
+        }
+        
+        public ICalcValue top(int offset) {
+            int i = stack.size() - 1 - offset;
+            ICalcValue top = stack.get(i);
+            return top;
+        }
+        
+        public ICalcValue pop() {
+            int i = stack.size() - 1;
+            ICalcValue top = stack.get(i);
+            stack.remove(i);
+            return top;
+        }
+        
+        public void pop(int count) {
+            stack.subList(stack.size() - count, stack.size()).clear();
+        }
+        
+        
+        public ExecResult ctxReturn() {
+            return ctxReturn(top());
+        }
+        
+        public ExecResult ctxReturn(int offset) {
+            return ctxReturn(top(offset));
+        }
+        
+        
+        @Override
+        public void setReturnedValue(ICalcValue returnedValue) {
+            stack.add(returnedValue);
+            super.setReturnedValue(returnedValue);
+        }
+        
+    }
 }

@@ -5,8 +5,6 @@
  */
 package cz.milik.nmcalc;
 
-import cz.milik.nmcalc.utils.IMonad;
-import cz.milik.nmcalc.utils.Monad;
 import java.math.BigDecimal;
 import java.util.function.Function;
 
@@ -35,6 +33,11 @@ public class FloatValue extends CalcValue {
     }
     
     
+    public static FloatValue parse(String value) {
+        return new FloatValue(new BigDecimal(value));
+    }
+    
+    
     @Override
     public String toString() {
         return value.toString();
@@ -58,10 +61,14 @@ public class FloatValue extends CalcValue {
         final FloatValue other = (FloatValue) obj;
         return value.compareTo(other.value) == 0;
     }
-
+    
+    public boolean isInteger() {
+        return (value.scale() <= 0) || (value.stripTrailingZeros().scale() <= 0);
+    }
+    
     @Override
     public String getRepr(ReprContext ctx) {
-        return ctx.formatFloat(value);
+        return ctx.formatFloat(this);
     }
     
     @Override
@@ -70,20 +77,9 @@ public class FloatValue extends CalcValue {
     }
     
     @Override
-    public IMonad<Float> getFloatValue() {
-        return Monad.just(value.floatValue());
-    }
-    
-    @Override
-    public double getDoubleValue() {
-        return value.doubleValue();
-    }
-
-    @Override
     public BigDecimal getDecimalValue() {
         return value;
     }
-    
     
     @Override
     public ICalcValue toFloat(Context ctx) {
@@ -132,7 +128,12 @@ public class FloatValue extends CalcValue {
     
     @Override
     public ICalcValue divide(ICalcValue other, Context ctx) {
-        return binaryOp(other, ctx, decimal -> value.divide(decimal));
+        return binaryOp(other, ctx, decimal -> {
+            return value.divide(decimal, ctx.getMathContext());
+            //BigDecimal result[] = value.divideAndRemainder(decimal);
+            //return result[0];
+        });
+        //return binaryOp(other, ctx, decimal -> value.divide(decimal));
     }
     
     @Override

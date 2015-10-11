@@ -6,8 +6,6 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
-import cz.milik.nmcalc.utils.IMonad;
-import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -28,6 +26,10 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     public static ICalcValue make(double value) {
+        return new FloatValue(value);
+    }
+    
+    public static ICalcValue make(BigDecimal value) {
         return new FloatValue(value);
     }
     
@@ -78,6 +80,12 @@ public abstract class CalcValue implements ICalcValue {
         );
     }
     
+    public static ICalcValue some(ICalcValue value) {
+        return new SomeValue(value);
+    }
+    
+    public static ICalcValue nothing() { return NothingValue.INSTANCE; }
+    
     
     public static boolean areValuesEqual(ICalcValue a, ICalcValue b, Context ctx) {
         if (a.isError()) {
@@ -125,6 +133,28 @@ public abstract class CalcValue implements ICalcValue {
     public boolean isSpecialForm() {
         return false;
     }
+
+    @Override
+    public boolean isSymbol() {
+        return false;
+    }
+    
+    @Override
+    public boolean isList() {
+        return false;
+    }
+
+    @Override
+    public boolean isSome() { return false; }
+    
+    @Override
+    public boolean isNothing() { return false; }
+
+    
+    @Override
+    public ICalcValue unwrap(Context ctx) {
+        return this;
+    }
     
     
     @Override
@@ -147,16 +177,6 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public ICalcValue toFloat(Context ctx) {
         return ErrorValue.formatted("Cannot convert %s to float.", getRepr(ctx.getReprContext()));
-    }
-    
-    @Override
-    public IMonad<Float> getFloatValue() {
-        return Monad.nothing();
-    }
-
-    @Override
-    public double getDoubleValue() {
-        return 0.0;
     }
     
     @Override
@@ -264,6 +284,61 @@ public abstract class CalcValue implements ICalcValue {
                 index
         ));
     }
+
+    @Override
+    public Context getHead(Context ctx) {
+        if (!hasLength()) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    "Cannot get the head of %s.",
+                    getRepr(ctx.getReprContext())
+            ));
+            return ctx;
+        }
+        
+        if (length() < 1) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    "Cannot get the head of %s, because it is empty.",
+                    getRepr(ctx.getReprContext())
+            ));
+            return ctx;
+        }
+        
+        ctx.setReturnedValue(getItem(0));
+        return ctx;
+    }
+    
+    @Override
+    public Context getTail(Context ctx) {
+        if (!hasLength()) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    "Cannot get the head of %s.",
+                    getRepr(ctx.getReprContext())
+            ));
+            return ctx;
+        }
+        
+        /*
+        if (length() < 1) {
+            ctx.setReturnedValue(CalcValue.error(
+                    ctx,
+                    "Cannot get the tail of %s, because it is empty.",
+                    getRepr(ctx.getReprContext())
+            ));
+            return ctx;
+        }
+        */
+        
+        ListBuilder lb = new ListBuilder();
+        for (int i = 1; i < length(); i++) {
+            lb.add(getItem(i));
+        }
+        
+        ctx.setReturnedValue(lb.makeList());
+        return ctx;
+    }
     
     @Override
     public Context unpack(Context ctx) {
@@ -343,12 +418,11 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     protected Context unapplyInner(Context ctx, ICalcValue value) throws NMCalcException {
-        ctx.setReturnedValue(CalcValue.error(
-                ctx,
-                "Cannot unapply %s to %s.",
-                value.getRepr(ctx.getReprContext()),
-                getRepr(ctx.getReprContext())
-        ));
+        if (isValueEqual(value, ctx)) {
+            ctx.setReturnedValue(CalcValue.some(CalcValue.list()));
+        } else {
+            ctx.setReturnedValue(CalcValue.nothing());
+        }
         return ctx;
     }
     
