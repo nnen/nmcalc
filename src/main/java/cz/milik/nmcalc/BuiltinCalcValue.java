@@ -234,6 +234,15 @@ public abstract class BuiltinCalcValue extends CalcValue {
             return ctx;
         }
         
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+            sb.append(StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr(ctx))));
+            sb.append("]");
+            return sb.toString();
+        }
+        
     };
     
     public static final BuiltinCalcValue CONS = new BinaryOperator("cons", "::") {
@@ -523,6 +532,32 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 }
             };
         }
+        
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
+            StringBuilder sb = new StringBuilder();
+            
+            sb.append("match ");
+            sb.append(arguments.get(0).getExprRepr(ctx));
+            sb.append(" { ");
+            
+            ICalcValue matches = arguments.get(1).getItem(1);
+            for (int i = 0; i < matches.length(); i++) {
+                ICalcValue pattern = matches.getItem(i).getItem(0);
+                ICalcValue body = matches.getItem(i).getItem(1);
+                
+                sb.append("case ");
+                sb.append(pattern.getExprRepr(ctx));
+                sb.append(" -> ");
+                sb.append(body.getExprRepr(ctx));
+                sb.append(" ");
+            }
+            
+            sb.append("}");
+            
+            return sb.toString();
+        }
+        
     };
 
     

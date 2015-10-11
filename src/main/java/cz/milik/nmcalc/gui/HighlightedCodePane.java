@@ -98,9 +98,11 @@ public class HighlightedCodePane extends JTextPane {
     }
     
     public void updateSyntax() {
-        scanner.reset(getText());
-        tokens = new TokenList(scanner.readTokens());
-        setSyntax(tokens);
+        if (!getText().isEmpty()) {
+            scanner.reset(getText());
+            tokens = new TokenList(scanner.readTokens());
+            setSyntax(tokens);
+        }
     }
     
     

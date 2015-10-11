@@ -27,11 +27,17 @@ public class SymbolValue extends StringValue {
     
     @Override
     public String getRepr(ReprContext ctx) {
+        if (isIdent()) {
+            return "'" + getValue();
+        }
         return "'$" + getValue();
     }
 
     @Override
     public String getExprRepr(ReprContext ctx) {
+        if (isIdent()) {
+            return getValue();
+        }
         return "$" + getValue();
     }
     
@@ -65,6 +71,14 @@ public class SymbolValue extends StringValue {
             return ctx;
         }
         return varValue.unapply(ctx, value);
+    }
+    
+    
+    public boolean isIdent() {
+        if (isKeyword()) {
+            return false;
+        }
+        return getValue().codePoints().allMatch(c -> Character.isJavaIdentifierPart(c));
     }
     
 }

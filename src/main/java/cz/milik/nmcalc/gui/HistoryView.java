@@ -8,11 +8,15 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
-import java.awt.Font;
+import java.awt.Color;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 /**
  *
@@ -20,6 +24,25 @@ import javax.swing.text.Document;
  */
 public class HistoryView extends javax.swing.JPanel {
 
+    private MutableAttributeSet lhsStyle = new SimpleAttributeSet();
+    private MutableAttributeSet lhsParStyle = new SimpleAttributeSet();
+    
+    private MutableAttributeSet rhsStyle = new SimpleAttributeSet();
+    private MutableAttributeSet rhsParStyle = new SimpleAttributeSet();
+    
+    {
+        StyleConstants.setItalic(lhsStyle, true);
+        
+        StyleConstants.setAlignment(lhsParStyle, StyleConstants.ALIGN_LEFT);
+        //StyleConstants.setBackground(lhsParStyle, Color.lightGray);
+        
+        //StyleConstants.setBold(rhsStyle, true);
+        StyleConstants.setFontSize(rhsStyle, (int)(getFont().getSize() * 1.5));
+        
+        StyleConstants.setAlignment(rhsParStyle, StyleConstants.ALIGN_RIGHT);
+        StyleConstants.setSpaceBelow(rhsParStyle, 6);
+    }
+    
     /**
      * Creates new form HistoryView
      */
@@ -50,9 +73,20 @@ public class HistoryView extends javax.swing.JPanel {
 
     
     public void append(String str) {
-        Document doc = outputPane.getDocument();
+        append(str, (AttributeSet)null, null);
+    }
+    
+    public void append(String str, AttributeSet attributes, AttributeSet parAttributes) {
+        StyledDocument doc = outputPane.getStyledDocument();
+        int offset = doc.getLength();
         try {
-            doc.insertString(doc.getLength(), str, null);
+            doc.insertString(offset, str, null);
+            if (attributes != null) {
+                doc.setCharacterAttributes(offset, str.length(), attributes, true);
+            }
+            if (parAttributes != null) {
+                doc.setParagraphAttributes(offset, str.length(), parAttributes, true);
+            }
         } catch (BadLocationException ex) {
             Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -67,7 +101,10 @@ public class HistoryView extends javax.swing.JPanel {
     }
     
     public void append(String expr, String value) {
-        append(expr + " => " + value + "\n");
+        append(">>> ");
+        append(expr + "\n", lhsStyle, lhsParStyle);
+        append(value + "\n", rhsStyle, rhsParStyle);
+        //append(expr + " => " + value + "\n");
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {

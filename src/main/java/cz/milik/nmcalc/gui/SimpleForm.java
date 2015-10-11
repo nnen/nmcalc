@@ -11,6 +11,7 @@ import cz.milik.nmcalc.Interpreter;
 import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
+import cz.milik.nmcalc.utils.Monad;
 
 /**
  *
@@ -34,7 +35,11 @@ public class SimpleForm extends javax.swing.JFrame {
             
             @Override
             public void onInput(IInputView view, String input) {
-                evaluate();
+                if (!input.isEmpty()) {
+                    evaluate();
+                } else {
+                    outputPane.setModel(Monad.nothing());
+                }
             }
             
             @Override
@@ -115,6 +120,8 @@ public class SimpleForm extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("NMCalc");
+        setPreferredSize(new java.awt.Dimension(500, 300));
+        setSize(new java.awt.Dimension(500, 300));
 
         jSplitPane2.setBorder(null);
         jSplitPane2.setDividerLocation(100);
@@ -122,28 +129,20 @@ public class SimpleForm extends javax.swing.JFrame {
         jSplitPane2.setResizeWeight(1.0);
 
         jSplitPane1.setBorder(null);
-        jSplitPane1.setDividerLocation(40);
+        jSplitPane1.setDividerLocation(50);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane1.setResizeWeight(1.0);
 
         outputPane.setMinimumSize(new java.awt.Dimension(41, 41));
-        jSplitPane1.setRightComponent(outputPane);
-        jSplitPane1.setLeftComponent(inputPane);
+        outputPane.setShowingNull(false);
+        jSplitPane1.setBottomComponent(outputPane);
+        jSplitPane1.setTopComponent(inputPane);
         inputPane.getAccessibleContext().setAccessibleDescription("");
 
         jSplitPane2.setBottomComponent(jSplitPane1);
         jSplitPane2.setTopComponent(historyView);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 242, Short.MAX_VALUE)
-        );
+        getContentPane().add(jSplitPane2, java.awt.BorderLayout.CENTER);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents

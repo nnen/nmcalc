@@ -16,6 +16,17 @@ import cz.milik.nmcalc.utils.Monad;
  */
 public class SimpleCalcValueView extends javax.swing.JPanel {
 
+    private boolean showingNull = true;
+
+    public boolean isShowingNull() {
+        return showingNull;
+    }
+    
+    public void setShowingNull(boolean showingNull) {
+        this.showingNull = showingNull;
+    }
+    
+    
     private IMonad<ICalcValue> model = Monad.nothing();
     
     public IMonad<ICalcValue> getModel() {
@@ -33,7 +44,10 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     }
     
     protected void onModelChanged(IMonad<ICalcValue> oldModel, IMonad<ICalcValue> newModel) {
-        textPane.setText(newModel.unwrap(value -> value.getRepr(ReprContext.getDefault()), "null"));
+        textPane.setText(newModel.unwrap(
+                value -> value.getRepr(ReprContext.getDefault()),
+                isShowingNull() ? "null" : ""
+        ));
         textPane.updateSyntax();
     }
     

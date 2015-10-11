@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.parser.Token;
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -112,6 +113,16 @@ public class StringValue extends PrimitiveValueBase<String> {
     @Override
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {
         return visitor.visitString(this, context);
+    }
+    
+    
+    public boolean isKeyword() {
+        for (Token.Types tt : Token.Types.values()) {
+            if (tt.isKeyword && Objects.equals(getValue(), tt.keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
     
 }
