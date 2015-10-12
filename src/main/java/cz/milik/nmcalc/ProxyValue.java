@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -22,6 +23,17 @@ public abstract class ProxyValue implements ICalcValue {
         this.target = target;
     }
 
+    @Override
+    public LinkedList<ICalcValueAnnotation> getAnnotations() {
+        return target.getAnnotations();
+    }
+
+    @Override
+    public ICalcValue addAnnotation(ICalcValueAnnotation value) {
+        target.addAnnotation(value);
+        return this;
+    }
+    
     @Override
     public ICalcValue unwrap(Context ctx) {
         return target.unwrap(ctx);

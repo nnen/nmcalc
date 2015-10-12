@@ -7,7 +7,16 @@ package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import cz.milik.nmcalc.utils.Utils;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,7 +27,7 @@ import java.util.Map;
  *
  * @author jan
  */
-public class Environment {
+public class Environment implements Serializable {
     
     private final Environment parent;
     
@@ -86,5 +95,34 @@ public class Environment {
             out.println(value.getRepr(ctx));
         }
     }
+ 
     
+    public void serialize(OutputStream stream) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(stream);
+        oos.writeObject(this);
+        oos.close();
+    }
+    
+    public void serialize(String fileName) throws IOException {
+        Utils.createAndClose(this, () -> {
+            return new FileOutputStream(fileName);
+        }, out -> {
+            serialize(out);
+        });
+    }
+    
+    public static Environment deserialize(InputStream stream) throws IOException, ClassNotFoundException {
+        ObjectInputStream ois = new ObjectInputStream(stream);
+        return (Environment)ois.readObject();
+    }
+    
+    public static Environment deserialize(String fileName) throws IOException, ClassNotFoundException {
+        FileInputStream in = null;
+        try {
+            in = new FileInputStream(fileName);
+            return deserialize(in);
+        } finally {
+            Utils.closeSilently(in);
+        }
+    }
 }

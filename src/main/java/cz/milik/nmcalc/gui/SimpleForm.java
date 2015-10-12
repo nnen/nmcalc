@@ -12,6 +12,12 @@ import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.Monad;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -25,11 +31,39 @@ public class SimpleForm extends javax.swing.JFrame {
     private ICalcValue result;
     private ParseResult<ICalcValue> parsed;
     
+    public String getEnvironmentFile() { return "environment.ser"; }
+    
     /**
      * Creates new form SimpleForm
      */
     public SimpleForm() {
         initComponents();
+        
+        /*
+        File envFile = new File(getEnvironmentFile());
+        if (envFile.exists()) {
+            try {
+                interpreter.deserializeEnvironment(getEnvironmentFile());
+            } catch (IOException ex) {
+                Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        */
+        
+        /*
+        this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    interpreter.serializeEnvironment(getEnvironmentFile());
+                } catch (IOException ex) {
+                    Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }        
+        });
+        */
         
         inputPane.addListener(new IInputViewListener() {
             
@@ -56,6 +90,8 @@ public class SimpleForm extends javax.swing.JFrame {
         //int minHeight = outputPane.getMinimumSize().height;
         //jSplitPane1.setDividerLocation(jSplitPane1.getHeight() - minHeight);
     }
+    
+    
     
     public boolean evaluate() {
         try {

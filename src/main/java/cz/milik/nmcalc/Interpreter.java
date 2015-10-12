@@ -10,6 +10,7 @@ import cz.milik.nmcalc.ast.ASTNodeTypes;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.IMonad;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -227,5 +228,14 @@ public class Interpreter {
     
     public Context applySpecial(ICalcValue value, Context ctx, List<? extends ICalcValue> arguments) {
         return value.applySpecial(ctx, arguments);
+    }
+
+
+    public void serializeEnvironment(String fileName) throws IOException {
+        defaultEnvironment.serialize(fileName);
+    }
+    
+    public void deserializeEnvironment(String fileName) throws IOException, ClassNotFoundException {
+        defaultEnvironment = Environment.deserialize(fileName);
     }
 }

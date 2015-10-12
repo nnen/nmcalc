@@ -6,6 +6,7 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
+import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,8 +34,16 @@ public abstract class CalcValue implements ICalcValue {
         return new FloatValue(value);
     }
     
+    public static ICalcValue make(SourceAnnotation src, BigDecimal value) {
+        return new FloatValue(value).addAnnotation(src);
+    }
+    
     public static ICalcValue make(String value) {
         return new StringValue(value);
+    }
+    
+    public static ICalcValue make(SourceAnnotation src, String value) {
+        return new StringValue(value).addAnnotation(src);
     }
     
     public static ICalcValue make(boolean value) {
@@ -149,7 +158,23 @@ public abstract class CalcValue implements ICalcValue {
     
     @Override
     public boolean isNothing() { return false; }
-
+    
+    
+    private LinkedList<ICalcValueAnnotation> annotations = EMPTY;
+    
+    private static final LinkedList<ICalcValueAnnotation> EMPTY = LinkedList.empty();
+    
+    @Override
+    public LinkedList<ICalcValueAnnotation> getAnnotations() {
+        return annotations;
+    }
+    
+    @Override
+    public ICalcValue addAnnotation(ICalcValueAnnotation value) {
+        annotations = annotations.add(value);
+        return this;
+    }
+    
     
     @Override
     public ICalcValue unwrap(Context ctx) {

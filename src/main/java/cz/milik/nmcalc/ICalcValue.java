@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -14,7 +15,7 @@ import java.util.function.Function;
  *
  * @author jan
  */
-public interface ICalcValue {
+public interface ICalcValue extends java.io.Serializable {
     
     public String getRepr(ReprContext ctx);
     public String getExprRepr(ReprContext ctx);
@@ -26,6 +27,9 @@ public interface ICalcValue {
     public boolean isList();
     public boolean isSome();
     public boolean isNothing();
+    
+    public LinkedList<ICalcValueAnnotation> getAnnotations();
+    public ICalcValue addAnnotation(ICalcValueAnnotation value);
     
     public ICalcValue unwrap(Context ctx);
     

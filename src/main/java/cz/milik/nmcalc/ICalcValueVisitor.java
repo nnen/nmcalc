@@ -11,12 +11,16 @@ package cz.milik.nmcalc;
  */
 public interface ICalcValueVisitor<T, U> {
     
+    public T visitBool(BoolValue value, U context);
     public T visitFloat(FloatValue value, U context);
     public T visitString(StringValue value, U context);
     public T visitList(ListValue value, U context);
     
     public T visitError(ErrorValue value, U context);
     public T visitSymbol(SymbolValue value, U context);
+    
+    public T visitSome(SomeValue value, U context);
+    public T visitNothing(NothingValue value, U context);
     
     public T visitBuiltin(BuiltinCalcValue value, U context);
     public T visitFunction(FunctionValue value, U context);
