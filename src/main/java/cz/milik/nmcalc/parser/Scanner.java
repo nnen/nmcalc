@@ -267,6 +267,13 @@ public class Scanner {
                 while (hasNext() && isOctChar(peek())) {
                     value.append(next());
                 }
+                if (value.length() == 1) {
+                    return new Token(
+                        Token.Types.FLOAT,
+                        tokenOffset,
+                        value.toString()
+                    );
+                }
                 return new Token(
                         Token.Types.OCT_LITERAL,
                         tokenOffset,
