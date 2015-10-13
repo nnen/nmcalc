@@ -468,6 +468,8 @@ public class CalcParser extends PegParser<ASTNode> {
                         );
                     }),
                     nt("real"),
+                    nt("hex"),
+                    nt("oct"),
                     nt("var"),
                     nt("symbol"),
                     nt("str"),
@@ -478,6 +480,14 @@ public class CalcParser extends PegParser<ASTNode> {
             nt("real", s(Token.Types.FLOAT).map(
                     //t -> CalcValue.make(Float.parseFloat(t.getValue()))
                     t -> FloatValue.parse(t.getValue())
+            ));
+            
+            nt("hex", s(Token.Types.HEX_LITERAL).map(
+                    t -> FloatValue.parseHex(t.getValue())
+            ));
+            
+            nt("oct", s(Token.Types.OCT_LITERAL).map(
+                    t -> FloatValue.parseOct(t.getValue())
             ));
             
             nt("var", s(Token.Types.IDENTIFIER).map(

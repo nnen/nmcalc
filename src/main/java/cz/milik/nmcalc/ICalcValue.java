@@ -8,6 +8,7 @@ package cz.milik.nmcalc;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -27,14 +28,16 @@ public interface ICalcValue extends java.io.Serializable {
     public boolean isList();
     public boolean isSome();
     public boolean isNothing();
+    public boolean isObject();
     
     public LinkedList<ICalcValueAnnotation> getAnnotations();
     public ICalcValue addAnnotation(ICalcValueAnnotation value);
+    public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls);
     
     public ICalcValue unwrap(Context ctx);
     
-    public Context getAttribute(String attrName, Context ctx);
-    public Context setAttribute(String attrName, ICalcValue value, Context ctx);
+    public Context getAttribute(SymbolValue attrName, Context ctx);
+    public Context setAttribute(SymbolValue attrName, ICalcValue value, Context ctx);
     
     public boolean getBooleanValue();
     

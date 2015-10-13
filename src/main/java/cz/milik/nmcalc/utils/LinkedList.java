@@ -5,7 +5,9 @@
  */
 package cz.milik.nmcalc.utils;
 
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  *
@@ -18,6 +20,8 @@ public abstract class LinkedList<TValue> {
     }
     
     public abstract void forEach(Consumer<TValue> consumer);
+    
+    public abstract <T> Optional<T> mapFirst(Function<TValue, Optional<T>> fn);
     
     public abstract boolean isEmpty();
     
@@ -56,6 +60,15 @@ public abstract class LinkedList<TValue> {
         }
 
         @Override
+        public <T> Optional<T> mapFirst(Function<TValue, Optional<T>> fn) {
+            Optional<T> result = fn.apply(head);
+            if (result.isPresent()) {
+                return result;
+            }
+            return tail.mapFirst(fn);
+        }
+        
+        @Override
         public boolean isEmpty() {
             return false;
         }
@@ -69,6 +82,11 @@ public abstract class LinkedList<TValue> {
             // Do nothing.
         }
 
+        @Override
+        public <T> Optional<T> mapFirst(Function<TValue, Optional<T>> fn) {
+            return Optional.empty();
+        }
+        
         @Override
         public boolean isEmpty() {
             return true;

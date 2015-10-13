@@ -108,6 +108,32 @@ public class Scanner {
         return true;
     }
     
+    private boolean isHexChar(char c) {
+        if (Character.isDigit(c)) {
+            return true;
+        }
+        switch (c) {
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+                return true;
+        }
+        return false;
+    }
+    
+    private boolean isOctChar(char c) {
+        return Character.digit(c, 8) >= 0;
+    }
+    
     private Token finishUnknownToken()
     {
         while (hasNext() && !isDelimiter(peek()))
@@ -220,6 +246,34 @@ public class Scanner {
         }
         
         // Real numbers in forms d+, d+.d*
+        if (peek() == '0') {
+            value.append(next());
+            
+            if (peek() == 'x') {
+                value.append(next());
+                if (isHexChar(peek())) {
+                    while (hasNext() && isHexChar(peek())) {
+                        value.append(next());
+                    }
+                    return new Token(
+                            Token.Types.HEX_LITERAL,
+                            tokenOffset,
+                            value.toString()
+                    );
+                } else {
+                    return finishUnknownToken();
+                }
+            } else {
+                while (hasNext() && isOctChar(peek())) {
+                    value.append(next());
+                }
+                return new Token(
+                        Token.Types.OCT_LITERAL,
+                        tokenOffset,
+                        value.toString()
+                );
+            }
+        }
         if (Character.isDigit(peek()))
         {
             while (hasNext() && Character.isDigit(peek()))

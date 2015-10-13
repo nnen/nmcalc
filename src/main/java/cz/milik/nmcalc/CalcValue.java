@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -34,7 +35,7 @@ public abstract class CalcValue implements ICalcValue {
         return new FloatValue(value);
     }
     
-    public static ICalcValue make(SourceAnnotation src, BigDecimal value) {
+    public static ICalcValue make(ICalcValueAnnotation src, BigDecimal value) {
         return new FloatValue(value).addAnnotation(src);
     }
     
@@ -42,7 +43,7 @@ public abstract class CalcValue implements ICalcValue {
         return new StringValue(value);
     }
     
-    public static ICalcValue make(SourceAnnotation src, String value) {
+    public static ICalcValue make(ICalcValueAnnotation src, String value) {
         return new StringValue(value).addAnnotation(src);
     }
     
@@ -158,6 +159,9 @@ public abstract class CalcValue implements ICalcValue {
     
     @Override
     public boolean isNothing() { return false; }
+
+    @Override
+    public boolean isObject() { return false; }
     
     
     private LinkedList<ICalcValueAnnotation> annotations = EMPTY;
@@ -174,6 +178,16 @@ public abstract class CalcValue implements ICalcValue {
         annotations = annotations.add(value);
         return this;
     }
+
+    @Override
+    public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls) {
+        return annotations.mapFirst(item -> {
+            if (cls.isInstance(item)) {
+                return Optional.of(cls.cast(item));
+            }
+            return Optional.empty();
+        });
+    }
     
     
     @Override
@@ -183,14 +197,24 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
-    public Context getAttribute(String attrName, Context ctx) {
-        ctx.setReturnedValue(ErrorValue.formatted(ctx, "%s doesn't have attribute '%s'.", getRepr(ctx.getReprContext()), attrName));
+    public Context getAttribute(SymbolValue attrName, Context ctx) {
+        ctx.setReturnedValue(ErrorValue.formatted(
+                ctx,
+                "%s doesn't have attribute '%s'.",
+                getRepr(ctx.getReprContext()),
+                attrName.getRepr(ctx.getReprContext())
+        ));
         return ctx;
     }
     
     @Override
-    public Context setAttribute(String attrName, ICalcValue value, Context ctx) {
-        ctx.setReturnedValue(ErrorValue.formatted(ctx, "Cannot assign attribute '%s' to %s.", attrName, getRepr(ctx.getReprContext())));
+    public Context setAttribute(SymbolValue attrName, ICalcValue value, Context ctx) {
+        ctx.setReturnedValue(ErrorValue.formatted(
+                ctx,
+                "Cannot assign attribute '%s' to %s.",
+                attrName.getRepr(ctx.getReprContext()),
+                getRepr(ctx.getReprContext())
+        ));
         return ctx;
     }
     

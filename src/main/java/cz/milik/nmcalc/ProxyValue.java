@@ -8,6 +8,7 @@ package cz.milik.nmcalc;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -23,6 +24,16 @@ public abstract class ProxyValue implements ICalcValue {
         this.target = target;
     }
 
+    @Override
+    public boolean isObject() {
+        return target.isObject();
+    }
+
+    @Override
+    public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls) {
+        return target.getAnnotation(cls);
+    }
+    
     @Override
     public LinkedList<ICalcValueAnnotation> getAnnotations() {
         return target.getAnnotations();
@@ -95,12 +106,12 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
-    public Context getAttribute(String attrName, Context ctx) {
+    public Context getAttribute(SymbolValue attrName, Context ctx) {
         return target.getAttribute(attrName, ctx);
     }
 
     @Override
-    public Context setAttribute(String attrName, ICalcValue value, Context ctx) {
+    public Context setAttribute(SymbolValue attrName, ICalcValue value, Context ctx) {
         return target.setAttribute(attrName, value, ctx);
     }
 

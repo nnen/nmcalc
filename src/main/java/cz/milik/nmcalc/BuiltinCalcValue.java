@@ -605,7 +605,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 return ctx;
             }
             ICalcValue obj = arguments.get(0);
-            ICalcValue name = arguments.get(1);
+            SymbolValue name = CalcValue.asSymbol(arguments.get(1), ctx);
             String nameStr = name.getStringValue(ctx);
             if (nameStr == null) {
                 ctx.setReturnedValue(ErrorValue.formatted(
@@ -623,7 +623,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                     switch (pc) {
                         case 0:
                             setPC(pc + 1);
-                            return ctxContinue(obj.getAttribute(name.toString(), this));
+                            return ctxContinue(obj.getAttribute(name, this));
                         case 1:
                             setPC(pc + 1);
                             return ctxReturn(getReturnedValue());
@@ -645,16 +645,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 return ctx;
             }
             ICalcValue obj = arguments.get(0);
-            ICalcValue name = arguments.get(1);
+            SymbolValue name = CalcValue.asSymbol(arguments.get(1), ctx);
             ICalcValue value = arguments.get(2);
-            String nameStr = name.getStringValue(ctx);
-            if (nameStr == null) {
-                ctx.setReturnedValue(ErrorValue.formatted(
-                        ctx,
-                        "%s expected a string as second argument.",
-                        getName()));
-                return ctx;
-            }
             
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
@@ -664,7 +656,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                     switch (pc) {
                         case 0:
                             setPC(pc + 1);
-                            return ctxContinue(obj.setAttribute(nameStr, value, this));
+                            return ctxContinue(obj.setAttribute(name, value, this));
                         case 1:
                             setPC(pc + 1);
                             return ctxReturn(getReturnedValue());

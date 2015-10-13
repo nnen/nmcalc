@@ -83,6 +83,8 @@ public class HighlightedCodePane extends JTextPane {
             }
             switch (token.getType()) {
                 case FLOAT:
+                case HEX_LITERAL:
+                case OCT_LITERAL:
                 case STRING:
                     doc.setCharacterAttributes(offset + token.getOffset(), token.getValue().length(), literal, true);
                     break;

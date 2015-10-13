@@ -16,6 +16,8 @@ public class Token {
         UNKNOWN,
         
         FLOAT,
+        HEX_LITERAL,
+        OCT_LITERAL,
         IDENTIFIER,
         SYMBOL,
         STRING,

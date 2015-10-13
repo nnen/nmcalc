@@ -6,6 +6,7 @@
 package cz.milik.nmcalc;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.function.Function;
 
 /**
@@ -35,6 +36,16 @@ public class FloatValue extends CalcValue {
     
     public static FloatValue parse(String value) {
         return new FloatValue(new BigDecimal(value));
+    }
+    
+    public static FloatValue parseHex(String value) {
+        String clean = value.substring(2);
+        return new FloatValue(new BigDecimal(new BigInteger(clean, 16)));
+    }
+    
+    public static FloatValue parseOct(String value) {
+        String clean = value.substring(1);
+        return new FloatValue(new BigDecimal(new BigInteger(clean, 8)));
     }
     
     
