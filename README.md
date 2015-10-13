@@ -1,5 +1,5 @@
-# NMCalc [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
-Desktop Calculator Application
+# NMCalc v0.2 [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
+NMCalc is primarily a desktop calculator application.  It is very young project, but already has useful functions.
 
 ## Usage
 The application window is divided into three parts (from top to bottom):
@@ -30,7 +30,7 @@ For example, factorial would be defined as:
 
     def factorial(x) if x > 1 then x * factorial(x - 1) else 1
 
-Function calls use a C-like syntax, for example: `factorial(5)`.
+Function calls use a C-like syntax, for example: `factorial(5)`. Note - function definitions are themselfs expressions, which evaluate to the function itself (functions are first-class objects and as such can be assigned to variables, passed to function arguments or returned by a function).
 
 ### Pattern matching
 
