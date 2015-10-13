@@ -1,4 +1,4 @@
-# NMCalc
+# NMCalc [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
 Desktop Calculator Application
 
 ## Usage
