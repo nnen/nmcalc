@@ -58,6 +58,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(OCT);
         env.setVariable(BIN);
         
+        env.setVariable(ENV);
+        
         env.setVariable(HELP);
     }
     
@@ -976,6 +978,36 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static final BuiltinCalcValue OCT = new ReprFlagUnaryOperator(ReprContext.Flags.OCTAL, "oct");
     public static final BuiltinCalcValue BIN = new ReprFlagUnaryOperator(ReprContext.Flags.BINARY, "bin");
     
+    
+    public static final BuiltinCalcValue ENV = new BuiltinCalcValue() {
+
+        @Override
+        public String getName() { return "env"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0)) {
+                return ctx;
+            }
+            
+            List<String> varNames = ctx.getEnvironment().getVariableNames();
+            ListBuilder lb = new ListBuilder();
+            
+            for (String varName : varNames) {
+                lb.add(CalcValue.list(
+                        CalcValue.makeSymbol(varName),
+                        ctx.getEnvironment().getVariable(varName).unwrap()
+                ));
+            }
+            
+            ctx.setReturnedValue(lb.makeList());
+            
+            return ctx;
+        }
+        
+    };
+            
+    
     public static final BuiltinCalcValue HELP = new BuiltinCalcValue() {
         
         public static final String HELP_FILE = "cz/milik/nmcalc/help.md";
@@ -1016,21 +1048,6 @@ public abstract class BuiltinCalcValue extends CalcValue {
             return ctx;
         }
         
-        /*
-        @Override
-        protected Context applyInner(Context ctx, ICalcValue argument) throws NMCalcException {
-            Optional<String> help = argument.getHelp();
-            if (!help.isPresent()) {
-                ctx.setReturnedValue(CalcValue.nothing());
-                return ctx;
-            }
-            ICalcValue result = CalcValue.make(help.get());
-            result.addAnnotation(CalcAnnotation.isHelp());
-            ctx.setReturnedValue(result);
-            return ctx;
-            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-        */
     };
     
 }

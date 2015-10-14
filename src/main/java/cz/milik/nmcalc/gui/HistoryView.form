@@ -34,6 +34,7 @@
             <Property name="font" type="java.awt.Font" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
               <Connection code="GUIUtils.getCodeFont()" type="code"/>
             </Property>
+            <Property name="text" type="java.lang.String" value="NMCalc&#xa;&#xa;Type an expression into the middle text area. The bottom area shows the result being evaluated as you type. Press Ctrl+Enter to clear the input and commit the current expression into the history view (this one).&#xa;&#xa;Type `help()` and press Ctrl+Enter to see the help.&#xa;&#xa;"/>
           </Properties>
         </Component>
       </SubComponents>

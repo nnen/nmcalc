@@ -8,7 +8,7 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
-import java.awt.Color;
+import java.awt.Rectangle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.AttributeSet;
@@ -82,6 +82,7 @@ public class HistoryView extends javax.swing.JPanel {
 
         outputPane.setEditable(false);
         outputPane.setFont(GUIUtils.getCodeFont());
+        outputPane.setText("NMCalc\n\nType an expression into the middle text area. The bottom area shows the result being evaluated as you type. Press Ctrl+Enter to clear the input and commit the current expression into the history view (this one).\n\nType `help()` and press Ctrl+Enter to see the help.\n\n");
         scrollPane.setViewportView(outputPane);
 
         add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -92,7 +93,7 @@ public class HistoryView extends javax.swing.JPanel {
         append(str, (AttributeSet)null, null);
     }
     
-    public void append(String str, AttributeSet attributes, AttributeSet parAttributes) {
+    public int append(String str, AttributeSet attributes, AttributeSet parAttributes) {
         StyledDocument doc = outputPane.getStyledDocument();
         int offset = doc.getLength();
         try {
@@ -106,6 +107,7 @@ public class HistoryView extends javax.swing.JPanel {
         } catch (BadLocationException ex) {
             Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return offset + str.length();
     }
     
     public void append(ICalcValue expr, ICalcValue value) {
@@ -124,8 +126,14 @@ public class HistoryView extends javax.swing.JPanel {
     public void append(String expr, String value) {
         append(">>> ");
         append(expr + "\n", lhsStyle, lhsParStyle);
-        append(value + "\n", rhsStyle, rhsParStyle);
-        //append(expr + " => " + value + "\n");
+        int pos = append(value + "\n", rhsStyle, rhsParStyle);
+        
+        try {
+            Rectangle rect = outputPane.modelToView(pos);
+            outputPane.scrollRectToVisible(rect);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public void appendHelp(String expr, String value) {

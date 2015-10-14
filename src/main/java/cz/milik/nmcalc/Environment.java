@@ -58,6 +58,11 @@ public class Environment implements Serializable {
     }
     
     
+    public List<String> getVariableNames() {
+        return new ArrayList(variables.keySet());
+    }
+    
+    
     public Environment() {
         this.parent = null;
         
@@ -95,7 +100,7 @@ public class Environment implements Serializable {
             out.println(value.getRepr(ctx));
         }
     }
- 
+    
     
     public void serialize(OutputStream stream) throws IOException {
         ObjectOutputStream oos = new ObjectOutputStream(stream);

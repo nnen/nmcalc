@@ -12,12 +12,6 @@ import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.Monad;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
