@@ -21,7 +21,16 @@ public class StringValue extends PrimitiveValueBase<String> {
 
     
     @Override
+    public boolean isHelp() {
+        return getAnnotation(CalcAnnotation.IsHelp.class).isPresent();
+    }
+    
+    
+    @Override
     public String getRepr(ReprContext ctx) {
+        if (ctx.hasPrettyPrintHelp() && isHelp()) {
+            return getValue();
+        }
         return "\"" + getValue() + "\"";
     }
     

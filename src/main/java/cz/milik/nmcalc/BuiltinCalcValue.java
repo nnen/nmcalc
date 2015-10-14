@@ -9,9 +9,13 @@ import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
+import cz.milik.nmcalc.utils.Utils;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -53,6 +57,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(HEX);
         env.setVariable(OCT);
         env.setVariable(BIN);
+        
+        env.setVariable(HELP);
     }
     
     
@@ -969,5 +975,60 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static final BuiltinCalcValue HEX = new ReprFlagUnaryOperator(ReprContext.Flags.HEX, "hex");
     public static final BuiltinCalcValue OCT = new ReprFlagUnaryOperator(ReprContext.Flags.OCTAL, "oct");
     public static final BuiltinCalcValue BIN = new ReprFlagUnaryOperator(ReprContext.Flags.BINARY, "bin");
+    
+    public static final BuiltinCalcValue HELP = new BuiltinCalcValue() {
+        
+        public static final String HELP_FILE = "cz.milik.nmcalc/help.md";
+        
+        @Override
+        public String getName() {
+            return "help";
+        }
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.of("`help([value])`\n\nReturns help for `value` if it is given, otherwise return help for NMCalc.");
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0, 1)) {
+                return ctx;
+            }
+            
+            if (arguments.size() == 0) {
+                ClassLoader loader = getClass().getClassLoader();
+                InputStream stream = loader.getResourceAsStream(HELP_FILE);
+                try {
+                    ctx.setReturnedValue(CalcValue.make(Utils.readAll(stream)));
+                } catch (IOException e) {
+                    ctx.setReturnedValue(CalcValue.error(ctx, e));
+                }
+            } else {
+                Optional<String> help = arguments.get(0).getHelp();
+                ICalcValue result = CalcValue.make(help.get());
+                result.addAnnotation(CalcAnnotation.isHelp());
+                ctx.setReturnedValue(result);
+            }
+            
+            return ctx;
+        }
+        
+        /*
+        @Override
+        protected Context applyInner(Context ctx, ICalcValue argument) throws NMCalcException {
+            Optional<String> help = argument.getHelp();
+            if (!help.isPresent()) {
+                ctx.setReturnedValue(CalcValue.nothing());
+                return ctx;
+            }
+            ICalcValue result = CalcValue.make(help.get());
+            result.addAnnotation(CalcAnnotation.isHelp());
+            ctx.setReturnedValue(result);
+            return ctx;
+            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        */
+    };
     
 }

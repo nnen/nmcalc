@@ -23,7 +23,9 @@ public class ReprContext {
         OCTAL_INTEGER_ONLY,
         
         BINARY,
-        BINARY_INTEGER_ONLY
+        BINARY_INTEGER_ONLY,
+        
+        PRETTY_PRINT_HELP,
     }
     
     
@@ -41,6 +43,9 @@ public class ReprContext {
         flags.addAll(EnumSet.of(first, rest));
         return this;
     }
+    
+    
+    public boolean hasPrettyPrintHelp() { return getFlags().contains(Flags.PRETTY_PRINT_HELP); }
     
     
     public ReprContext() {

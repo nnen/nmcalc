@@ -25,8 +25,14 @@ public class CalcAnnotation implements ICalcValueAnnotation {
         return new SourceAnnotation(first.getOffset(), last.getOffset() + last.getValue().length());
     }
     
+    public static HelpAnnotation help(String value) {
+        return new HelpAnnotation(value);
+    }
     
-    public static class SourceAnnotation {
+    public static IsHelp isHelp() { return new IsHelp(); }
+    
+    
+    public static class SourceAnnotation extends CalcAnnotation {
         
         private final int offset;
         private final int length;
@@ -43,6 +49,30 @@ public class CalcAnnotation implements ICalcValueAnnotation {
             this.offset = offset;
             this.length = length;
         }
+        
+    }
+    
+    
+    public static class HelpAnnotation extends CalcAnnotation {
+        
+        private String help;
+        
+        public String getHelp() {
+            return help;
+        }
+        
+        public void setHelp(String help) {
+            this.help = help;
+        }
+        
+        public HelpAnnotation(String help) {
+            this.help = help;
+        }
+        
+    }
+    
+    
+    public static class IsHelp extends CalcAnnotation {
         
     }
     

@@ -30,6 +30,22 @@ public class HistoryView extends javax.swing.JPanel {
     private MutableAttributeSet rhsStyle = new SimpleAttributeSet();
     private MutableAttributeSet rhsParStyle = new SimpleAttributeSet();
     
+    
+    private ReprContext reprContext = new ReprContext();
+    
+    {
+        reprContext.getFlags().add(ReprContext.Flags.PRETTY_PRINT_HELP);
+    }
+    
+    public ReprContext getReprContext() {
+        return reprContext;
+    }
+    
+    public void setReprContext(ReprContext reprContext) {
+        this.reprContext = reprContext;
+    }
+    
+    
     {
         StyleConstants.setItalic(lhsStyle, true);
         
@@ -93,11 +109,16 @@ public class HistoryView extends javax.swing.JPanel {
     }
     
     public void append(ICalcValue expr, ICalcValue value) {
-        append(expr.getRepr(ReprContext.getDefault()), value);
+        append(expr.getRepr(getReprContext()), value);
     }
     
     public void append(String expr, ICalcValue value) {
-        append(expr, value.getRepr(ReprContext.getDefault()));
+        if (value.isHelp()) {
+            //appendHelp(expr, value.get)
+            appendHelp(expr, value.getRepr(getReprContext()));
+        } else {
+            append(expr, value.getRepr(getReprContext()));
+        }
     }
     
     public void append(String expr, String value) {
@@ -105,6 +126,12 @@ public class HistoryView extends javax.swing.JPanel {
         append(expr + "\n", lhsStyle, lhsParStyle);
         append(value + "\n", rhsStyle, rhsParStyle);
         //append(expr + " => " + value + "\n");
+    }
+    
+    public void appendHelp(String expr, String value) {
+        append(">>> ");
+        append(expr + "\n", lhsStyle, lhsParStyle);
+        append(value + "\n", null, null);
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {

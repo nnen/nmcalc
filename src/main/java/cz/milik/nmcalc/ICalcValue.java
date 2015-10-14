@@ -34,6 +34,10 @@ public interface ICalcValue extends java.io.Serializable {
     public ICalcValue addAnnotation(ICalcValueAnnotation value);
     public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls);
     
+    public Optional<String> getHelp();
+    public void setHelp(String help);
+    public boolean isHelp();
+    
     public ICalcValue unwrap(Context ctx);
     
     public Context getAttribute(SymbolValue attrName, Context ctx);

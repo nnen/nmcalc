@@ -5,10 +5,12 @@
  */
 package cz.milik.nmcalc;
 
+import java.io.Serializable;
+
 /**
  *
  * @author jan
  */
-public interface ICalcValueAnnotation {
+public interface ICalcValueAnnotation extends Serializable {
     
 }

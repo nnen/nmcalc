@@ -188,6 +188,36 @@ public abstract class CalcValue implements ICalcValue {
             return Optional.empty();
         });
     }
+
+    
+    @Override
+    public Optional<String> getHelp() {
+        Optional<CalcAnnotation.HelpAnnotation> help = getAnnotation(CalcAnnotation.HelpAnnotation.class);
+        if (help.isPresent()) {
+            return Optional.of(help.get().getHelp());
+        }
+        return getHelpInner();
+    }
+    
+    protected Optional<String> getHelpInner() {
+        return Optional.empty();
+    }
+    
+    @Override
+    public void setHelp(String help) {
+        Optional<CalcAnnotation.HelpAnnotation> annotation = getAnnotation(CalcAnnotation.HelpAnnotation.class);
+        if (!annotation.isPresent()) {
+            annotation = Optional.of(CalcAnnotation.help(help));
+            addAnnotation(annotation.get());
+        }
+        annotation.get().setHelp(help);
+    }
+    
+    @Override
+    public boolean isHelp() {
+        return false;
+        //return getAnnotation(CalcAnnotation.IsHelp.class).isPresent();
+    }
     
     
     @Override
@@ -493,14 +523,34 @@ public abstract class CalcValue implements ICalcValue {
         throw new NMCalcException(String.format("Invalid argument count: %d.", arguments.size()), ctx);
     }
     
-    protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, int expectedCount) {
-        if (arguments.size() != expectedCount) {
-            ctx.setReturnedValue(ErrorValue.formatted(
-                    "%s cannot be applied to %d argument(s). Exactly %d argument(s) are expected.",
-                    getRepr(ctx.getReprContext()), arguments.size(), expectedCount));
-            return false;
+    protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, int expectedCount, int... expectedCountRest) {
+        if (arguments.size() == expectedCount) {
+            return true;
         }
-        return true;
+        
+        for (int count : expectedCountRest) {
+            if (arguments.size() == count) {
+                return true;
+            }
+        }
+        
+        String countStr = Integer.toString(expectedCount);
+        
+        if (expectedCountRest.length > 0) {
+            for (int i = 0; i < expectedCountRest.length - 1; i++) {
+                countStr += ", " + Integer.toString(expectedCountRest[i]);
+            }
+            countStr += " or " + Integer.toString(expectedCountRest[expectedCountRest.length - 1]);
+        }
+        
+        ctx.setReturnedValue(ErrorValue.formatted(
+                "%s cannot be applied to %d argument(s). Exactly %s argument(s) are expected.",
+                getRepr(ctx.getReprContext()),
+                arguments.size(),
+                countStr
+        ));
+        
+        return false;
     }
     
     public static SymbolValue asSymbol(ICalcValue value, Context ctx) throws NMCalcException {

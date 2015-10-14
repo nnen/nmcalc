@@ -7,6 +7,11 @@ package cz.milik.nmcalc.utils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -79,4 +84,33 @@ public class Utils {
         }
     }
     
+    
+    public static void readAll(Reader reader, Writer writer) throws IOException
+    {
+        char buffer[] = new char[1024];
+        int count = 0;
+        
+        do {
+            count = reader.read(buffer);
+            writer.write(buffer, 0, count);
+        } while (count > 0);
+    }
+    
+    public static void readAll(InputStream input, Writer writer) throws IOException
+    {
+        Reader reader = new InputStreamReader(input);
+        
+        try {
+            readAll(reader, writer);
+        } finally {
+            closeSilently(reader);
+        }
+    }
+    
+    public static String readAll(InputStream input) throws IOException
+    {
+        StringWriter writer = new StringWriter();
+        readAll(input, writer);
+        return writer.getBuffer().toString();
+    }
 }

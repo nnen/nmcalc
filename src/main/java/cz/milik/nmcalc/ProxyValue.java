@@ -25,6 +25,21 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
+    public boolean isHelp() {
+        return target.isHelp();
+    }
+
+    @Override
+    public Optional<String> getHelp() {
+        return target.getHelp();
+    }
+
+    @Override
+    public void setHelp(String help) {
+        target.setHelp(help);
+    }
+    
+    @Override
     public boolean isObject() {
         return target.isObject();
     }
