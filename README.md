@@ -1,4 +1,4 @@
-# NMCalc v0.3 [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
+# NMCalc v0.4 [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
 NMCalc is primarily a desktop calculator application.  It is very young project, but already has useful functions.
 
 ## Usage
