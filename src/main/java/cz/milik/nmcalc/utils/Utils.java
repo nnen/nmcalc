@@ -92,7 +92,9 @@ public class Utils {
         
         do {
             count = reader.read(buffer);
-            writer.write(buffer, 0, count);
+            if (count > 0) {
+                writer.write(buffer, 0, count);
+            }
         } while (count > 0);
     }
     

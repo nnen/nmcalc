@@ -978,7 +978,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     public static final BuiltinCalcValue HELP = new BuiltinCalcValue() {
         
-        public static final String HELP_FILE = "cz.milik.nmcalc/help.md";
+        public static final String HELP_FILE = "cz/milik/nmcalc/help.md";
         
         @Override
         public String getName() {
@@ -1000,7 +1000,9 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 ClassLoader loader = getClass().getClassLoader();
                 InputStream stream = loader.getResourceAsStream(HELP_FILE);
                 try {
-                    ctx.setReturnedValue(CalcValue.make(Utils.readAll(stream)));
+                    ICalcValue result = CalcValue.make(Utils.readAll(stream));
+                    result.addAnnotation(CalcAnnotation.isHelp());
+                    ctx.setReturnedValue(result);
                 } catch (IOException e) {
                     ctx.setReturnedValue(CalcValue.error(ctx, e));
                 }
