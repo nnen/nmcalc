@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.loader.CalcLoader;
 import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
@@ -1039,7 +1040,21 @@ public abstract class BuiltinCalcValue extends CalcValue {
                     ctx.setReturnedValue(CalcValue.error(ctx, e));
                 }
             } else {
-                Optional<String> help = arguments.get(0).getHelp();
+                ICalcValue arg = arguments.get(0);
+                
+                Optional<String> help = Optional.empty();
+                
+                if (arg instanceof StringValue) {
+                    help = Optional.ofNullable(CalcLoader.getInstance().getString(arg.getStringValue(ctx)));
+                } else {
+                    help = arguments.get(0).getHelp();
+                }
+                
+                if (!help.isPresent()) {
+                    ctx.setReturnedValue(CalcValue.nothing());
+                    return ctx;
+                }
+                
                 ICalcValue result = CalcValue.make(help.get());
                 result.addAnnotation(CalcAnnotation.isHelp());
                 ctx.setReturnedValue(result);
