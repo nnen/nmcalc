@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>NMCalc by nnen</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>NMCalc</h1>
+        <p>Desktop Calculator Application</p>
+
+        <p class="view"><a href="https://github.com/nnen/nmcalc">View the Project on GitHub <small>nnen/nmcalc</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/nnen/nmcalc/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/nnen/nmcalc/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/nnen/nmcalc">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="nmcalc-v04-" class="anchor" href="#nmcalc-v04-" aria-hidden="true"><span class="octicon octicon-link"></span></a>NMCalc v0.4 <a href="https://travis-ci.org/nnen/nmcalc"><img src="https://travis-ci.org/nnen/nmcalc.svg?branch=master" alt="Build Status"></a>
+</h1>
+
+<p>NMCalc is primarily a desktop calculator application.  It is very young project, but already has useful functions.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>The application window is divided into three parts (from top to bottom):
+history window, input window and result window.  Enter an expression into
+the input window (the middle one), the result is shown as you type in the
+result window (the bottom one).  To commit the expression into the history
+window, press <code>Ctrl + Enter</code>.</p>
+
+<p><img src="https://raw.githubusercontent.com/nnen/nmcalc/master/nmcalc.png" alt="NMCalc Screenshot"></p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<h3>
+<a id="variables" class="anchor" href="#variables" aria-hidden="true"><span class="octicon octicon-link"></span></a>Variables</h3>
+
+<p>The variable assignment syntax is simply:</p>
+
+<pre><code>x = &lt;expression&gt;
+</code></pre>
+
+<p>Variables are remembered between different expression evaluations, can hold value of any type (real, list, boolean, function, etc.).</p>
+
+<h3>
+<a id="functions" class="anchor" href="#functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Functions</h3>
+
+<p>There are some builtin functions, such as <code>sin(&lt;real&gt;)</code>, <code>apply(&lt;value&gt;, &lt;arguments&gt;)</code> or <code>eval(&lt;expression&gt;)</code>. Apart from those, users can define custom functions using the syntax:</p>
+
+<pre><code>def myFunction(&lt;arguments&gt;) &lt;expression&gt;
+</code></pre>
+
+<p>For example, factorial would be defined as:</p>
+
+<pre><code>def factorial(x) if x &gt; 1 then x * factorial(x - 1) else 1
+</code></pre>
+
+<p>Function calls use a C-like syntax, for example: <code>factorial(5)</code>. Note - function definitions are themselfs expressions, which evaluate to the function itself (functions are first-class objects and as such can be assigned to variables, passed to function arguments or returned by a function).</p>
+
+<h3>
+<a id="pattern-matching" class="anchor" href="#pattern-matching" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pattern matching</h3>
+
+<p>The pattern matching syntax is:</p>
+
+<pre><code>match &lt;expression&gt; {
+  case &lt;pattern 1&gt; -&gt; &lt;expression&gt;
+  case &lt;pattern 2&gt; -&gt; &lt;expression&gt;
+  ...
+}
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>def append(lst, value) match lst {
+  case first :: rest -&gt; first :: append(lst, value)
+  case [] -&gt; [value]
+}
+
+append([1, 2, 3], 4) =&gt; [1, 2, 3, 4]
+</code></pre>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/nnen">nnen</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
