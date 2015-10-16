@@ -45,6 +45,33 @@ public abstract class Text implements IText {
     }
     
     
+    public static PlainText plain(String value) {
+        return new PlainText(value);
+    }
+    
+    public static Paragraph paragraph(ITextElement... elements) {
+        Paragraph par = new Paragraph();
+        for (ITextElement element : elements) {
+            par.addChild(element);
+        }
+        return par;
+    }
+    
+    public static Paragraph paragraph(String value) {
+        return paragraph(plain(value));
+    }
+    
+    public static CodeBlock codeBlock(String value) {
+        CodeBlock result = new CodeBlock();
+        result.addChild(plain(value));
+        return result;
+    }
+    
+    public static Headline headline(String value, int level) {
+        return new Headline(value, level);
+    }
+    
+    
     public static abstract class ParentElement extends Text {
         private final List<ITextElement> children = new ArrayList();
         
@@ -57,6 +84,27 @@ public abstract class Text implements IText {
         public void addChild(ITextElement child) {
             children.add(child);
         }
+    
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(getClass().getSimpleName());
+            sb.append("{ ");
+            for (ITextElement child : getChildren()) {
+                sb.append(child.toString());
+                sb.append(", ");
+            }
+            sb.append("}");
+            return sb.toString();
+        }
+    }
+    
+    
+    public static class Fragment extends ParentElement {
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitFragment(this, ctx);
+        }
     }
     
     
@@ -68,12 +116,40 @@ public abstract class Text implements IText {
     }
     
     
+    public static class CodeBlock extends ParentElement {
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitCodeBlock(this, ctx);
+        }
+    }
+    
+    
     public static class PlainText extends Text {
         private String text = "";
+
+        public PlainText() {
+        }
+
+        public PlainText(String text) {
+            this.text = text;
+        }
+
+        
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(getClass().getSimpleName());
+            sb.append("{\"");
+            sb.append(text);
+            sb.append("\"}");
+            return sb.toString();
+            //return "PlainText{" + "text=" + text + '}';
+        }
+        
         
         @Override
         public String getText() {
-            return super.getText(); //To change body of generated methods, choose Tools | Templates.
+            return text;
         }
         
         public void setText(String text) {
@@ -107,6 +183,13 @@ public abstract class Text implements IText {
         public void setLevel(int level) {
             this.level = level;
         }
+
+        
+        public Headline(String text, int level) {
+            super(text);
+            this.level = level;
+        }
+        
         
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {

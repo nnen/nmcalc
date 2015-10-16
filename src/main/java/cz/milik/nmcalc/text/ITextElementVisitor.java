@@ -11,7 +11,11 @@ package cz.milik.nmcalc.text;
  */
 public interface ITextElementVisitor<C, R> {
     
+    public R visitFragment(Text.Fragment fragment, C ctx);
+    
     public R visitParagraph(Text.Paragraph paragraph, C ctx);
+    
+    public R visitCodeBlock(Text.CodeBlock codeBlock, C ctx);
     
     public R visitHeadline(Text.Headline headline, C ctx);
     

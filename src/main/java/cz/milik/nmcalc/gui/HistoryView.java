@@ -8,6 +8,8 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
+import cz.milik.nmcalc.text.ITextElement;
+import cz.milik.nmcalc.text.MarkupParser;
 import java.awt.Rectangle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -137,9 +139,15 @@ public class HistoryView extends javax.swing.JPanel {
     }
     
     public void appendHelp(String expr, String value) {
+        MarkupParser parser = new MarkupParser();
+        ITextElement element = parser.parse(value);
+        
         append(">>> ");
         append(expr + "\n", lhsStyle, lhsParStyle);
-        append(value + "\n", null, null);
+        
+        //append(value + "\n", null, null);
+        
+        HyperTextPane.append(outputPane.getStyledDocument(), element);
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {
