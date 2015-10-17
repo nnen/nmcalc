@@ -6,11 +6,16 @@
 package cz.milik.nmcalc;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.nevec.rjm.BigDecimalMath;
+import org.nevec.rjm.BigIntegerMath;
 
 /**
  *
@@ -19,23 +24,75 @@ import java.util.function.Function;
 public final class MathBuiltins {
     
     public static void initialize(Environment env) {
-        env.setVariable("pi", CalcValue.make(Math.PI));
-        env.setVariable("e", CalcValue.make(Math.E));
+        env.setVariable(
+                "pi",
+                CalcValue.make(BigDecimalMath.pi(MathContext.UNLIMITED)));
+        env.setVariable(
+                "e",
+                CalcValue.make(BigDecimalMath.exp(MathContext.UNLIMITED)));
         
-        env.setVariable(makeFloatFunction("abs", x -> x.abs()));
-        env.setVariable(makeFloatFunction("ceil", x -> x.setScale(0, RoundingMode.CEILING)));
-        env.setVariable(makeFloatFunction("floor", x -> x.setScale(0, RoundingMode.FLOOR)));
+        env.setVariable(makeFloatFunction(
+                "abs",
+                "**`abs(x)`**\n\nReturns the absolute value of `x`.",
+                x -> x.abs()));
+        env.setVariable(makeFloatFunction(
+                "ceil",
+                "**`ceil(x)`**\n\nReturns `x` rounded up.",
+                x -> x.setScale(0, RoundingMode.CEILING)));
+        env.setVariable(makeFloatFunction(
+                "floor",
+                "**`floor(x)`**\n\nReturns `x` rounded down.",
+                x -> x.setScale(0, RoundingMode.FLOOR)));
         
-        env.setVariable(makeDoubleFunction("sin", x -> Math.sin(x.doubleValue())));
-        env.setVariable(makeDoubleFunction("cos", x -> Math.cos(x.doubleValue())));
-        env.setVariable(makeDoubleFunction("tan", x -> Math.tan(x.doubleValue())));
+        env.setVariable(makeFloatFunction(
+                "sin",
+                "**`sin(x)`**\n\nReturns the sine of `x`.",
+                x -> BigDecimalMath.sin(x)));
+        env.setVariable(makeFloatFunction(
+                "asin",
+                "**`asin(x)`**\n\nReturns the arc sine of `x`.",
+                x -> BigDecimalMath.asin(x)));
+        env.setVariable(makeFloatFunction(
+                "cos",
+                "**`cos(x)`**\n\nReturns the cosine of `x`.",
+                x -> BigDecimalMath.cos(x)));
+        env.setVariable(makeFloatFunction(
+                "acos",
+                "**`acos(x)`**\n\nReturns the arc cosine of `x`.",
+                x -> BigDecimalMath.acos(x)));
+        env.setVariable(makeFloatFunction(
+                "tan",
+                "**`tan(x)`**\n\nReturns the tangent of `x`.",
+                x -> BigDecimalMath.tan(x)));
+        env.setVariable(makeFloatFunction(
+                "atan",
+                "**`atan(x)`**\n\nReturns the arc tangent of `x`.",
+                x -> BigDecimalMath.atan(x)));
         
-        env.setVariable(makeDoubleFunction("ln", x -> Math.log(x.doubleValue())));
+        env.setVariable(POW);
+        env.setVariable(makeFloatFunction(
+                "sqrt",
+                "**`sqrt(x)`**\n\nReturns the square root of `x`.",
+                x -> BigDecimalMath.sqrt(x)));
+        env.setVariable(makeFloatFunction(
+                "ln",
+                "**`ln(x)`**\n\nReturns the natural logarithm of `x`.",
+                x -> BigDecimalMath.log(x)));
+        
+        env.setVariable(makeIntegerFunction(
+                "lcm",
+                "**`lcm(a, b)`**\n\nReturns least common denominator of `a` and `b`.",
+                (a, b) -> BigIntegerMath.lcm(a, b)));
     }
     
     
-    public static BuiltinCalcValue makeFloatFunction(String name, Function<BigDecimal, BigDecimal> fn) {
-        return new FloatFunction1(name) {
+    public static final BuiltinCalcValue POW = makeFloatFunction(
+            "pow",
+            (b, e) -> BigDecimalMath.pow(b, e));
+    
+    
+    public static BuiltinCalcValue makeFloatFunction(String name, String help, Function<BigDecimal, BigDecimal> fn) {
+        return new FloatFunction1(name, help) {
             @Override
             protected BigDecimal apply(BigDecimal value) throws NMCalcException {
                 return fn.apply(value);
@@ -43,8 +100,8 @@ public final class MathBuiltins {
         };
     }
     
-    public static BuiltinCalcValue makeDoubleFunction(String name, Function<BigDecimal, Double> fn) {
-        return new FloatFunction1(name) {
+    public static BuiltinCalcValue makeDoubleFunction(String name, String help, Function<BigDecimal, Double> fn) {
+        return new FloatFunction1(name, help) {
             @Override
             protected BigDecimal apply(BigDecimal value) throws NMCalcException {
                 return new BigDecimal(fn.apply(value));
@@ -56,6 +113,15 @@ public final class MathBuiltins {
         return new FloatFunction2(name) {
             @Override
             protected BigDecimal apply(Context ctx, BigDecimal a, BigDecimal b) throws NMCalcException {
+                return fn.apply(a, b);
+            }
+        };
+    }
+    
+    public static BuiltinCalcValue makeIntegerFunction(String name, String help, BiFunction<BigInteger, BigInteger, BigInteger> fn) {
+        return new IntegerFunction2(name, help) {
+            @Override
+            protected BigInteger apply(Context ctx, BigInteger a, BigInteger b) throws NMCalcException {
                 return fn.apply(a, b);
             }
         };
@@ -97,8 +163,16 @@ public final class MathBuiltins {
     
     public static abstract class FloatFunction1 extends BuiltinCalcValue.UnaryFunction {
 
-        public FloatFunction1(String name) {
+        private final String help;
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.ofNullable(help);
+        }
+        
+        public FloatFunction1(String name, String help) {
             super(name);
+            this.help = help;
         }
         
         @Override
@@ -146,4 +220,45 @@ public final class MathBuiltins {
         
     }
     
+    public static abstract class IntegerFunction2 extends BuiltinCalcValue {
+        
+        private String name;
+        private String help;
+        
+        public String getName() {
+            return name;
+        }
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.ofNullable(help);
+        }
+        
+        public IntegerFunction2(String name, String help) {
+            this.name = name;
+            this.help = help;
+        }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            ICalcValue a = arguments.get(0);
+            ICalcValue b = arguments.get(1);
+            if (a.isError()) {
+                ctx.setReturnedValue(a);
+                return ctx;
+            }
+            if (b.isError()) {
+                ctx.setReturnedValue(b);
+                return ctx;
+            }
+            ctx.setReturnedValue(CalcValue.make(apply(ctx, a.getDecimalValue().toBigInteger(), b.getDecimalValue().toBigInteger())));
+            return ctx;
+        }
+        
+        protected abstract BigInteger apply(Context ctx, BigInteger a, BigInteger b) throws NMCalcException;
+        
+    }
 }

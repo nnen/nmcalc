@@ -8,6 +8,8 @@ package cz.milik.nmcalc.text;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -15,29 +17,28 @@ import java.util.List;
  */
 public class MarkupParser {
     
+    public static final Pattern PAR_SEPARATOR = Pattern.compile("\\r?\\n(\\r?\\n)+");
+    public static final Pattern LINE_SEPARATOR = Pattern.compile("\\s*\\n\\s*");
+    
+    public static final Pattern BULLET_LIST_START = Pattern.compile("\\s*^  [ \\t]*-");
+    public static final Pattern BULLET_POINT = Pattern.compile("(\\r\\n)*^  [ \\t]*-", Pattern.MULTILINE);
+    
     public ITextElement parse(String input) {
-        String[] paras = input.split("\\r?\\n(\\r?\\n)+");
-        Text.Fragment result = new Text.Fragment();
+        final Text.Fragment result = new Text.Fragment();
         
-        for (String para : paras) {
-            String trimmed = para.trim();
-            if (trimmed.isEmpty()) {
-                continue;
-            }
-            result.addChild(parseParagraph(para, trimmed));
-        }
-        
-        System.err.println(result.toString());
+        PAR_SEPARATOR.splitAsStream(input).forEach(para -> {
+            result.addChild(parseParagraph(para, para));
+        });
         
         return result;
     }
     
     public ITextElement parseParagraph(String input, String trimmed) {
-        String[] lines = input.split("\\r?\\n");
-        
-        for (int i = 0; i < lines.length; i++) {
-            System.err.printf("[%d] \"%s\"\n", i, lines[i]);
+        if (BULLET_LIST_START.matcher(input).lookingAt()) {
+            return parseList(input);
         }
+        
+        String[] lines = input.split("\\r?\\n");
         
         if ((lines.length == 1) || (lines.length == 2 && lines[1].isEmpty())) {
             String line = lines[0].trim();
@@ -77,7 +78,73 @@ public class MarkupParser {
             return Text.codeBlock(StringUtils.join("\n", newLines.iterator()).toString());
         }
         
-        return Text.paragraph(input);  
+        return parseText(input);
+        //return Text.paragraph(input);  
+    }
+    
+    public ITextElement parseText(String input) {
+        String glued = StringUtils.join(
+                " ",
+                LINE_SEPARATOR.splitAsStream(input)).toString();
+        ITextElement result = Text.paragraph();
+        return parseText(glued, result);
+    }
+    
+    public ITextElement parseText(String input, ITextElement result) {
+        Pattern p = Pattern.compile("`([^`]*)`|\\*\\*((\\\\\\*|[^*])*)\\*\\*|\\*((\\\\\\*|[^*])*)\\*");
+        Matcher m = p.matcher(input);
+        int lastOffset = 0;
+        
+        while (m.find()) {
+            if (lastOffset < m.start()) {
+                result.addChild(Text.plain(input.substring(lastOffset, m.start())));
+            }
+            
+            if (m.group(2) != null) {
+                Text.Bold bold = Text.bold();
+                parseText(m.group(2).replace("\\*", "*"), bold);
+                result.addChild(bold);
+            } else if (m.group(4) != null) {
+                result.addChild(Text.italic(m.group(4).replace("\\*", "*")));
+            } else {
+                result.addChild(Text.monospace(m.group(1)));
+            }
+            
+            lastOffset = m.end();
+        }
+        
+        if (lastOffset < input.length()) {
+            result.addChild(Text.plain(input.substring(lastOffset)));
+        }
+        
+        return result;
+    }
+    
+    public ITextElement parseList(String input) {
+        ITextElement result = Text.bulletList();
+        return parseList(input, result);
+    }
+    
+    public ITextElement parseList(String input, ITextElement listElement) {
+        Matcher m = BULLET_POINT.matcher(input);
+        int lastOffset = -1;
+        
+        while (m.find()) {
+            if ((lastOffset < m.start()) && (lastOffset >= 0)) {
+                Text.BulletPoint point = Text.bulletPoint();
+                parseText(input.substring(lastOffset, m.start()), point);
+                listElement.addChild(point);
+            }
+            lastOffset = m.end();
+        }
+        
+        if (lastOffset >= 0) {
+            Text.BulletPoint point = Text.bulletPoint();
+            parseText(input.substring(lastOffset), point);
+            listElement.addChild(point);
+        }
+        
+        return listElement;
     }
     
 }

@@ -49,6 +49,22 @@ public abstract class Text implements IText {
         return new PlainText(value);
     }
     
+    public static Monospace monospace(String value) {
+        return new Monospace(value);
+    }
+    
+    public static Italic italic(String value) {
+        return new Italic(value);
+    }
+    
+    public static Bold bold(String value) {
+        return new Bold(plain(value));
+    }
+    
+    public static Bold bold(ITextElement... children) {
+        return new Bold(children);
+    }
+    
     public static Paragraph paragraph(ITextElement... elements) {
         Paragraph par = new Paragraph();
         for (ITextElement element : elements) {
@@ -67,6 +83,14 @@ public abstract class Text implements IText {
         return result;
     }
     
+    public static BulletList bulletList(ITextElement... children) {
+        return new BulletList(children);
+    }
+    
+    public static BulletPoint bulletPoint(ITextElement... children) {
+        return new BulletPoint(children);
+    }
+    
     public static Headline headline(String value, int level) {
         return new Headline(value, level);
     }
@@ -74,6 +98,12 @@ public abstract class Text implements IText {
     
     public static abstract class ParentElement extends Text {
         private final List<ITextElement> children = new ArrayList();
+        
+        public ParentElement(ITextElement... children) {
+            for (ITextElement child : children) {
+                addChild(child);
+            }
+        }
         
         @Override
         public List<ITextElement> getChildren() {
@@ -124,6 +154,30 @@ public abstract class Text implements IText {
     }
     
     
+    public static class BulletList extends ParentElement {
+        public BulletList(ITextElement... children) {
+            super(children);
+        }
+        
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitBulletList(this, ctx);
+        }
+    }
+    
+    
+    public static class BulletPoint extends ParentElement {
+        public BulletPoint(ITextElement... children) {
+            super(children);
+        }
+        
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitBulletPoint(this, ctx);
+        }
+    }
+    
+    
     public static class PlainText extends Text {
         private String text = "";
 
@@ -163,13 +217,40 @@ public abstract class Text implements IText {
     }
     
     
-    public static class Bold extends PlainText {
+    public static class Bold extends ParentElement {
+        public Bold(ITextElement... children) {
+            super(children);
+        }
         
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitBold(this, ctx);
+        }
     }
     
     
     public static class Italic extends PlainText {
+        public Italic() {
+        }
+
+        public Italic(String text) {
+            super(text);
+        }
+    }
+    
+    
+    public static class Monospace extends PlainText {
+        public Monospace() {
+        }
+
+        public Monospace(String text) {
+            super(text);
+        }
         
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitMonospace(this, ctx);
+        }    
     }
     
     

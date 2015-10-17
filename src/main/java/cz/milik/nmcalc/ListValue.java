@@ -6,6 +6,7 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.StringUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -138,6 +139,26 @@ public class ListValue extends CalcValue {
         return values.get(index);
     }
 
+    @Override
+    public Context getItem(Context ctx, ICalcValue index) {
+        ICalcValue fltValue = index.toFloat(ctx);
+        if (fltValue.isError()) {
+            ctx.setReturnedValue(fltValue);
+            return ctx;
+        }
+        BigDecimal dec = fltValue.getDecimalValue();
+        int intValue = dec.intValue();
+        if ((intValue < 0) || (intValue >= values.size())) {
+            ctx.setReturnedError(
+                    "Invalid index: %d. Expected value greater or equal to 0 and less than %d.",
+                    intValue,
+                    values.size()
+            );
+            return ctx;
+        }
+        ctx.setReturnedValue(values.get(intValue));
+        return ctx;
+    }
     
     public ICalcValue getHead() {
         if (values.size() > 0) {

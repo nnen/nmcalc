@@ -263,9 +263,31 @@ public class Scanner {
                 } else {
                     return finishUnknownToken();
                 }
+            } else if (peek() == decimalPoint) {
+                value.append(next());
+                while (hasNext() && Character.isDigit(peek()))
+                {
+                    value.append(next());
+                }
+                return new Token(Token.Types.FLOAT, tokenOffset, value.toString());
             } else {
                 while (hasNext() && isOctChar(peek())) {
                     value.append(next());
+                }
+                if (peek() == 'b') {
+                    if (value.toString().matches("[01]+")) {
+                        value.append(next());
+                        return new Token(
+                                Token.Types.BIN_LITERAL,
+                                tokenOffset,
+                                value.toString());
+                    } else {
+                        value.append(next());
+                        return new Token(
+                                Token.Types.UNKNOWN,
+                                tokenOffset,
+                                value.toString());
+                    }
                 }
                 if (value.length() == 1) {
                     return new Token(
@@ -286,6 +308,21 @@ public class Scanner {
             while (hasNext() && Character.isDigit(peek()))
             {
                 value.append(next());
+            }
+            if (peek() == 'b') {
+                if (value.toString().matches("[01]+")) {
+                    value.append(next());
+                    return new Token(
+                            Token.Types.BIN_LITERAL,
+                            tokenOffset,
+                            value.toString());
+                } else {
+                    value.append(next());
+                    return new Token(
+                            Token.Types.UNKNOWN,
+                            tokenOffset,
+                            value.toString());
+                }
             }
             if (hasNext() && (peek() == decimalPoint))
             {
@@ -343,7 +380,13 @@ public class Scanner {
                 }
                 return new Token(Token.Types.MINUS, tokenOffset, value.toString());
             case '*':
-                return new Token(Token.Types.ASTERISK, tokenOffset, next());
+                value.append(next());
+                if (peek() == '*') {
+                    value.append(next());
+                    return new Token(Token.Types.DOUBLE_ASTERISK, tokenOffset, value.toString());
+                } else {
+                    return new Token(Token.Types.ASTERISK, tokenOffset, value.toString());
+                }
             case '/':
                 return new Token(Token.Types.SLASH, tokenOffset, next());
             

@@ -9,6 +9,7 @@ import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,6 +33,10 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     public static ICalcValue make(BigDecimal value) {
+        return new FloatValue(value);
+    }
+    
+    public static ICalcValue make(BigInteger value) {
         return new FloatValue(value);
     }
     
@@ -70,6 +75,10 @@ public abstract class CalcValue implements ICalcValue {
         return new ListValue(head, tail);
     }
 
+    public static ICalcValue dict() {
+        return new MapValue();
+    }
+    
     public static ICalcValue quote(ICalcValue value) {
         return new QuoteValue(value);
     }
@@ -359,11 +368,36 @@ public abstract class CalcValue implements ICalcValue {
     public ICalcValue getItem(int index) {
         return new ErrorValue(String.format(
                 "%s value doesn't support indexing.",
-                getClass().getSimpleName(),
-                index
+                getClass().getSimpleName()
         ));
     }
+    
+    @Override
+    public Context getItem(Context ctx, ICalcValue index) {
+        ctx.setReturnedError(
+                "%s value doesn't support indexing.",
+                getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
 
+    @Override
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
+        ctx.setReturnedError(
+                "%s value doesn't support indexing.",
+                getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
+    
+    @Override
+    public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException {
+        throw new NMCalcException(String.format(
+                "%s doesn't support item assignment.",
+                getClass().getSimpleName()
+        ));
+    }
+    
     @Override
     public Context getHead(Context ctx) {
         if (!hasLength()) {

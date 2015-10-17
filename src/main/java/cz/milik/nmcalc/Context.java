@@ -170,6 +170,10 @@ public class Context {
         ));
     }
     
+    protected ExecResult ctxGetItem(ICalcValue container, ICalcValue index) {
+        return ctxContinue(container.getItem(this, index));
+    }
+    
     
     public static class ReturnContext extends Context {
         

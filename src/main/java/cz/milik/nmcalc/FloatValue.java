@@ -33,6 +33,10 @@ public class FloatValue extends CalcValue {
         this.value = value;
     }
     
+    public FloatValue(BigInteger value) {
+        this.value = new BigDecimal(value);
+    }
+    
     
     public static FloatValue parse(String value) {
         return new FloatValue(new BigDecimal(value));
@@ -46,6 +50,11 @@ public class FloatValue extends CalcValue {
     public static FloatValue parseOct(String value) {
         String clean = value.substring(1);
         return new FloatValue(new BigDecimal(new BigInteger(clean, 8)));
+    }
+    
+    public static FloatValue parseBin(String value) {
+        String clean = value.substring(0, value.length() - 1);
+        return new FloatValue(new BigDecimal(new BigInteger(clean, 2)));
     }
     
     

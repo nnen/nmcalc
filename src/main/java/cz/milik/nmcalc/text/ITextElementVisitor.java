@@ -21,9 +21,19 @@ public interface ITextElementVisitor<C, R> {
     
     public R visitPlainText(Text.PlainText plainText, C ctx);
     
+    public R visitMonospace(Text.Monospace plainText, C ctx);
+    
+    public R visitItalic(Text.Italic italic, C ctx);
+    
+    public R visitBold(Text.Bold bold, C ctx);
+    
     public R visitCalcValue(Text.CalcValue calcValue, C ctx);
     
     
     public R visitOther(ITextElement element, C ctx);
+
+    public <C, R> R visitBulletList(Text.BulletList bulletList, C ctx);
+
+    public <C, R> R visitBulletPoint(Text.BulletPoint bulletPoint, C ctx);
     
 }

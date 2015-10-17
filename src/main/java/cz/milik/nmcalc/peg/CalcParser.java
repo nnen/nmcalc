@@ -10,6 +10,7 @@ import cz.milik.nmcalc.CalcValue;
 import cz.milik.nmcalc.FloatValue;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ListBuilder;
+import cz.milik.nmcalc.MathBuiltins;
 import cz.milik.nmcalc.NothingValue;
 import cz.milik.nmcalc.SymbolValue;
 import cz.milik.nmcalc.ast.ASTBuilder;
@@ -383,16 +384,32 @@ public class CalcParser extends PegParser<ASTNode> {
                                     ).repeat()
                             ).maybe(),
                             s(Token.Types.RPAR)
-                    ).named("call").maybe()
+                    ).named("call").maybe(),
+                    concatAny(
+                            s(Token.Types.DOUBLE_ASTERISK).ignore(),
+                            s("factor", "exponent")
+                    ).named("power").maybe()
             ).map(ctx -> {
-                return ctx.withNamedValue("call", IPegContext.class, call-> {
-                    return CalcValue.list(
-                        ctx.getNamedValue("primary", ICalcValue.class),
-                        ctx.getNamedValues("args", ICalcValue.class)
+                ICalcValue result = ctx.getNamedValue("primary", ICalcValue.class);
+                
+                IPegContext callCtx = ctx.getNamedValue("call", IPegContext.class);
+                if (callCtx != null) {
+                    result = CalcValue.list(
+                            result,
+                            ctx.getNamedValues("args", ICalcValue.class)
                     );
-                }, () -> {
-                    return ctx.getNamedValue("primary", ICalcValue.class);
-                });
+                }
+                
+                IPegContext powCtx = ctx.getNamedValue("power", IPegContext.class);
+                if (powCtx != null) {
+                    result = CalcValue.list(
+                            MathBuiltins.POW,
+                            result,
+                            ctx.getNamedValue("exponent", ICalcValue.class)
+                    );
+                }
+                
+                return result;
             }));
             
             nt("primary", or(
@@ -470,6 +487,7 @@ public class CalcParser extends PegParser<ASTNode> {
                     nt("real"),
                     nt("hex"),
                     nt("oct"),
+                    nt("bin"),
                     nt("var"),
                     nt("symbol"),
                     nt("str"),
@@ -488,6 +506,10 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("oct", s(Token.Types.OCT_LITERAL).map(
                     t -> FloatValue.parseOct(t.getValue())
+            ));
+            
+            nt("bin", s(Token.Types.BIN_LITERAL).map(
+                    t -> FloatValue.parseBin(t.getValue())
             ));
             
             nt("var", s(Token.Types.IDENTIFIER).map(

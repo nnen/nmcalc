@@ -37,6 +37,9 @@ public class HyperTextPane extends JTextPane {
     public static final MutableAttributeSet CODE_BLOCK = new SimpleAttributeSet();
     public static final MutableAttributeSet CODE_BLOCK_BLOCK = new SimpleAttributeSet();
     
+    public static final MutableAttributeSet ITALIC = new SimpleAttributeSet();
+    public static final MutableAttributeSet BOLD = new SimpleAttributeSet();
+    
     static {
         StyleConstants.setFontFamily(PLAIN_TEXT, "sans serif");
         StyleConstants.setFontSize(PLAIN_TEXT, 12);
@@ -53,7 +56,7 @@ public class HyperTextPane extends JTextPane {
         
         //StyleConstants.setBold(HEADLINE3, true);
         StyleConstants.setUnderline(HEADLINE3, true);
-        StyleConstants.setFontFamily(HEADLINE3, "serif");
+        StyleConstants.setFontFamily(HEADLINE3, "sans serif");
         StyleConstants.setFontSize(HEADLINE3, 12);
         
         StyleConstants.setAlignment(PARAGRAPH_BLOCK, StyleConstants.ALIGN_JUSTIFIED);
@@ -64,6 +67,10 @@ public class HyperTextPane extends JTextPane {
         StyleConstants.setAlignment(CODE_BLOCK_BLOCK, StyleConstants.ALIGN_LEFT);
         StyleConstants.setSpaceBelow(CODE_BLOCK_BLOCK, 12);
         StyleConstants.setLeftIndent(CODE_BLOCK_BLOCK, 12);
+        
+        StyleConstants.setItalic(ITALIC, true);
+        
+        StyleConstants.setBold(BOLD, true);
     }
     
     public static void append(StyledDocument doc, ITextElement element) {
@@ -109,7 +116,38 @@ public class HyperTextPane extends JTextPane {
                 doc.setParagraphAttributes(offset, length, CODE_BLOCK_BLOCK, false);
                 return null;
             }
-
+            
+            @Override
+            public <C, R> R visitBulletList(Text.BulletList bulletList, C ctx) {
+                for (ITextElement item : bulletList.getChildren()) {
+                    item.visit(this, ctx);
+                }
+                try {
+                    doc.insertString(doc.getLength(), "\n", null);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+            
+            @Override
+            public <C, R> R visitBulletPoint(Text.BulletPoint bulletPoint, C ctx) {
+                try {
+                    doc.insertString(doc.getLength(), "\u2022 ", null);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                for (ITextElement item : bulletPoint.getChildren()) {
+                    item.visit(this, ctx);
+                }
+                try {
+                    doc.insertString(doc.getLength(), "\n", null);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+            
             @Override
             public Object visitHeadline(Text.Headline headline, Object ctx) {
                 try {
@@ -144,6 +182,42 @@ public class HyperTextPane extends JTextPane {
             }
 
             @Override
+            public Object visitMonospace(Text.Monospace plainText, Object ctx) {
+                int offset = doc.getLength();
+                try {
+                    doc.insertString(offset, plainText.getText(), null);
+                    doc.setCharacterAttributes(offset, plainText.getText().length(), CODE_BLOCK, true);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+
+            @Override
+            public Object visitItalic(Text.Italic italic, Object ctx) {
+                int offset = doc.getLength();
+                try {
+                    doc.insertString(offset, italic.getText(), null);
+                    doc.setCharacterAttributes(offset, italic.getText().length(), ITALIC, false);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+
+            @Override
+            public Object visitBold(Text.Bold bold, Object ctx) {
+                int offset = doc.getLength();
+                try {
+                    doc.insertString(offset, bold.getText(), null);
+                    doc.setCharacterAttributes(offset, bold.getText().length(), BOLD, false);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }
+            
+            @Override
             public Object visitCalcValue(Text.CalcValue calcValue, Object ctx) {
                 throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
@@ -157,3 +231,4 @@ public class HyperTextPane extends JTextPane {
     }
     
 }
+

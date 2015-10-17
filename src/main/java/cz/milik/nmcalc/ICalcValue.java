@@ -66,6 +66,9 @@ public interface ICalcValue extends java.io.Serializable {
     public boolean hasLength();
     public int length();
     public ICalcValue getItem(int index);
+    public Context getItem(Context ctx, ICalcValue index);
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value);
+    public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException;
     public Context getHead(Context ctx);
     public Context getTail(Context ctx);
     public Context unpack(Context ctx);

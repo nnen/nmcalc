@@ -5,10 +5,13 @@
  */
 package cz.milik.nmcalc.gui;
 
+import cz.milik.nmcalc.BuiltinCalcValue;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import java.util.Optional;
 
 /**
  *
@@ -44,11 +47,25 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     }
     
     protected void onModelChanged(IMonad<ICalcValue> oldModel, IMonad<ICalcValue> newModel) {
-        textPane.setText(newModel.unwrap(
-                value -> value.getRepr(ReprContext.getDefault()),
-                isShowingNull() ? "null" : ""
-        ));
-        textPane.updateSyntax();
+        ICalcValue value = newModel.unwrap();
+        
+        if (value == null) {
+            if (isShowingNull()) {
+                textPane.setText("null");
+            }
+            textPane.setText("");
+        } else {
+            if (value instanceof BuiltinCalcValue) {
+                Optional<String> help = value.getHelp();
+                if (help.isPresent()) {
+                    MarkupParser markup = new MarkupParser();
+                    HyperTextPane.append(textPane.getStyledDocument(), markup.parse(help.get()));
+                    return;
+                }
+            }
+            textPane.setText(value.getRepr(ReprContext.getDefault()));
+            textPane.updateSyntax();
+        }
     }
     
     

@@ -12,7 +12,20 @@
             <version>4.10</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.numericalmethod</groupId>
+            <artifactId>suanshu</artifactId>
+            <version>3.3.0</version>
+        </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>nm-repo</id>
+            <name>Numerical Method's Maven Repository</name>
+            <url>http://repo.numericalmethod.com/maven/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
