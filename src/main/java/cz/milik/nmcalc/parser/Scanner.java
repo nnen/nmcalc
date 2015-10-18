@@ -394,7 +394,7 @@ public class Scanner {
             {
                 value.append(next());
                 if (peek() != ':') {
-                    return finishUnknownToken();
+                    return new Token(Token.Types.COLON, tokenOffset, value.toString());
                 }
                 value.append(next());
                 return new Token(Token.Types.CONS, tokenOffset, value.toString());

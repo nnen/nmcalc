@@ -159,6 +159,28 @@ public class ListValue extends CalcValue {
         ctx.setReturnedValue(values.get(intValue));
         return ctx;
     }
+
+    @Override
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
+        ICalcValue fltValue = index.toFloat(ctx);
+        if (fltValue.isError()) {
+            ctx.setReturnedValue(fltValue);
+            return ctx;
+        }
+        BigDecimal dec = fltValue.getDecimalValue();
+        int intValue = dec.intValue();
+        if ((intValue < 0) || (intValue >= values.size())) {
+            ctx.setReturnedError(
+                    "Invalid index: %d. Expected value greater or equal to 0 and less than %d.",
+                    intValue,
+                    values.size()
+            );
+            return ctx;
+        }
+        values.set(intValue, value);
+        ctx.setReturnedValue(value);
+        return ctx;
+    }
     
     public ICalcValue getHead() {
         if (values.size() > 0) {

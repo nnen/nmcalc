@@ -74,6 +74,13 @@ public abstract class CalcValue implements ICalcValue {
     public static ICalcValue list(ICalcValue head, Collection<? extends ICalcValue> tail) {
         return new ListValue(head, tail);
     }
+    
+    public static ICalcValue list(ICalcValue head, ICalcValue tailFirst, Collection<? extends ICalcValue> tailRest) {
+        ListBuilder lb = new ListBuilder();
+        lb.add(head, tailFirst);
+        lb.addAll(tailRest);
+        return lb.makeList();
+    }
 
     public static ICalcValue dict() {
         return new MapValue();
@@ -226,6 +233,18 @@ public abstract class CalcValue implements ICalcValue {
     public boolean isHelp() {
         return false;
         //return getAnnotation(CalcAnnotation.IsHelp.class).isPresent();
+    }
+    
+    protected Optional<String> makeHelp(String signature, String... paragraphs) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("**`");
+        sb.append(signature);
+        sb.append("`**");
+        for (String par : paragraphs) {
+            sb.append("\n\n");
+            sb.append(par);
+        }
+        return Optional.of(sb.toString());
     }
     
     
@@ -585,6 +604,23 @@ public abstract class CalcValue implements ICalcValue {
         ));
         
         return false;
+    }
+    
+    protected void requireLength(Context ctx, ICalcValue value) throws NMCalcException {
+        if (!value.hasLength()) {
+            throw new NMCalcException("Expected a value with length.");
+        }
+    }
+    
+    protected void requireLength(Context ctx, ICalcValue value, int length) throws NMCalcException {
+        requireLength(ctx, value);
+        if (value.length() != length) {
+            throw new NMCalcException(String.format(
+                    "Expected a value of length %d. Got a value of length %d.",
+                    length,
+                    value.length()
+            ));
+        }
     }
     
     public static SymbolValue asSymbol(ICalcValue value, Context ctx) throws NMCalcException {

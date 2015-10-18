@@ -45,6 +45,10 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(HEAD);
         env.setVariable(TAIL);
         
+        env.setVariable(DICT);
+        env.setVariable(GET_ITEM);
+        env.setVariable(SET_ITEM);
+        
         env.setVariable(APPLY);
         env.setVariable(UNAPPLY);
         env.setVariable(EVAL);
@@ -338,20 +342,111 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static final BuiltinCalcValue DICT = new BuiltinCalcValue() {
         @Override
         public String getName() { return "dict"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "dict([entries])",
+                    "Constructs a new mutable "
+                            + "dictionary using the key-value pairs in "
+                            + "`entries` if `entries` is given, otherwise "
+                            + "constructs a new empty dictionary.\n\n"
+                            + "Example:\n\n"
+                            + "    dict([[1, \"apple\"], [16, \"banana\"]]) => { 1: \"apple\", 16: \"banana\" }"
+            );
+        }
         
         @Override
         protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
-            return new Context.StackContext(ctx, ctx.getEnvironment(), this) {
-                @Override
-                public ExecResult execute(Interpreter interpreter) {
-                    int pc = getPC();
-                    
-                    switch (pc) {
-                        default:
-                            return invalidPC(pc);
-                    }
-                }
-            };
+            if (!checkArguments(ctx, arguments, 0, 1)) {
+                return ctx;
+            }
+            
+            if (arguments.size() == 0) {
+                ctx.setReturnedValue(CalcValue.dict());
+                return ctx;
+            }
+            
+            final ICalcValue arg = arguments.get(0);
+            requireLength(ctx, arg);
+            
+            final MapValue result = new MapValue();
+            
+            for (int i = 0; i < arg.length(); i++) {
+                ICalcValue item = arg.getItem(i);
+                requireLength(ctx, item, 2);
+                ICalcValue key = item.getItem(0);
+                ICalcValue value = item.getItem(1);
+                result.setItem(key, value);
+            }
+            
+            ctx.setReturnedValue(result);
+            return ctx;
+        }
+    };
+    
+    public static final BuiltinCalcValue GET_ITEM = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "get_item"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "get_item(value, key)",
+                    "Returns `value[key]`, the item of `value` indexed by "
+                            + "`key`. For dictionaries, this returns the value "
+                            + "mapped under `key`. For lists, this returns "
+                            + "`key`-th element if `key` is a number.",
+                    "If `value` doesn't have any item under index `key`, "
+                            + "error is returned.",
+                    "Example:",
+                    "    d = { 2: \"apple\", 4: \"banana\", 8: \"citrus\" }\n"
+                            + "    get_item(d, 4) => \"banana\"\n"
+                            + "    get_item({}, 4) => error(...)"
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            
+            ICalcValue dict = arguments.get(0);
+            ICalcValue key = arguments.get(1);
+            
+            return dict.getItem(ctx, key);
+        }
+    };
+    
+    public static final BuiltinCalcValue SET_ITEM = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "set_item"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "set_item(collection, key, value)",
+                    "Sets an indexed item of a collection (dictionary, list, "
+                            + "possibly others). Returns the assigned value.",
+                    "Example:",
+                    "    d = {}\n"
+                            + "    set_item(d, \"pi\", 3.1415) => 3.1415\n"
+                            + "    d => { \"pi\": 3.1415 }\n\n"
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            ICalcValue dict = arguments.get(0);
+            ICalcValue key = arguments.get(1);
+            ICalcValue value = arguments.get(2);
+            
+            return dict.setItem(ctx, key, value);
         }
     };
             

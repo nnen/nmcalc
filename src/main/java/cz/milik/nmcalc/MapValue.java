@@ -61,6 +61,7 @@ public class MapValue extends CalcValue {
         for (Entry<ICalcValue, ICalcValue> entry : values.entrySet()) {
             if (isFirst) {
                 isFirst = false;
+                sb.append(" ");
             } else {
                 sb.append(", ");
             }

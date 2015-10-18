@@ -45,6 +45,7 @@ public class Token {
         RBRACE('}'),
         QUOTE('\''),
         COMMA(','),
+        COLON(':'),
         
         KW_DEF("def"),
         KW_IF("if"),
