@@ -1,6 +1,17 @@
 # NMCalc v0.4 [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
 NMCalc is primarily a desktop calculator application.  It is very young project, but already has useful functions.
 
+## Download
+
+[Download JAR or source of the lates release here.](https://github.com/nnen/nmcalc/releases/latest)
+
+## Compilation
+
+This is a Maven project. To build it, run `mvn package` in the root
+directory of the project (contains `pom.xml`). If everything goes well,
+this will create directory `target` and a jar file inside it. The jar file
+is executable and can be run directly.
+
 ## Usage
 The application window is divided into three parts (from top to bottom):
 history window, input window and result window.  Enter an expression into
