@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc.parser;
 
+import cz.milik.nmcalc.FloatValue;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayDeque;
@@ -30,6 +31,7 @@ public class Scanner {
     
     private int tokenOffset;
     private final StringBuilder value = new StringBuilder();
+    //private final StringBuilder value = new StringBuilder();
     
     private final Queue<Token> tokenBuffer = new ArrayDeque<>();
     
@@ -108,6 +110,10 @@ public class Scanner {
         return true;
     }
     
+    private boolean isInnerDigit(char c) {
+        return Character.isDigit(c) || (c == FloatValue.GROUPING_SEPARATOR);
+    }
+    
     private boolean isHexChar(char c) {
         if (Character.isDigit(c)) {
             return true;
@@ -125,6 +131,7 @@ public class Scanner {
             case 'D':
             case 'E':
             case 'F':
+            case '_':
                 return true;
         }
         return false;
@@ -265,7 +272,7 @@ public class Scanner {
                 }
             } else if (peek() == decimalPoint) {
                 value.append(next());
-                while (hasNext() && Character.isDigit(peek()))
+                while (hasNext() && isInnerDigit(peek()))
                 {
                     value.append(next());
                 }
@@ -305,12 +312,12 @@ public class Scanner {
         }
         if (Character.isDigit(peek()))
         {
-            while (hasNext() && Character.isDigit(peek()))
+            while (hasNext() && isInnerDigit(peek()))
             {
                 value.append(next());
             }
             if (peek() == 'b') {
-                if (value.toString().matches("[01]+")) {
+                if (value.toString().matches("[01_]+")) {
                     value.append(next());
                     return new Token(
                             Token.Types.BIN_LITERAL,
@@ -328,7 +335,7 @@ public class Scanner {
             {
                 value.append(next());
             }
-            while (hasNext() && Character.isDigit(peek()))
+            while (hasNext() && isInnerDigit(peek()))
             {
                 value.append(next());
             }

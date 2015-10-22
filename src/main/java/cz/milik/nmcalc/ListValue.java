@@ -296,6 +296,44 @@ public class ListValue extends CalcValue {
             }
         };
     }
+
+    
+    @Override
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
+        if (value.isError()) {
+            ctx.setReturnedValue(value);
+            return ctx;
+        }
+        
+        if (replacement.isError()) {
+            ctx.setReturnedValue(replacement);
+            return ctx;
+        }
+        
+        return new Context.StackContext(ctx, this) {
+            @Override
+            public ExecResult execute(Interpreter interpreter) {
+                int pc = getPC();
+                
+                if ((pc > 0) && (pc <= values.size())) {
+                    if (peek().isError()) {
+                        return this.ctxReturn(peek());
+                    }
+                }
+                
+                if (pc < values.size()) {
+                    ICalcValue item = values.get(pc);
+                    setPC(pc + 1);
+                    return ctxContinue(item.substitute(this, value, replacement));
+                } else if (pc == values.size()) {
+                    setPC(pc + 1);
+                    return ctxReturn(toList(0, values.size()));
+                }
+                
+                return invalidPC(pc);
+            }
+        };
+    }
     
     
     @Override

@@ -78,6 +78,8 @@ public interface ICalcValue extends java.io.Serializable {
     public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments);
     public Context unapply(Context ctx, ICalcValue value);
     
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement);
+    
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function);
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function);
     

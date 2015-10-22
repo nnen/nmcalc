@@ -31,6 +31,10 @@ public final class MathBuiltins {
                 "e",
                 CalcValue.make(BigDecimalMath.exp(MathContext.UNLIMITED)));
         
+        env.setVariable(MOD);
+        
+        env.setVariable(RAND);
+        
         env.setVariable(makeFloatFunction(
                 "abs",
                 "**`abs(x)`**\n\nReturns the absolute value of `x`.",
@@ -86,9 +90,37 @@ public final class MathBuiltins {
     }
     
     
+    public static final BuiltinCalcValue MOD = makeFloatFunction(
+            "mod",
+            (a, b) -> a.remainder(b));
+    
     public static final BuiltinCalcValue POW = makeFloatFunction(
             "pow",
             (b, e) -> BigDecimalMath.pow(b, e));
+    
+    
+    public static final BuiltinCalcValue RAND = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "rand"; }
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "rand() => <random float>",
+                    "Returns random number `x` where `x >= 0` and `x < 1`."
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0)) {
+                return ctx;
+            }
+            
+            ctx.setReturnedValue(CalcValue.make(Math.random()));
+            return ctx;
+        }
+    };
     
     
     public static BuiltinCalcValue makeFloatFunction(String name, String help, Function<BigDecimal, BigDecimal> fn) {

@@ -27,6 +27,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static void initialize(Environment env) {
         env.setVariable("let", LET);
         env.setVariable(DEF);
+        env.setVariable(DEFMACRO);
         
         env.setVariable(IF_ELSE);
         env.setVariable(MATCH);
@@ -52,6 +53,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(APPLY);
         env.setVariable(UNAPPLY);
         env.setVariable(EVAL);
+        
+        env.setVariable(SUBSTITUTE);
         
         env.setVariable(EQUALS);
         env.setVariable(LT);
@@ -206,10 +209,51 @@ public abstract class BuiltinCalcValue extends CalcValue {
         */
     };
     
+    public static final BuiltinCalcValue DEFMACRO = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "defmacro"; }
+
+        @Override
+        protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3, 4)) {
+                return ctx;
+            }
+            
+            SymbolValue name = CalcValue.asSymbol(arguments.get(0), ctx);
+            List<? extends SymbolValue> argNames = CalcValue.asSymbolList(arguments.get(1), ctx);
+            ICalcValue body;
+            String help = null;
+            
+            if (arguments.size() == 3) {
+                body = arguments.get(2);
+            } else {
+                help = arguments.get(2).getStringValue(ctx);
+                body = arguments.get(3);
+            }
+            
+            ICalcValue macro = new MacroValue(name, argNames, help, body);
+            
+            ctx.setVariable(name.getValue(), macro);
+            ctx.setReturnedValue(macro);
+            return ctx;
+        }
+        
+        @Override
+        public boolean isSpecialForm() { return true; }
+    };
+    
     
     public static final BuiltinCalcValue QUOTE = new BuiltinCalcValue() {
         @Override
         public String getName() { return "quote"; }
+
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
+            if (arguments.size() != 1) {
+                return super.getApplyRepr(arguments, ctx);
+            }
+            return "'(" + arguments.get(0).getExprRepr(ctx) + ")";
+        }
         
         @Override
         public boolean isSpecialForm() { return true; }
@@ -549,6 +593,26 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
+    
+    public static final BuiltinCalcValue SUBSTITUTE = new BuiltinCalcValue() {
+
+        @Override
+        public String getName() { return "substitute"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            ICalcValue pattern = arguments.get(0);
+            ICalcValue value = arguments.get(1);
+            ICalcValue replacement = arguments.get(2);
+            
+            return pattern.substitute(ctx, value, replacement);
+        }
+        
+    };
     
     public static final BuiltinCalcValue IF_ELSE = new BuiltinCalcValue() {
 

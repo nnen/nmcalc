@@ -7,6 +7,8 @@ package cz.milik.nmcalc;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.EnumSet;
 
 /**
@@ -45,6 +47,29 @@ public class ReprContext {
     }
     
     
+    private DecimalFormat decimalFormat;
+
+    public DecimalFormat getDecimalFormat() {
+        if (decimalFormat == null) {
+            DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+            dfs.setGroupingSeparator('_');
+            dfs.setDecimalSeparator('.');
+            
+            decimalFormat = new DecimalFormat();
+            decimalFormat.setGroupingUsed(true);
+            decimalFormat.setGroupingSize(3);
+            decimalFormat.setDecimalFormatSymbols(dfs);
+            decimalFormat.setMaximumFractionDigits(340);
+            //decimalFormat.setRoundingMode(RoundingMode.);
+        }
+        return decimalFormat;
+    }
+
+    public void setDecimalFormat(DecimalFormat decimalFormat) {
+        this.decimalFormat = decimalFormat;
+    }
+    
+    
     public boolean hasPrettyPrintHelp() { return getFlags().contains(Flags.PRETTY_PRINT_HELP); }
     
     
@@ -62,7 +87,7 @@ public class ReprContext {
     
     public String formatFloat(BigDecimal value) {
         //return value.stripTrailingZeros().toString();
-        return value.toString();
+        return getDecimalFormat().format(value);
     }
     
     public String formatFloat(FloatValue value) {
@@ -80,9 +105,11 @@ public class ReprContext {
             } else if (flags.contains(Flags.BINARY_INTEGER_ONLY)) {
                 return formatBinInt(value.getDecimalValue());
             }
-            return value.getDecimalValue().setScale(0).toString();
+            //return value.getDecimalValue().setScale(0).toString();
+            return formatFloat(value.getDecimalValue().setScale(0));
         }
-        return value.getDecimalValue().toString();
+        return formatFloat(value.getDecimalValue());
+        //return value.getDecimalValue().toString();
     }
     
     public String formatHexInt(BigDecimal value) {

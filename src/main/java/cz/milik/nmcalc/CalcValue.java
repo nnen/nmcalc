@@ -560,6 +560,23 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
+        if (isError()) {
+            ctx.setReturnedValue(this);
+        } else if (value.isError()) {
+            ctx.setReturnedValue(value);
+        } else if (replacement.isError()) {
+            ctx.setReturnedValue(replacement);
+        } else if (isValueEqual(value, ctx)) {
+            ctx.setReturnedValue(replacement);
+        } else {
+            ctx.setReturnedValue(this);
+        }
+        return ctx;
+    }
+    
+    
+    @Override
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function) {
         return function.apply(this);
     }
