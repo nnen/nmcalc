@@ -81,6 +81,15 @@ public class SimpleForm extends javax.swing.JFrame {
         
         inputPane.clearError();
         
+        historyView.appendMarkup("# NMCalc\n" +
+            "\n" +
+            "Type an expression into the middle text area. The bottom area "
+                + "shows the result being evaluated as you type. Press "
+                + "Ctrl+Enter to clear the input and commit the current "
+                + "expression into the history view (this one).\n" +
+            "\n" +
+            "Type `help()` and press `Ctrl+Enter` to see the help.");
+        
         //int minHeight = outputPane.getMinimumSize().height;
         //jSplitPane1.setDividerLocation(jSplitPane1.getHeight() - minHeight);
     }
@@ -154,16 +163,17 @@ public class SimpleForm extends javax.swing.JFrame {
         setSize(new java.awt.Dimension(500, 300));
 
         jSplitPane2.setBorder(null);
-        jSplitPane2.setDividerLocation(100);
+        jSplitPane2.setDividerLocation(150);
         jSplitPane2.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane2.setResizeWeight(1.0);
 
         jSplitPane1.setBorder(null);
-        jSplitPane1.setDividerLocation(50);
+        jSplitPane1.setDividerLocation(40);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane1.setResizeWeight(1.0);
 
         outputPane.setMinimumSize(new java.awt.Dimension(41, 41));
+        outputPane.setPreferredSize(new java.awt.Dimension(73, 41));
         outputPane.setShowingNull(false);
         jSplitPane1.setBottomComponent(outputPane);
         jSplitPane1.setTopComponent(inputPane);

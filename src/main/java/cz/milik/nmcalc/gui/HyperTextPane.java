@@ -7,6 +7,7 @@ package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.text.ITextElement;
 import cz.milik.nmcalc.text.ITextElementVisitor;
+import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -228,6 +229,12 @@ public class HyperTextPane extends JTextPane {
             }
             
         }, doc);
+    }
+    
+    public static void appendMarkup(StyledDocument doc, String markup) {
+        MarkupParser parser = new MarkupParser();
+        ITextElement parsed = parser.parse(markup);
+        append(doc, parsed);
     }
     
 }

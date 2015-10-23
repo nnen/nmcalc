@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -55,7 +56,7 @@ public class ListValue extends CalcValue {
     public List<ICalcValue> getValues() {
         return Collections.unmodifiableList(values);
     }
-
+    
     
     @Override
     public boolean isList() {
@@ -92,6 +93,12 @@ public class ListValue extends CalcValue {
         }
         ICalcValue head = values.get(0);
         return head.getApplyRepr(values.subList(1, values.size()), ctx);
+    }
+
+    
+    @Override
+    protected Optional<String> getHelpInner() {
+        return Optional.of("A list.");
     }
     
     

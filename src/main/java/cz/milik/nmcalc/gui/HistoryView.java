@@ -84,7 +84,6 @@ public class HistoryView extends javax.swing.JPanel {
 
         outputPane.setEditable(false);
         outputPane.setFont(GUIUtils.getCodeFont());
-        outputPane.setText("NMCalc\n\nType an expression into the middle text area. The bottom area shows the result being evaluated as you type. Press Ctrl+Enter to clear the input and commit the current expression into the history view (this one).\n\nType `help()` and press Ctrl+Enter to see the help.\n\n");
         scrollPane.setViewportView(outputPane);
 
         add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -148,6 +147,10 @@ public class HistoryView extends javax.swing.JPanel {
         //append(value + "\n", null, null);
         
         HyperTextPane.append(outputPane.getStyledDocument(), element);
+    }
+    
+    public void appendMarkup(String markup) {
+        HyperTextPane.appendMarkup(outputPane.getStyledDocument(), markup);
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {

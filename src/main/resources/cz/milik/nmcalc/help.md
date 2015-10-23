@@ -39,3 +39,11 @@ Note these functions do not return string, they still return the same value and
 thus can be used in expressions such as `hex(10) + 10 => 20`, they just
 internally annotate the value in way that makes the GUI to print it out in the
 desired format.
+
+
+Further Topics
+--------------
+
+### Functions
+
+For more info on functions, see `help("functions.md")`.
