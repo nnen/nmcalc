@@ -81,14 +81,22 @@ public class SimpleForm extends javax.swing.JFrame {
         
         inputPane.clearError();
         
-        historyView.appendMarkup("# NMCalc\n" +
-            "\n" +
-            "Type an expression into the middle text area. The bottom area "
-                + "shows the result being evaluated as you type. Press "
-                + "Ctrl+Enter to clear the input and commit the current "
-                + "expression into the history view (this one).\n" +
-            "\n" +
-            "Type `help()` and press `Ctrl+Enter` to see the help.");
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+        	public void componentShown(java.awt.event.ComponentEvent e) {
+        		javax.swing.SwingUtilities.invokeLater(new java.lang.Runnable() {
+        			public void run() {
+        				historyView.appendMarkup("# NMCalc\n" +
+				            "\n" +
+				            "Type an expression into the middle text area. The bottom area "
+				                + "shows the result being evaluated as you type. Press "
+				                + "`Ctrl+Enter` to clear the input and commit the current "
+				                + "expression into the history view (this one).\n" +
+				            "\n" +
+				            "Type `help()` and press `Ctrl+Enter` to see the help.");
+        			}
+        		});
+        	}
+        });
         
         //int minHeight = outputPane.getMinimumSize().height;
         //jSplitPane1.setDividerLocation(jSplitPane1.getHeight() - minHeight);
