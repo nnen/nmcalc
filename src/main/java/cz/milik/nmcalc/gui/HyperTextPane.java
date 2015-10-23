@@ -26,7 +26,7 @@ import javax.swing.text.StyledDocument;
  */
 public class HyperTextPane extends JTextPane {
     
-    public static final Font NORMAL_FONT = Font.getDefault();
+    //public static final Font NORMAL_FONT = Font.getDefault();
     
     public static final MutableAttributeSet PLAIN_TEXT = new SimpleAttributeSet();
     public static final MutableAttributeSet HEADLINE1 = new SimpleAttributeSet();
