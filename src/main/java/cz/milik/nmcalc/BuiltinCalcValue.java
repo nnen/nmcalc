@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.loader.CalcLoader;
 import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
@@ -26,6 +27,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static void initialize(Environment env) {
         env.setVariable("let", LET);
         env.setVariable(DEF);
+        env.setVariable(DEFMACRO);
         
         env.setVariable(IF_ELSE);
         env.setVariable(MATCH);
@@ -44,9 +46,15 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(HEAD);
         env.setVariable(TAIL);
         
+        env.setVariable(DICT);
+        env.setVariable(GET_ITEM);
+        env.setVariable(SET_ITEM);
+        
         env.setVariable(APPLY);
         env.setVariable(UNAPPLY);
         env.setVariable(EVAL);
+        
+        env.setVariable(SUBSTITUTE);
         
         env.setVariable(EQUALS);
         env.setVariable(LT);
@@ -201,10 +209,51 @@ public abstract class BuiltinCalcValue extends CalcValue {
         */
     };
     
+    public static final BuiltinCalcValue DEFMACRO = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "defmacro"; }
+
+        @Override
+        protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3, 4)) {
+                return ctx;
+            }
+            
+            SymbolValue name = CalcValue.asSymbol(arguments.get(0), ctx);
+            List<? extends SymbolValue> argNames = CalcValue.asSymbolList(arguments.get(1), ctx);
+            ICalcValue body;
+            String help = null;
+            
+            if (arguments.size() == 3) {
+                body = arguments.get(2);
+            } else {
+                help = arguments.get(2).getStringValue(ctx);
+                body = arguments.get(3);
+            }
+            
+            ICalcValue macro = new MacroValue(name, argNames, help, body);
+            
+            ctx.setVariable(name.getValue(), macro);
+            ctx.setReturnedValue(macro);
+            return ctx;
+        }
+        
+        @Override
+        public boolean isSpecialForm() { return true; }
+    };
+    
     
     public static final BuiltinCalcValue QUOTE = new BuiltinCalcValue() {
         @Override
         public String getName() { return "quote"; }
+
+        @Override
+        public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
+            if (arguments.size() != 1) {
+                return super.getApplyRepr(arguments, ctx);
+            }
+            return "'(" + arguments.get(0).getExprRepr(ctx) + ")";
+        }
         
         @Override
         public boolean isSpecialForm() { return true; }
@@ -219,11 +268,21 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
     };
     
-    public static final BuiltinCalcValue LIST = new BuiltinCalcValue() {
-        
+    public static final BuiltinCalcValue LIST = new BuiltinCalcValue() {  
         @Override
         public String getName() {
             return "list";
+        }
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.of(
+                    "**`list(...) => [...]`**\n\n" +
+                    "Constructs a list from the arguments passed to this " +
+                    "function. Examples:\n\n" +
+                    "    list(1, 2, 3) => [1, 2, 3]\n" +
+                    "    list([1], [2], 3) => [[1], [2], 3]"
+            );
         }
         
         @Override
@@ -254,6 +313,24 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     public static final BuiltinCalcValue CONS = new BinaryOperator("cons", "::") {
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.of(
+                    "**`cons(head, tail) => head :: tail`**\n\n" +
+                    "Constructs a new list from `head` as its first element and " +
+                    "`tail` as the rest of the elements. The **`::`** operator " +
+                    "is just a syntactic sugar for this function.\n\n" +
+                    "Both the `cons` function and the `::` operator can be " +
+                    "used as patterns in the `match` construct.\n\n" +
+                    "Examples:\n\n" +
+                    "    cons(1, [2, 3, 4]) => [1, 2, 3, 4]\n" +
+                    "    1 :: [2, 3, 4] => [1, 2, 3, 4]\n" +
+                    "    cons([1], [2, 3, 4]) => [[1], 2, 3, 4]\n" +
+                    "    [1] :: [2, 3, 4] => [[1], 2, 3, 4]\n" +
+                    "    cons(1, []) => [1]"
+            );
+        }
+        
         @Override
         protected ICalcValue applyInner(ICalcValue a, ICalcValue b, Context ctx) throws NMCalcException {
             if (!b.hasLength()) {
@@ -305,6 +382,118 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
     };
     
+    
+    public static final BuiltinCalcValue DICT = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "dict"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "dict([entries])",
+                    "Constructs a new mutable "
+                            + "dictionary using the key-value pairs in "
+                            + "`entries` if `entries` is given, otherwise "
+                            + "constructs a new empty dictionary.\n\n"
+                            + "Example:\n\n"
+                            + "    dict([[1, \"apple\"], [16, \"banana\"]]) => { 1: \"apple\", 16: \"banana\" }"
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0, 1)) {
+                return ctx;
+            }
+            
+            if (arguments.size() == 0) {
+                ctx.setReturnedValue(CalcValue.dict());
+                return ctx;
+            }
+            
+            final ICalcValue arg = arguments.get(0);
+            requireLength(ctx, arg);
+            
+            final MapValue result = new MapValue();
+            
+            for (int i = 0; i < arg.length(); i++) {
+                ICalcValue item = arg.getItem(i);
+                requireLength(ctx, item, 2);
+                ICalcValue key = item.getItem(0);
+                ICalcValue value = item.getItem(1);
+                result.setItem(key, value);
+            }
+            
+            ctx.setReturnedValue(result);
+            return ctx;
+        }
+    };
+    
+    public static final BuiltinCalcValue GET_ITEM = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "get_item"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "get_item(value, key)",
+                    "Returns `value[key]`, the item of `value` indexed by "
+                            + "`key`. For dictionaries, this returns the value "
+                            + "mapped under `key`. For lists, this returns "
+                            + "`key`-th element if `key` is a number.",
+                    "If `value` doesn't have any item under index `key`, "
+                            + "error is returned.",
+                    "Example:",
+                    "    d = { 2: \"apple\", 4: \"banana\", 8: \"citrus\" }\n"
+                            + "    get_item(d, 4) => \"banana\"\n"
+                            + "    get_item({}, 4) => error(...)"
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            
+            ICalcValue dict = arguments.get(0);
+            ICalcValue key = arguments.get(1);
+            
+            return dict.getItem(ctx, key);
+        }
+    };
+    
+    public static final BuiltinCalcValue SET_ITEM = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "set_item"; }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "set_item(collection, key, value)",
+                    "Sets an indexed item of a collection (dictionary, list, "
+                            + "possibly others). Returns the assigned value.",
+                    "Example:",
+                    "    d = {}\n"
+                            + "    set_item(d, \"pi\", 3.1415) => 3.1415\n"
+                            + "    d => { \"pi\": 3.1415 }\n\n"
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            ICalcValue dict = arguments.get(0);
+            ICalcValue key = arguments.get(1);
+            ICalcValue value = arguments.get(2);
+            
+            return dict.setItem(ctx, key, value);
+        }
+    };
+            
     
     public static final BuiltinCalcValue APPLY = new BuiltinCalcValue() {
 
@@ -404,6 +593,26 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
+    
+    public static final BuiltinCalcValue SUBSTITUTE = new BuiltinCalcValue() {
+
+        @Override
+        public String getName() { return "substitute"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 3)) {
+                return ctx;
+            }
+            
+            ICalcValue pattern = arguments.get(0);
+            ICalcValue value = arguments.get(1);
+            ICalcValue replacement = arguments.get(2);
+            
+            return pattern.substitute(ctx, value, replacement);
+        }
+        
+    };
     
     public static final BuiltinCalcValue IF_ELSE = new BuiltinCalcValue() {
 
@@ -983,24 +1192,31 @@ public abstract class BuiltinCalcValue extends CalcValue {
 
         @Override
         public String getName() { return "env"; }
-
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return Optional.of("**`env()`**\n\nReturns a dictionary of all symbols (variables) defined in the current environment.");
+        }
+        
         @Override
         protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
             if (!checkArguments(ctx, arguments, 0)) {
                 return ctx;
             }
             
-            List<String> varNames = ctx.getEnvironment().getVariableNames();
-            ListBuilder lb = new ListBuilder();
+            Environment env = ctx.getEnvironment();
+            List<String> varNames = env.getVariableNames();
+            
+            ICalcValue result = CalcValue.dict();
             
             for (String varName : varNames) {
-                lb.add(CalcValue.list(
+                result.setItem(
                         CalcValue.makeSymbol(varName),
-                        ctx.getEnvironment().getVariable(varName).unwrap()
-                ));
+                        env.getVariable(varName).unwrap()
+                );
             }
             
-            ctx.setReturnedValue(lb.makeList());
+            ctx.setReturnedValue(result);
             
             return ctx;
         }
@@ -1019,7 +1235,10 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
         @Override
         protected Optional<String> getHelpInner() {
-            return Optional.of("`help([value])`\n\nReturns help for `value` if it is given, otherwise return help for NMCalc.");
+            return Optional.of("**`help([value])`**\n\nIf `value` is ommitted, returns the help for NMCalc."
+                    + " If `value` is a string, returns a help page with that name if it exists, otherwise returns `nothing`."
+                    + " If `value` is any other object (such as a builtin function), returns the help for that object, if it"
+                    + " exists, otherwise returns `nothing`.\n\nExample usage:\n\n    help(lcm) => <help for the lcm function>");
         }
         
         @Override
@@ -1039,7 +1258,21 @@ public abstract class BuiltinCalcValue extends CalcValue {
                     ctx.setReturnedValue(CalcValue.error(ctx, e));
                 }
             } else {
-                Optional<String> help = arguments.get(0).getHelp();
+                ICalcValue arg = arguments.get(0);
+                
+                Optional<String> help = Optional.empty();
+                
+                if (arg instanceof StringValue) {
+                    help = Optional.ofNullable(CalcLoader.getInstance().getString(arg.getStringValue(ctx)));
+                } else {
+                    help = arguments.get(0).getHelp();
+                }
+                
+                if (!help.isPresent()) {
+                    ctx.setReturnedValue(CalcValue.nothing());
+                    return ctx;
+                }
+                
                 ICalcValue result = CalcValue.make(help.get());
                 result.addAnnotation(CalcAnnotation.isHelp());
                 ctx.setReturnedValue(result);

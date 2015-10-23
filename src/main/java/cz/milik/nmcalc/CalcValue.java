@@ -9,6 +9,7 @@ import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,6 +33,10 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     public static ICalcValue make(BigDecimal value) {
+        return new FloatValue(value);
+    }
+    
+    public static ICalcValue make(BigInteger value) {
         return new FloatValue(value);
     }
     
@@ -69,7 +74,18 @@ public abstract class CalcValue implements ICalcValue {
     public static ICalcValue list(ICalcValue head, Collection<? extends ICalcValue> tail) {
         return new ListValue(head, tail);
     }
+    
+    public static ICalcValue list(ICalcValue head, ICalcValue tailFirst, Collection<? extends ICalcValue> tailRest) {
+        ListBuilder lb = new ListBuilder();
+        lb.add(head, tailFirst);
+        lb.addAll(tailRest);
+        return lb.makeList();
+    }
 
+    public static ICalcValue dict() {
+        return new MapValue();
+    }
+    
     public static ICalcValue quote(ICalcValue value) {
         return new QuoteValue(value);
     }
@@ -219,6 +235,18 @@ public abstract class CalcValue implements ICalcValue {
         //return getAnnotation(CalcAnnotation.IsHelp.class).isPresent();
     }
     
+    protected Optional<String> makeHelp(String signature, String... paragraphs) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("**`");
+        sb.append(signature);
+        sb.append("`**");
+        for (String par : paragraphs) {
+            sb.append("\n\n");
+            sb.append(par);
+        }
+        return Optional.of(sb.toString());
+    }
+    
     
     @Override
     public ICalcValue unwrap(Context ctx) {
@@ -359,11 +387,36 @@ public abstract class CalcValue implements ICalcValue {
     public ICalcValue getItem(int index) {
         return new ErrorValue(String.format(
                 "%s value doesn't support indexing.",
-                getClass().getSimpleName(),
-                index
+                getClass().getSimpleName()
         ));
     }
+    
+    @Override
+    public Context getItem(Context ctx, ICalcValue index) {
+        ctx.setReturnedError(
+                "%s value doesn't support indexing.",
+                getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
 
+    @Override
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
+        ctx.setReturnedError(
+                "%s value doesn't support indexing.",
+                getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
+    
+    @Override
+    public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException {
+        throw new NMCalcException(String.format(
+                "%s doesn't support item assignment.",
+                getClass().getSimpleName()
+        ));
+    }
+    
     @Override
     public Context getHead(Context ctx) {
         if (!hasLength()) {
@@ -507,6 +560,23 @@ public abstract class CalcValue implements ICalcValue {
     
     
     @Override
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
+        if (isError()) {
+            ctx.setReturnedValue(this);
+        } else if (value.isError()) {
+            ctx.setReturnedValue(value);
+        } else if (replacement.isError()) {
+            ctx.setReturnedValue(replacement);
+        } else if (isValueEqual(value, ctx)) {
+            ctx.setReturnedValue(replacement);
+        } else {
+            ctx.setReturnedValue(this);
+        }
+        return ctx;
+    }
+    
+    
+    @Override
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function) {
         return function.apply(this);
     }
@@ -551,6 +621,23 @@ public abstract class CalcValue implements ICalcValue {
         ));
         
         return false;
+    }
+    
+    protected void requireLength(Context ctx, ICalcValue value) throws NMCalcException {
+        if (!value.hasLength()) {
+            throw new NMCalcException("Expected a value with length.");
+        }
+    }
+    
+    protected void requireLength(Context ctx, ICalcValue value, int length) throws NMCalcException {
+        requireLength(ctx, value);
+        if (value.length() != length) {
+            throw new NMCalcException(String.format(
+                    "Expected a value of length %d. Got a value of length %d.",
+                    length,
+                    value.length()
+            ));
+        }
     }
     
     public static SymbolValue asSymbol(ICalcValue value, Context ctx) throws NMCalcException {

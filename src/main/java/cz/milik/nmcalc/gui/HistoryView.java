@@ -8,6 +8,8 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
+import cz.milik.nmcalc.text.ITextElement;
+import cz.milik.nmcalc.text.MarkupParser;
 import java.awt.Rectangle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,7 +84,6 @@ public class HistoryView extends javax.swing.JPanel {
 
         outputPane.setEditable(false);
         outputPane.setFont(GUIUtils.getCodeFont());
-        outputPane.setText("NMCalc\n\nType an expression into the middle text area. The bottom area shows the result being evaluated as you type. Press Ctrl+Enter to clear the input and commit the current expression into the history view (this one).\n\nType `help()` and press Ctrl+Enter to see the help.\n\n");
         scrollPane.setViewportView(outputPane);
 
         add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -137,9 +138,19 @@ public class HistoryView extends javax.swing.JPanel {
     }
     
     public void appendHelp(String expr, String value) {
+        MarkupParser parser = new MarkupParser();
+        ITextElement element = parser.parse(value);
+        
         append(">>> ");
         append(expr + "\n", lhsStyle, lhsParStyle);
-        append(value + "\n", null, null);
+        
+        //append(value + "\n", null, null);
+        
+        HyperTextPane.append(outputPane.getStyledDocument(), element);
+    }
+    
+    public void appendMarkup(String markup) {
+        HyperTextPane.appendMarkup(outputPane.getStyledDocument(), markup);
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {

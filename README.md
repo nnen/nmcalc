@@ -31,7 +31,18 @@ The variable assignment syntax is simply:
 
 Variables are remembered between different expression evaluations, can hold value of any type (real, list, boolean, function, etc.).
 
-### Functions
+### Built-in Functions
+
+The built-in mathematical functions include:
+
+  - trigonometric functions (`sin`, `asin`, `cos`, `acos`, `tan`, `atan`),
+  - natural logarithm function (`ln`),
+  - least common multiplier function (`lcm`),
+  - power and square root function (`pow` and `sqrt` respectively),
+  - absolute value, ceiling and floor functions
+    (`abs`, `ceil` and `floor` respectively).
+
+### User-defined Functions
 
 There are some builtin functions, such as `sin(<real>)`, `apply(<value>, <arguments>)` or `eval(<expression>)`. Apart from those, users can define custom functions using the syntax:
 

@@ -170,6 +170,10 @@ public class Context {
         ));
     }
     
+    protected ExecResult ctxGetItem(ICalcValue container, ICalcValue index) {
+        return ctxContinue(container.getItem(this, index));
+    }
+    
     
     public static class ReturnContext extends Context {
         
@@ -311,6 +315,21 @@ public class Context {
         
         public void pop(int count) {
             stack.subList(stack.size() - count, stack.size()).clear();
+        }
+        
+        public ICalcValue peek(int offset) {
+            int i = stack.size() - 1 - offset;
+            return stack.get(i);
+        }
+        
+        public ICalcValue peek() {
+            return peek(0);
+        }
+        
+        public ICalcValue toList(int offset, int length) {
+            ListBuilder lb = new ListBuilder();
+            lb.addAll(stack.subList(offset, offset + length));
+            return lb.makeList();
         }
         
         

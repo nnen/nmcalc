@@ -81,7 +81,12 @@ public class FunctionValue extends CalcValue {
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
         final List<SymbolValue> argNames = getArgumentNames();
-        return new Context(ctx, getStaticContext().getEnvironment().createChild(), getFunctionBody()) {
+        
+        if (!checkArguments(ctx, arguments, argNames.size())) {
+            return ctx;
+        }
+        
+        return new Context(ctx, getStaticContext().getEnvironment().createChild(), getFunctionBody()) {    
             @Override
             public ExecResult execute(Interpreter interpreter) {
                 int pc = getPC();
@@ -92,24 +97,12 @@ public class FunctionValue extends CalcValue {
                             env.setVariable(argNames.get(i).getValue(), arguments.get(i));
                         }
                         setPC(pc + 1);
-                        return new ExecResult(
-                                ExecResult.ExitCodes.CONTINUE,
-                                getFunctionBody().eval(this),
-                                null
-                        );
+                        return ctxContinue(getFunctionBody().eval(this));
                     case 1:
                         setPC(pc + 1);
-                        return new ExecResult(
-                                ExecResult.ExitCodes.RETURN,
-                                this,
-                                getReturnedValue()
-                        );
+                        return ctxReturn(getReturnedValue());
                     default:
-                        return new ExecResult(
-                                ExecResult.ExitCodes.ERROR,
-                                this,
-                                ErrorValue.formatted("Invalid value of PC counter (%d) in %s.", pc, toString())
-                        );
+                        return invalidPC(pc);
                 }
             }  
         };

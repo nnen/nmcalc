@@ -66,6 +66,9 @@ public interface ICalcValue extends java.io.Serializable {
     public boolean hasLength();
     public int length();
     public ICalcValue getItem(int index);
+    public Context getItem(Context ctx, ICalcValue index);
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value);
+    public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException;
     public Context getHead(Context ctx);
     public Context getTail(Context ctx);
     public Context unpack(Context ctx);
@@ -74,6 +77,8 @@ public interface ICalcValue extends java.io.Serializable {
     public Context apply(Context ctx, List<? extends ICalcValue> arguments);
     public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments);
     public Context unapply(Context ctx, ICalcValue value);
+    
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement);
     
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function);
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function);

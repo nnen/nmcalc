@@ -25,6 +25,26 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
+        return target.substitute(ctx, value, replacement);
+    }
+    
+    @Override
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
+        return target.setItem(ctx, index, value);
+    }
+
+    @Override
+    public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException {
+        target.setItem(index, value);
+    }
+
+    @Override
+    public Context getItem(Context ctx, ICalcValue index) {
+        return target.getItem(ctx, index);
+    }
+    
+    @Override
     public boolean isHelp() {
         return target.isHelp();
     }

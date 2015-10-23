@@ -6,10 +6,12 @@
 package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.StringUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -54,7 +56,7 @@ public class ListValue extends CalcValue {
     public List<ICalcValue> getValues() {
         return Collections.unmodifiableList(values);
     }
-
+    
     
     @Override
     public boolean isList() {
@@ -91,6 +93,12 @@ public class ListValue extends CalcValue {
         }
         ICalcValue head = values.get(0);
         return head.getApplyRepr(values.subList(1, values.size()), ctx);
+    }
+
+    
+    @Override
+    protected Optional<String> getHelpInner() {
+        return Optional.of("A list.");
     }
     
     
@@ -138,6 +146,48 @@ public class ListValue extends CalcValue {
         return values.get(index);
     }
 
+    @Override
+    public Context getItem(Context ctx, ICalcValue index) {
+        ICalcValue fltValue = index.toFloat(ctx);
+        if (fltValue.isError()) {
+            ctx.setReturnedValue(fltValue);
+            return ctx;
+        }
+        BigDecimal dec = fltValue.getDecimalValue();
+        int intValue = dec.intValue();
+        if ((intValue < 0) || (intValue >= values.size())) {
+            ctx.setReturnedError(
+                    "Invalid index: %d. Expected value greater or equal to 0 and less than %d.",
+                    intValue,
+                    values.size()
+            );
+            return ctx;
+        }
+        ctx.setReturnedValue(values.get(intValue));
+        return ctx;
+    }
+
+    @Override
+    public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
+        ICalcValue fltValue = index.toFloat(ctx);
+        if (fltValue.isError()) {
+            ctx.setReturnedValue(fltValue);
+            return ctx;
+        }
+        BigDecimal dec = fltValue.getDecimalValue();
+        int intValue = dec.intValue();
+        if ((intValue < 0) || (intValue >= values.size())) {
+            ctx.setReturnedError(
+                    "Invalid index: %d. Expected value greater or equal to 0 and less than %d.",
+                    intValue,
+                    values.size()
+            );
+            return ctx;
+        }
+        values.set(intValue, value);
+        ctx.setReturnedValue(value);
+        return ctx;
+    }
     
     public ICalcValue getHead() {
         if (values.size() > 0) {
@@ -250,6 +300,44 @@ public class ListValue extends CalcValue {
                 } else {
                     return invalidPC(pc);
                 }
+            }
+        };
+    }
+
+    
+    @Override
+    public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
+        if (value.isError()) {
+            ctx.setReturnedValue(value);
+            return ctx;
+        }
+        
+        if (replacement.isError()) {
+            ctx.setReturnedValue(replacement);
+            return ctx;
+        }
+        
+        return new Context.StackContext(ctx, this) {
+            @Override
+            public ExecResult execute(Interpreter interpreter) {
+                int pc = getPC();
+                
+                if ((pc > 0) && (pc <= values.size())) {
+                    if (peek().isError()) {
+                        return this.ctxReturn(peek());
+                    }
+                }
+                
+                if (pc < values.size()) {
+                    ICalcValue item = values.get(pc);
+                    setPC(pc + 1);
+                    return ctxContinue(item.substitute(this, value, replacement));
+                } else if (pc == values.size()) {
+                    setPC(pc + 1);
+                    return ctxReturn(toList(0, values.size()));
+                }
+                
+                return invalidPC(pc);
             }
         };
     }

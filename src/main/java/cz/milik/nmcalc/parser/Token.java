@@ -18,6 +18,7 @@ public class Token {
         FLOAT,
         HEX_LITERAL,
         OCT_LITERAL,
+        BIN_LITERAL,
         IDENTIFIER,
         SYMBOL,
         STRING,
@@ -33,6 +34,7 @@ public class Token {
         PLUS('+'),
         MINUS('-'),
         ASTERISK('*'),
+        DOUBLE_ASTERISK,
         SLASH('/'),
         
         LPAR('('),
@@ -43,6 +45,7 @@ public class Token {
         RBRACE('}'),
         QUOTE('\''),
         COMMA(','),
+        COLON(':'),
         
         KW_DEF("def"),
         KW_IF("if"),
