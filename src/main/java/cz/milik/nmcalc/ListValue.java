@@ -232,7 +232,7 @@ public class ListValue extends CalcValue {
             private ICalcValue unapplyResult;
             
             @Override
-            public ExecResult execute(Interpreter interpreter) {
+            public ExecResult execute(Process process) {
                 int pc = getPC();
                 ICalcValue returned;
                 
@@ -319,7 +319,7 @@ public class ListValue extends CalcValue {
         
         return new Context.StackContext(ctx, this) {
             @Override
-            public ExecResult execute(Interpreter interpreter) {
+            public ExecResult execute(Process process) {
                 int pc = getPC();
                 
                 if ((pc > 0) && (pc <= values.size())) {

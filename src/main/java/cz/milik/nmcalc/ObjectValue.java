@@ -63,7 +63,7 @@ public class ObjectValue extends CalcValue {
         }
 
         @Override
-        public ExecResult execute(Interpreter interpreter) {
+        public ExecResult execute(Process process) {
             int pc = getPC();
             
             switch (pc) {

@@ -165,24 +165,47 @@ public class CalcParser extends PegParser<ASTNode> {
                             ).maybe(),
                             s(Token.Types.RPAR)
                     ).maybe(),
-                    s("expr", "body")
+                    or (
+                            concatAny(
+                                    s("str", "help"),
+                                    s("expr", "body").maybe()
+                            ),
+                            concatAny(
+                                s("expr", "body")
+                            )
+                    )
+                    //s("str", "help"),
+                    //s("expr", "body").maybe()
             ).map(ctx -> {
                 Token name = ctx.getNamedValue("name", Token.class);
                 List<Token> args = ctx.getNamedValues("args", Token.class);
+                ICalcValue help = ctx.getNamedValue("help", ICalcValue.class);
                 ICalcValue body = ctx.getNamedValue("body", ICalcValue.class);
-                if (name == null) {
+                
+                String nameStr = (name == null) ? "" : name.getValue();
+                
+                if (body == null) {
+                    body = help;
+                    help = null;
+                }
+                
+                SymbolValue symbol = new SymbolValue(nameStr);
+                ICalcValue argList = CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue())));
+                
+                if (help != null) {
                     return CalcValue.list(
                         BuiltinCalcValue.DEF,
-                        new SymbolValue("_fn"),
-                        CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue()))),
+                        symbol,
+                        argList,
+                        help,
                         body
                     );
                 }
-                SymbolValue symbol = new SymbolValue(name.getValue());
+                
                 return CalcValue.list(
                         BuiltinCalcValue.DEF,
                         symbol,
-                        CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue()))),
+                        argList,
                         body
                 );
             }));

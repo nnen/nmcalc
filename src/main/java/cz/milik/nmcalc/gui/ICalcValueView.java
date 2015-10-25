@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.utils.IMonad;
 
 /**
  *
@@ -14,6 +15,6 @@ import cz.milik.nmcalc.ICalcValue;
 public interface ICalcValueView {
     
     public void setModel(ICalcValue model);
-    public ICalcValue getModel();
+    public IMonad<ICalcValue> getModel();
     
 }

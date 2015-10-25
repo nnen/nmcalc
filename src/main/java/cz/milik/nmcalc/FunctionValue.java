@@ -17,12 +17,12 @@ import java.util.List;
  */
 public class FunctionValue extends CalcValue {
     
-    private final Context staticContext;
+    private final Environment staticContext;
     private final SymbolValue functionName;
     private final List<SymbolValue> argumentNames = new ArrayList();
     private final ICalcValue functionBody;
 
-    public Context getStaticContext() {
+    public Environment getStaticContext() {
         return staticContext;
     }
     
@@ -39,13 +39,13 @@ public class FunctionValue extends CalcValue {
     }
     
     
-    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Context aStaticContext) {
+    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext) {
         functionName = aName;
         functionBody = aFunctionBody;
         staticContext = aStaticContext;
     }
     
-    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Context aStaticContext, Collection<? extends SymbolValue> someArgumentNames) {
+    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext, Collection<? extends SymbolValue> someArgumentNames) {
         functionName = aName;
         functionBody = aFunctionBody;
         argumentNames.addAll(someArgumentNames);
@@ -74,6 +74,11 @@ public class FunctionValue extends CalcValue {
         sb.append("(");
         sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
         sb.append(") ");
+        if (getHelp().isPresent()) {
+            sb.append("\"");
+            sb.append(getHelp().get());
+            sb.append("\" ");
+        }
         sb.append(functionBody.getExprRepr(ctx));
         return sb.toString();
     }
@@ -86,9 +91,9 @@ public class FunctionValue extends CalcValue {
             return ctx;
         }
         
-        return new Context(ctx, getStaticContext().getEnvironment().createChild(), getFunctionBody()) {    
+        return new Context(ctx, getStaticContext().createChild(), getFunctionBody()) {    
             @Override
-            public ExecResult execute(Interpreter interpreter) {
+            public ExecResult execute(Process process) {
                 int pc = getPC();
                 switch (pc) {
                     case 0:

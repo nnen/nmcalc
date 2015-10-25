@@ -12,6 +12,13 @@ import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.Monad;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -25,7 +32,12 @@ public class SimpleForm extends javax.swing.JFrame {
     private ICalcValue result;
     private ParseResult<ICalcValue> parsed;
     
-    public String getEnvironmentFile() { return "environment.ser"; }
+    private String lastEvaluatedExpression;
+    
+    public String getEnvironmentFile() {
+        String home = System.getProperty("user.home");
+        return home + File.separator + "nmcalc.environment";
+    }
     
     /**
      * Creates new form SimpleForm
@@ -46,8 +58,22 @@ public class SimpleForm extends javax.swing.JFrame {
         }
         */
         
-        /*
         this.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                String fileName = getEnvironmentFile();
+                File file = new File(fileName);
+                if (file.exists()) {
+                    try {
+                        interpreter.deserializeEnvironment(fileName);
+                    } catch (IOException ex) {
+                        Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (ClassNotFoundException ex) {
+                        Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+            
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
@@ -57,14 +83,16 @@ public class SimpleForm extends javax.swing.JFrame {
                 }
             }        
         });
-        */
         
         inputPane.addListener(new IInputViewListener() {
             
             @Override
             public void onInput(IInputView view, String input) {
                 if (!input.isEmpty()) {
-                    evaluate();
+                    if (!Objects.equals(lastEvaluatedExpression, input)) {
+                        evaluate();
+                        lastEvaluatedExpression = input;
+                    }
                 } else {
                     outputPane.setModel(Monad.nothing());
                 }

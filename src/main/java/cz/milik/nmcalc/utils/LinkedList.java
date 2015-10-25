@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc.utils;
 
+import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -13,7 +14,7 @@ import java.util.function.Function;
  *
  * @author jan
  */
-public abstract class LinkedList<TValue> {
+public abstract class LinkedList<TValue> implements Serializable {
     
     public LinkedList<TValue> add(TValue value) {
         return new List(value, this);

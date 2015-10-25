@@ -8,6 +8,7 @@ package cz.milik.nmcalc;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  *
@@ -49,6 +50,14 @@ public class MapValue extends CalcValue {
         values.put(index, value);
         ctx.setReturnedValue(value);
         return ctx;
+    }
+    
+    public ICalcValue getItem(ICalcValue index) {
+        return values.get(index);
+    }
+    
+    public Set<ICalcValue> getKeys() {
+        return values.keySet();
     }
     
     

@@ -9,6 +9,7 @@ import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -18,257 +19,291 @@ import java.util.function.Function;
  */
 public abstract class ProxyValue implements ICalcValue {
     
-    private final ICalcValue target;
-
+    private ICalcValue target;
+    
+    /**
+     * @return the target
+     */
+    public ICalcValue getTarget() {
+        return target;
+    }
+    
+    public void setTarget(ICalcValue target) {
+        this.target = target;
+    }
+    
+    
     public ProxyValue(ICalcValue target) {
         this.target = target;
+    }
+    
+    public ProxyValue() {
+        this.target = CalcValue.nothing();
+    }
+    
+
+    @Override
+    public boolean serialize(SerializationContext ctx) throws NMCalcException {
+        return getTarget().serialize(ctx);
+    }
+    
+    @Override
+    public Context serialize(Context ctx, SerializationContext serCtx) {
+        return getTarget().serialize(ctx, serCtx);
+    }
+    
+    @Override
+    public Optional<UUID> getId() {
+        return getTarget().getId();
     }
 
     @Override
     public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement) {
-        return target.substitute(ctx, value, replacement);
+        return getTarget().substitute(ctx, value, replacement);
     }
     
     @Override
     public Context setItem(Context ctx, ICalcValue index, ICalcValue value) {
-        return target.setItem(ctx, index, value);
+        return getTarget().setItem(ctx, index, value);
     }
 
     @Override
     public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException {
-        target.setItem(index, value);
+        getTarget().setItem(index, value);
     }
 
     @Override
     public Context getItem(Context ctx, ICalcValue index) {
-        return target.getItem(ctx, index);
+        return getTarget().getItem(ctx, index);
     }
     
     @Override
     public boolean isHelp() {
-        return target.isHelp();
+        return getTarget().isHelp();
     }
 
     @Override
     public Optional<String> getHelp() {
-        return target.getHelp();
+        return getTarget().getHelp();
     }
 
     @Override
     public void setHelp(String help) {
-        target.setHelp(help);
+        getTarget().setHelp(help);
     }
     
     @Override
     public boolean isObject() {
-        return target.isObject();
+        return getTarget().isObject();
     }
 
     @Override
     public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls) {
-        return target.getAnnotation(cls);
+        return getTarget().getAnnotation(cls);
     }
     
     @Override
     public LinkedList<ICalcValueAnnotation> getAnnotations() {
-        return target.getAnnotations();
+        return getTarget().getAnnotations();
     }
 
     @Override
     public ICalcValue addAnnotation(ICalcValueAnnotation value) {
-        target.addAnnotation(value);
+        getTarget().addAnnotation(value);
         return this;
     }
     
     @Override
     public ICalcValue unwrap(Context ctx) {
-        return target.unwrap(ctx);
+        return getTarget().unwrap(ctx);
     }
     
     @Override
     public Context getHead(Context ctx) {
-        return target.getHead(ctx);
+        return getTarget().getHead(ctx);
     }
 
     @Override
     public Context getTail(Context ctx) {
-        return target.getTail(ctx);
+        return getTarget().getTail(ctx);
     }
     
     @Override
     public boolean isSymbol() {
-        return target.isSymbol();
+        return getTarget().isSymbol();
     }
 
     @Override
     public boolean isList() {
-        return target.isList();
+        return getTarget().isList();
     }
 
     @Override
     public boolean isSome() {
-        return target.isSome();
+        return getTarget().isSome();
     }
     
     @Override
     public boolean isNothing() {
-        return target.isNothing();
+        return getTarget().isNothing();
     }
     
     @Override
     public String getRepr(ReprContext ctx) {
-        return target.getRepr(ctx);
+        return getTarget().getRepr(ctx);
     }
 
     @Override
     public String getExprRepr(ReprContext ctx) {
-        return target.getExprRepr(ctx);
+        return getTarget().getExprRepr(ctx);
     }
 
     @Override
     public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
-        return target.getApplyRepr(arguments, ctx);
+        return getTarget().getApplyRepr(arguments, ctx);
     }
 
     @Override
     public boolean isError() {
-        return target.isError();
+        return getTarget().isError();
     }
 
     @Override
     public boolean isSpecialForm() {
-        return target.isSpecialForm();
+        return getTarget().isSpecialForm();
     }
 
     @Override
     public Context getAttribute(SymbolValue attrName, Context ctx) {
-        return target.getAttribute(attrName, ctx);
+        return getTarget().getAttribute(attrName, ctx);
     }
 
     @Override
     public Context setAttribute(SymbolValue attrName, ICalcValue value, Context ctx) {
-        return target.setAttribute(attrName, value, ctx);
+        return getTarget().setAttribute(attrName, value, ctx);
     }
 
     @Override
     public boolean getBooleanValue() {
-        return target.getBooleanValue();
+        return getTarget().getBooleanValue();
     }
 
     @Override
     public ICalcValue toFloat(Context ctx) {
-        return target.toFloat(ctx);
+        return getTarget().toFloat(ctx);
     }
     
     @Override
     public BigDecimal getDecimalValue() {
-        return target.getDecimalValue();
+        return getTarget().getDecimalValue();
     }
 
     @Override
     public ICalcValue toStringValue(Context ctx) {
-        return target.toStringValue(ctx);
+        return getTarget().toStringValue(ctx);
     }
 
     @Override
     public String getStringValue(Context ctx) {
-        return target.getStringValue(ctx);
+        return getTarget().getStringValue(ctx);
     }
 
     @Override
     public ICalcValue toSymbolValue(Context ctx) {
-        return target.toSymbolValue(ctx);
+        return getTarget().toSymbolValue(ctx);
     }
 
     @Override
     public boolean isValueEqual(ICalcValue other, Context ctx) {
-        return target.isValueEqual(other, ctx);
+        return getTarget().isValueEqual(other, ctx);
     }
 
     @Override
     public int compareValue(ICalcValue other, Context ctx) {
-        return target.compareValue(other, ctx);
+        return getTarget().compareValue(other, ctx);
     }
 
     @Override
     public ICalcValue negate(Context ctx) {
-        return target.negate(ctx);
+        return getTarget().negate(ctx);
     }
 
     @Override
     public ICalcValue add(ICalcValue other, Context ctx) {
-        return target.add(other, ctx);
+        return getTarget().add(other, ctx);
     }
 
     @Override
     public ICalcValue subtract(ICalcValue other, Context ctx) {
-        return target.subtract(other, ctx);
+        return getTarget().subtract(other, ctx);
     }
 
     @Override
     public ICalcValue multiply(ICalcValue other, Context ctx) {
-        return target.multiply(other, ctx);
+        return getTarget().multiply(other, ctx);
     }
 
     @Override
     public ICalcValue divide(ICalcValue other, Context ctx) {
-        return target.divide(other, ctx);
+        return getTarget().divide(other, ctx);
     }
 
     @Override
     public boolean hasLength() {
-        return target.hasLength();
+        return getTarget().hasLength();
     }
 
     @Override
     public int length() {
-        return target.length();
+        return getTarget().length();
     }
 
     @Override
     public ICalcValue getItem(int index) {
-        return target.getItem(index);
+        return getTarget().getItem(index);
     }
 
     @Override
     public Context unpack(Context ctx) {
-        return target.unpack(ctx);
+        return getTarget().unpack(ctx);
     }
 
     @Override
     public Context eval(Context ctx) {
-        return target.eval(ctx);
+        return getTarget().eval(ctx);
     }
 
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
-        return target.apply(ctx, arguments);
+        return getTarget().apply(ctx, arguments);
     }
 
     @Override
     public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments) {
-        return target.applySpecial(ctx, arguments);
+        return getTarget().applySpecial(ctx, arguments);
     }
 
     @Override
     public Context unapply(Context ctx, ICalcValue value) {
-        return target.unapply(ctx, value);
+        return getTarget().unapply(ctx, value);
     }
 
     @Override
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function) {
-        return target.withNonError(function);
+        return getTarget().withNonError(function);
     }
 
     @Override
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function) {
-        return target.withNonError(other, function);
+        return getTarget().withNonError(other, function);
     }
 
     @Override
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {
-        return target.visit(visitor, context);
+        return getTarget().visit(visitor, context);
     }
+
+    
     
     
     

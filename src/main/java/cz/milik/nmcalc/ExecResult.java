@@ -27,6 +27,8 @@ public class ExecResult {
          */
         CALL,
         YIELD,
+        BREAK,
+        INTERRUPT,
     }
     
     

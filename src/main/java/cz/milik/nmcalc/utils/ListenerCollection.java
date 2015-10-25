@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  *
@@ -51,4 +52,12 @@ public class ListenerCollection<T> extends AbstractCollection<T> {
         }
     }
     
+    public void handleChain(Function<T, Boolean> fn) {
+        T[] array = listeners.toArray(arrayDummy);
+        for (T listener : array) {
+            if (fn.apply(listener)) {
+                break;
+            }
+        }
+    }
 }

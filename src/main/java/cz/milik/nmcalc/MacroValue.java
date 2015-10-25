@@ -71,7 +71,7 @@ public class MacroValue extends CalcValue {
             private ICalcValue substituted = body;
             
             @Override
-            public ExecResult execute(Interpreter interpreter) {
+            public ExecResult execute(Process process) {
                 int pc = getPC();
                 
                 if ((pc > 0) && (pc <= arguments.size())) {

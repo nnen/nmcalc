@@ -9,6 +9,7 @@ import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -82,6 +83,11 @@ public interface ICalcValue extends java.io.Serializable {
     
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function);
     public ICalcValue withNonError(ICalcValue other, BiFunction<ICalcValue, ICalcValue, ICalcValue> function);
+    
+    public Optional<UUID> getId();
+    
+    public boolean serialize(SerializationContext ctx) throws NMCalcException;
+    public Context serialize(Context ctx, SerializationContext serCtx);
     
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context);
     

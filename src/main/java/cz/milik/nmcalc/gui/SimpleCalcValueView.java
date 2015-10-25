@@ -11,13 +11,14 @@ import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
+import java.awt.Font;
 import java.util.Optional;
 
 /**
  *
  * @author jan
  */
-public class SimpleCalcValueView extends javax.swing.JPanel {
+public class SimpleCalcValueView extends javax.swing.JPanel implements ICalcValueView {
 
     private boolean showingNull = true;
 
@@ -27,6 +28,17 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
     
     public void setShowingNull(boolean showingNull) {
         this.showingNull = showingNull;
+    }
+    
+    
+    private boolean showHelp = false;
+
+    public boolean isShowHelp() {
+        return showHelp;
+    }
+    
+    public void setShowHelp(boolean showHelp) {
+        this.showHelp = showHelp;
     }
     
     
@@ -57,14 +69,24 @@ public class SimpleCalcValueView extends javax.swing.JPanel {
         } else {
             if (value instanceof BuiltinCalcValue) {
                 Optional<String> help = value.getHelp();
-                if (help.isPresent()) {
+                if (help.isPresent() && isShowHelp()) {
                     MarkupParser markup = new MarkupParser();
+                    textPane.setText("");
                     HyperTextPane.append(textPane.getStyledDocument(), markup.parse(help.get()));
                     return;
                 }
             }
             textPane.setText(value.getRepr(ReprContext.getDefault()));
             textPane.updateSyntax();
+        }
+    }
+
+    
+    @Override
+    public void setFont(Font font) {
+        super.setFont(font);
+        if (textPane != null) {
+            textPane.setFont(font);
         }
     }
     

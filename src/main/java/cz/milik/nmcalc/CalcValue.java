@@ -15,8 +15,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -587,7 +590,48 @@ public abstract class CalcValue implements ICalcValue {
            return function.apply(this, otherNonError);
         });
     }
- 
+
+    
+    @Override
+    public Optional<UUID> getId() {
+        return Optional.empty();
+    }
+    
+    
+    @Override
+    public boolean serialize(SerializationContext ctx) throws NMCalcException {
+        return false;
+    }
+    
+    @Override
+    public Context serialize(Context ctx, SerializationContext serCtx) {
+        try {
+            if (serialize(serCtx)) {
+                ctx.setReturnedValue(this);
+                return ctx;
+            }
+        } catch (NMCalcException ex) {
+            ctx.setReturnedValue(CalcValue.error(ctx, ex));
+            return ctx;
+        }
+        
+        try {
+            serializeInner(ctx, serCtx);
+            return ctx;
+        } catch (NMCalcException ex) {
+            ctx.setReturnedValue(CalcValue.error(ctx, ex));
+            return ctx;
+        }
+    }
+    
+    protected Context serializeInner(Context ctx, SerializationContext serCtx) throws NMCalcException {
+        ctx.setReturnedValue(ErrorValue.formatted(
+                "%s %s cannot be serialized.",
+                getClass().getSimpleName(),
+                getRepr(ctx.getReprContext())));
+        return ctx;
+    }
+    
     
     protected void invalidArgumentCount(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
         throw new NMCalcException(String.format("Invalid argument count: %d.", arguments.size()), ctx);
@@ -673,5 +717,46 @@ public abstract class CalcValue implements ICalcValue {
                 "Expected a list of symbols, got: %s.",
                 value.getRepr(ctx.getReprContext())
         ));
+    }
+    
+    
+    public static SymbolValue asSymbol(ICalcValue value, Context ctx, int argPos) throws NMCalcException {
+        if (value == null) {
+            throw NMCalcException.format(
+                    ctx,
+                    "Expected a symbol as %dth argument, got null.",
+                    argPos);
+        }
+        
+        if (value instanceof SymbolValue) {
+            return (SymbolValue)value;
+        }
+        
+        throw NMCalcException.format(
+                ctx,
+                "Expected a symbol as %dth argument, got: %s.",
+                argPos, value.getRepr(ctx.getReprContext()));
+    }
+    
+    public static List<ICalcValue> asList(ICalcValue value, Context ctx, int argPos) throws NMCalcException {
+        if (value == null) {
+            throw NMCalcException.format(
+                    ctx,
+                    "Expected a list of symbols as %dth argument, got null.",
+                    argPos);
+        }
+        
+        if (value.hasLength()) {
+            List<ICalcValue> result = new ArrayList();
+            for (int i = 0; i < value.length(); i++) {
+                result.add(value.getItem(i));
+            }
+            return result;
+        }
+        
+        throw NMCalcException.format(
+                ctx,
+                "Expected a list of symbols as %dth argument, got: %s.",
+                argPos, value.getRepr(ctx.getReprContext()));
     }
 }

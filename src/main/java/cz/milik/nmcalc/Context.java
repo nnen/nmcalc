@@ -104,7 +104,7 @@ public class Context {
         return new Context(this, getEnvironment(), method);
     }
     
-    public ExecResult execute(Interpreter interpreter) {
+    public ExecResult execute(Process process) {
         return new ExecResult(
                 ExecResult.ExitCodes.ERROR,
                 this,
@@ -174,6 +174,14 @@ public class Context {
         return ctxContinue(container.getItem(this, index));
     }
     
+    protected ExecResult ctxBreak() {
+        return new ExecResult(
+                ExecResult.ExitCodes.BREAK,
+                this,
+                null
+        );
+    }
+    
     
     public static class ReturnContext extends Context {
         
@@ -182,7 +190,7 @@ public class Context {
         }
         
         @Override
-        public ExecResult execute(Interpreter interpreter) {
+        public ExecResult execute(Process process) {
             return new ExecResult(
                     ExecResult.ExitCodes.EXIT,
                     this,
@@ -211,18 +219,18 @@ public class Context {
         }
         
         @Override
-        public ExecResult execute(Interpreter interpreter) {
+        public ExecResult execute(Process process) {
             int pc = getPC();
             Context newCtx;
             
             switch (pc) {
                 case 0:
                     setPC(pc + 1);
-                    return eval(interpreter, getMethod());
+                    return eval(process.getInterpreter(), getMethod());
                 case 1:
                     ICalcValue head = getReturnedValue();
                     if (head.isSpecialForm()) {
-                        newCtx = interpreter.applySpecial(head, this, arguments);
+                        newCtx = process.getInterpreter().applySpecial(head, this, arguments);
                         setPC(4);
                         return new ExecResult(
                                 ExecResult.ExitCodes.CONTINUE,
@@ -231,15 +239,15 @@ public class Context {
                         );
                     } else if (arguments.size() == 1) {
                         setPC(3);
-                        return evalArgument(interpreter);
+                        return evalArgument(process.getInterpreter());
                     } else if (arguments.size() > 1) {
                         setPC(pc + 1);
-                        return evalArgument(interpreter);
+                        return evalArgument(process.getInterpreter());
                     } else {
                         setPC(4);
                         return new ExecResult(
                                 ExecResult.ExitCodes.CONTINUE,
-                                interpreter.apply(head, this, arguments),
+                                process.getInterpreter().apply(head, this, arguments),
                                 null
                         );
                     }
@@ -247,12 +255,12 @@ public class Context {
                     if (evaluated.size() == arguments.size()) {
                         setPC(pc + 1);
                     }
-                    return evalArgument(interpreter);
+                    return evalArgument(process.getInterpreter());
                 case 3:
                     setPC(pc + 1);
                     return new ExecResult(
                             ExecResult.ExitCodes.CONTINUE,
-                            interpreter.apply(evaluated.get(0), this, evaluated.subList(1, evaluated.size())),
+                            process.getInterpreter().apply(evaluated.get(0), this, evaluated.subList(1, evaluated.size())),
                             null
                     );
                 case 4:

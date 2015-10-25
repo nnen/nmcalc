@@ -5,13 +5,13 @@
  */
 package cz.milik.nmcalc;
 
-import cz.milik.nmcalc.ast.ASTNode;
-import cz.milik.nmcalc.ast.ASTNodeTypes;
+import cz.milik.nmcalc.gui.GUIManager;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
-import cz.milik.nmcalc.utils.IMonad;
+import cz.milik.nmcalc.utils.ListenerCollection;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -22,7 +22,7 @@ public class Interpreter {
     private final CalcParser parser = new CalcParser();
     
     private Context defaultContext = Context.createRoot();
-    private Environment defaultEnvironment = new Environment();
+    private Environment defaultEnvironment = BuiltinCalcValue.getBuiltins().createChild();
     
     
     private ListBuilder listBuilder = new ListBuilder();
@@ -38,183 +38,35 @@ public class Interpreter {
         return new ErrorValue("Syntax error: " + node.toString());
     }
     
-    public ICalcValue evaluate(ASTNode node)
-    {
-        return evaluate(node, defaultContext);
-    }
-    
-    public ICalcValue evaluate(ASTNode node, Context context)
-    {
-        switch (node.getType())
-        {
-            case UNKNOWN:
-                break;
-            case REAL_LITERAL:
-                return evaluateRealLiteral(node);
-            case VARIABLE:
-                return evaluateVariable(node, context);
-            case ASSIGNMENT:
-                return evaluateAssignment(node, context);
-            case ADDITION:
-            case SUBTRACTION:
-            case MULTIPLICATION:
-            case DIVISION:
-                return evaluateBinaryOp(node, context);
-            default:
-                throw new AssertionError(node.getType().name());
-        }
-        
-        throw new AssertionError(node.getType().name());
-    }
-    
-    private ICalcValue evaluateRealLiteral(ASTNode node)
-    {
-        return CalcValue.make(node.getFloatValue());
-    }
-    
-    private ICalcValue evaluateVariable(ASTNode node, Context context) {
-        String varName = node.getLiteralValue().getValue();
-        IMonad<ICalcValue> value = context.getVariable(varName);
-        return value.unwrap(() -> {
-           return new ErrorValue(
-                   String.format("Undefined variable: %s.", varName),
-                   context
-           );
-        });
-    }
-        
-    private ICalcValue evaluateBinaryOp(final ASTNode node, Context context) {
-        final ASTNodeTypes nodeType = node.getType();
-        ICalcValue result = evaluate(node.getChildren().get(0), context);
-        for (int i = 1; i < node.getChildren().size(); i++)
-        {
-            final ICalcValue other = evaluate(node.getChildren().get(i), context);
-            
-            switch (nodeType) {
-                case ADDITION:
-                    result = result.add(other, context);
-                    break;
-                case SUBTRACTION:
-                    result = result.subtract(other, context);
-                    break;
-                case MULTIPLICATION:
-                    result = result.multiply(other, context);
-                    break;
-                case DIVISION:
-                    result = result.divide(other, context);
-                    break;
-                default:
-                    result = new ErrorValue();
-                    break;
-            }
-        }
-        return result;
-    }
-    
-    private ICalcValue evaluateAssignment(ASTNode node, Context context) {
-        ASTNode lhs = node.getChildren().get(0);
-        ASTNode rhs = node.getChildren().get(1);
-        
-        if (lhs.getType() != ASTNodeTypes.VARIABLE) {
-            return ErrorValue.formatted(
-                    context,
-                    "Internal error: cannot assign to %s.",
-                    lhs.getType().toString()
-            );
-        }
-        
-        ICalcValue value = evaluate(rhs, context);
-        context.setVariable(lhs.getLiteralValue().getValue(), value);
-        return value;
-    }
-    
-    
-    private ExecResult execute(Context aContext) {
-        try {
-            Context current = aContext;
-            Context parent;
-            ExecResult result;
-            ICalcValue method;
-            List<? extends ICalcValue> arguments;
-
-            while (true) {
-                result = current.execute(this);
-
-                if (result.getNewContext() != null) {
-                    current = result.getNewContext();
-                }
-
-                switch (result.getExitCode()) {
-                    case CONTINUE:
-                        break;
-
-                    case ERROR:
-                    case EXIT:
-                    case YIELD:
-                        return result;
-
-                    case RETURN:
-                        parent = current.getParent();
-                        if (parent == null) {
-                            return result;
-                        }
-                        parent.setReturnedValue(result.getReturnValue());
-                        current = parent;
-                        break;
-
-                    case CALL:
-                        method = result.getReturnValue();
-                        arguments = result.getArguments();
-                        current = method.apply(current, arguments);
-                        break;
-
-                    default:
-                        throw new AssertionError(String.format(
-                                "Unknown exit code: %s.",
-                                result.getExitCode().toString()
-                        ));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ExecResult(
-                    ExecResult.ExitCodes.ERROR,
-                    aContext,
-                    new ErrorValue(
-                            String.format(
-                                    "Internal error (%s: %s).",
-                                    e.getClass().getSimpleName(),
-                                    e.getMessage()
-                            ),
-                            aContext,
-                            e
-                    )
-            );
-        }
-    }
-    
     public ICalcValue eval(ICalcValue value) {
-        Context current = value.eval(Context.createRoot(defaultEnvironment));
-        ICalcValue returnValue = null;
-        boolean continueEval = true;
+        return eval(value, (Process.IListener)null);
+    }
+    
+    public ICalcValue eval(ICalcValue value, Process.IListener listener) {
+        Process process = startEvalProcess(value, listener);
         
-        while (continueEval) {
-            ExecResult result = execute(current);
-            
-            if (result.getNewContext() != null) {
-                current = result.getNewContext();
-            }
-            
-            switch (result.getExitCode()) {
-                case EXIT:
-                case ERROR:
-                    returnValue = result.getReturnValue();
-                    continueEval = false;
-                    break;
+        while (process.evalSynchronous()) {
+            if (process.getState() == Process.State.BREAKED) {
+                System.err.println("Breakpoint reached.");
             }
         }
         
-        return returnValue;
+        return process.getReturnedValue();
+    }
+    
+    public Process startEvalProcess(ICalcValue value, Process.IListener listener) {
+        Context current = value.eval(Context.createRoot(defaultEnvironment));
+        Process process = new Process(this, current);
+        process.addListener(processListener);
+        if (listener != null) {
+            process.addListener(listener);
+        }
+        fireOnProcessStarted(process);
+        return process;
+    }
+    
+    public Process startEvalProcess(ICalcValue value) {
+        return startEvalProcess(value, null);
     }
  
     
@@ -229,13 +81,55 @@ public class Interpreter {
     public Context applySpecial(ICalcValue value, Context ctx, List<? extends ICalcValue> arguments) {
         return value.applySpecial(ctx, arguments);
     }
-
-
+    
+    
     public void serializeEnvironment(String fileName) throws IOException {
         defaultEnvironment.serialize(fileName);
     }
     
     public void deserializeEnvironment(String fileName) throws IOException, ClassNotFoundException {
         defaultEnvironment = Environment.deserialize(fileName);
+    }
+    
+    
+    private final Process.IListener processListener = new Process.Adapter() {
+        @Override
+        public boolean onInterrupt(Process process, SymbolValue name, List<? extends ICalcValue> arguments) {
+            if (Objects.equals(name.getValue(), "inspect")) {
+                ICalcValue value = arguments.get(0);
+                GUIManager.getInstance().showValue(Interpreter.this, null, value);
+            }
+            return false;
+        }
+    };
+    
+    
+    private final ListenerCollection<IListener> listeners = new ListenerCollection(new IListener[] {});
+
+    public boolean addListener(IListener e) {
+        return listeners.add(e);
+    }
+    
+    public boolean remove(IListener o) {
+        return listeners.remove(o);
+    }
+    
+    private void fireOnProcessStarted(Process process) {
+        listeners.handleEvent(listener -> {
+            listener.onProcessStarted(this, process);
+        });
+    }
+    
+    
+    public interface IListener {
+        public void onProcessStarted(Interpreter intr, Process process);
+    }
+    
+    
+    public static class Adapter implements IListener {
+        @Override
+        public void onProcessStarted(Interpreter intr, Process process) {
+            // Do nothing.
+        }
     }
 }

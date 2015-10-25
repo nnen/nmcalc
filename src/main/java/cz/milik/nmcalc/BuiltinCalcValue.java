@@ -15,14 +15,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  *
  * @author jan
  */
 public abstract class BuiltinCalcValue extends CalcValue {
+    
+    private static Environment builtins;
+    
+    public static Environment getBuiltins() {
+        if (builtins == null) {
+            builtins = SingletonEnvironment.get(UUID.fromString("8ba3a256-5abb-4168-8416-873a1b11022c"));
+            
+            initialize(builtins);
+            MathBuiltins.initialize(builtins);
+        }
+        return builtins;
+    }
+    
     
     public static void initialize(Environment env) {
         env.setVariable("let", LET);
@@ -69,6 +84,10 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(ENV);
         
         env.setVariable(HELP);
+        
+        env.setVariable(DEBUG_BREAK);
+        env.setVariable(INTERRUPT);
+        env.setVariable(INSPECT);
     }
     
     
@@ -100,6 +119,15 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 return Monad.nothing();
         }
     }
+    
+    
+    /*
+    protected Object writeReplace()
+        throws java.io.ObjectStreamException
+    {
+        return new BuiltinProxy(null, getName());
+    }
+    */
     
     
     public static class QuoteValue extends BuiltinCalcValue {
@@ -158,13 +186,30 @@ public abstract class BuiltinCalcValue extends CalcValue {
 
         @Override
         public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
-            ListValue argNames = (ListValue)arguments.get(1);
-            return String.format(
-                    "def %s(%s) %s",
-                    arguments.get(0).getExprRepr(ctx),
-                    StringUtils.join(", ", argNames.getValues().stream().map(arg -> arg.getExprRepr(ctx))),
-                    arguments.get(2).getExprRepr(ctx)
-            );
+            switch (arguments.size()) {
+                case 3: {
+                    ListValue argNames = (ListValue)arguments.get(1);
+                    return String.format(
+                            "def %s(%s) %s",
+                            arguments.get(0).getExprRepr(ctx),
+                            StringUtils.join(", ", argNames.getValues().stream().map(arg -> arg.getExprRepr(ctx))),
+                            arguments.get(2).getExprRepr(ctx)
+                    );
+                }
+                case 4: {
+                    ListValue argNames = (ListValue)arguments.get(1);
+                    return String.format(
+                            "def %s(%s) %s %s",
+                            arguments.get(0).getExprRepr(ctx),
+                            StringUtils.join(", ", argNames.getValues().stream().map(arg -> arg.getExprRepr(ctx))),
+                            arguments.get(2).getExprRepr(ctx),
+                            arguments.get(3).getExprRepr(ctx)
+                    );
+                }
+                default:
+                    return super.getApplyRepr(arguments, ctx);
+            }
+            
         }
         
         @Override
@@ -174,15 +219,27 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
         @Override
         public Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
-            if (!checkArguments(ctx, arguments, 3)) {
+            if (!checkArguments(ctx, arguments, 3, 4)) {
                 return ctx;
             }
             
             SymbolValue symbol = asSymbol(arguments.get(0), ctx);
             Collection<? extends SymbolValue> argumentNames = asSymbolList(arguments.get(1), ctx);
-            ICalcValue body = arguments.get(2);
             
-            FunctionValue fn = new FunctionValue(symbol, body, ctx, argumentNames);
+            ICalcValue help = null;
+            ICalcValue body;
+            if (arguments.size() == 3) {
+                body = arguments.get(2);
+            } else {
+                help = arguments.get(2);
+                body = arguments.get(3);
+            }
+            
+            
+            FunctionValue fn = new FunctionValue(symbol, body, ctx.getEnvironment(), argumentNames);
+            if (help != null) {
+                fn.setHelp(help.getStringValue(ctx));
+            }
             ctx.setVariable(symbol.getValue(), fn);
             ctx.setReturnedValue(fn);
             
@@ -517,11 +574,12 @@ public abstract class BuiltinCalcValue extends CalcValue {
             return head.apply(ctx, tail);
         }
         
+        /*
         @Override
         protected Context unapplyInner(Context ctx, ICalcValue value) throws NMCalcException {
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     
                     switch (pc) {
@@ -532,6 +590,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 }
             };
         }
+        */
     };
     
     public static final BuiltinCalcValue UNAPPLY = new BuiltinCalcValue() {
@@ -644,19 +703,19 @@ public abstract class BuiltinCalcValue extends CalcValue {
             
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     
                     switch (pc) {
                         case 0:
                             setPC(pc + 1);
-                            return eval(interpreter, condition);
+                            return eval(process.getInterpreter(), condition);
                         case 1:
                             setPC(pc + 1);
                             if (getReturnedValue().getBooleanValue()) {
-                                return eval(interpreter, trueExpr);
+                                return eval(process.getInterpreter(), trueExpr);
                             } else {
-                                return eval(interpreter, falseExpr);
+                                return eval(process.getInterpreter(), falseExpr);
                             }
                         case 2:
                             return ctxReturn(getReturnedValue());
@@ -709,7 +768,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 private final Environment originalEnv = getEnvironment();
                 
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     ICalcValue returned;
                     ICalcValue body;
@@ -722,7 +781,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                         if (returned.isSome()) {
                             body = matches.getItem(pc - 1).getItem(1);
                             setPC(matches.length() + 1);
-                            return ctxContinue(interpreter.eval(body, this));
+                            return ctxContinue(process.getInterpreter().eval(body, this));
                         }
                         setPC(pc + 1);
                         return match(matches.getItem(pc), matchedValue);
@@ -731,7 +790,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                         if (returned.isSome()) {
                             body = matches.getItem(pc - 1).getItem(1);
                             setPC(matches.length() + 1);
-                            return ctxContinue(interpreter.eval(body, this));
+                            return ctxContinue(process.getInterpreter().eval(body, this));
                         }
                         setPC(matches.length() + 2);
                         return ctxReturn(CalcValue.nothing());
@@ -790,7 +849,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     
                     if (pc < arguments.size()) {
@@ -834,7 +893,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
             
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     
                     switch (pc) {
@@ -867,7 +926,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
             
             return new Context(ctx, ctx.getEnvironment(), this) {
                 @Override
-                public ExecResult execute(Interpreter interpreter) {
+                public ExecResult execute(Process process) {
                     int pc = getPC();
                     
                     switch (pc) {
@@ -1283,4 +1342,108 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
+    
+    public static final BuiltinCalcValue DEBUG_BREAK = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "debug_break"; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0, 1)) {
+                return ctx;
+            }
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                private final ICalcValue result = 
+                        (arguments.size() > 0) ? arguments.get(0) : CalcValue.nothing();
+                
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    if (pc == 0) {
+                        setPC(pc + 1);
+                        return ctxBreak();
+                    } else if (pc == 1) {
+                        return ctxReturn(result);
+                    }
+                    return invalidPC(pc);
+                }
+            };
+        }
+    };
+    
+    public static final BuiltinCalcValue INTERRUPT = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "interrupt"; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 2)) {
+                return ctx;
+            }
+            
+            SymbolValue name = CalcValue.asSymbol(arguments.get(0), ctx, 1);
+            List<ICalcValue> args = CalcValue.asList(arguments.get(1), ctx, 2);
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    
+                    if (pc == 0) {
+                        process.setInterrupt(name, args);
+                        setPC(pc + 1);
+                        return new ExecResult(
+                                ExecResult.ExitCodes.INTERRUPT,
+                                this,
+                                null
+                        );
+                    } else if (pc == 1) {
+                        setPC(pc + 1);
+                        ICalcValue returned = process.getInterruptReturn();
+                        return ctxReturn((returned == null) ? CalcValue.nothing() : returned);
+                    }
+                    
+                    return invalidPC(pc);
+                }
+            };
+        }
+    };
+
+    public static final BuiltinCalcValue INSPECT = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "inspect"; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 1)) {
+                return ctx;
+            }
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    
+                    switch (pc) {
+                        case 0:
+                            setPC(pc + 1);
+                            process.setInterrupt(
+                                    (SymbolValue)CalcValue.makeSymbol("inspect"),
+                                    Collections.singletonList(arguments.get(0)));
+                            return new ExecResult(
+                                    ExecResult.ExitCodes.INTERRUPT,
+                                    this,
+                                    null
+                            );
+                        case 1:
+                            setPC(pc + 1);
+                            return ctxReturn(CalcValue.nothing());
+                    }
+                    
+                    return invalidPC(pc);
+                }
+            };
+        }
+    };
 }

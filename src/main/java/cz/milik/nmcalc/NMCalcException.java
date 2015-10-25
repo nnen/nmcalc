@@ -52,4 +52,8 @@ public class NMCalcException extends Exception {
         context = null;
     }
     
+    
+    public static NMCalcException format(Context ctx, String fmt, Object... args) {
+        return new NMCalcException(String.format(fmt, args), ctx);
+    }
 }

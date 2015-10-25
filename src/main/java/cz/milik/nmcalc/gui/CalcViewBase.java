@@ -6,6 +6,10 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.Interpreter;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.utils.IMonad;
+import cz.milik.nmcalc.utils.Monad;
 import javax.swing.JPanel;
 
 /**
@@ -14,14 +18,15 @@ import javax.swing.JPanel;
  */
 public class CalcViewBase extends JPanel implements ICalcValueView {
 
-    private ICalcValue model;
+    private IMonad<ICalcValue> model = Monad.nothing();
     
     @Override
     public void setModel(ICalcValue model) {
-        ICalcValue oldModel = this.model;
-        this.model = model;
-        if (oldModel != model) {
-            onModelChanged(oldModel, model);
+        IMonad<ICalcValue> oldModel = this.model;
+        this.model = Monad.maybe(model);
+        
+        if (oldModel.unwrap() != model) {
+            onModelChanged(oldModel.unwrap(), model);
         }
     }
     
@@ -30,8 +35,39 @@ public class CalcViewBase extends JPanel implements ICalcValueView {
     }
     
     @Override
-    public ICalcValue getModel() {
+    public IMonad<ICalcValue> getModel() {
         return model;
+    }
+    
+    
+    private Interpreter interpreter;
+
+    public Interpreter getInterpreter() {
+        return interpreter;
+    }
+
+    public void setInterpreter(Interpreter interpreter) {
+        this.interpreter = interpreter;
+    }
+    
+    
+    private ReprContext reprContext;
+
+    public ReprContext getReprContext() {
+        return reprContext;
+    }
+
+    public void setReprContext(ReprContext reprContext) {
+        this.reprContext = reprContext;
+    }
+    
+    
+    public CalcViewBase(Interpreter interpreter, ReprContext reprContext) {
+        this.interpreter = interpreter;
+        this.reprContext = reprContext;
+    }
+    
+    public CalcViewBase() {
     }
     
 }

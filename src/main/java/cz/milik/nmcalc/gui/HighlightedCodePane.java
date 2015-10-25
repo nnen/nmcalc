@@ -121,4 +121,9 @@ public class HighlightedCodePane extends JTextPane {
         }
     }
     
+    public void append(String text) {
+        scanner.reset(text);
+        append(text, new TokenList(scanner.readTokens()));
+    }
+    
 }
