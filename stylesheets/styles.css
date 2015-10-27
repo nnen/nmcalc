@@ -121,6 +121,34 @@ header ul {
   width:270px;
 }
 
+header a.downloadButton {
+  display: block;
+
+  height:40px;
+
+  padding:0;
+  margin-bottom: 10px;
+
+  background: #efe;
+  background: -moz-linear-gradient(top, #aaeeaa 0%, #77dd77 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#aaeeaa), color-stop(100%,#77dd77));
+  background: -webkit-linear-gradient(top, #aaeeaa 0%,#77dd77 100%);
+  background: -o-linear-gradient(top, #aaeeaa 0%,#77dd77 100%);
+  background: -ms-linear-gradient(top, #aaeeaa 0%,#77dd77 100%);
+  background: linear-gradient(top, #aaeeaa 0%,#77dd77 100%);
+
+  line-height: 40px;
+  text-align: center;
+
+  color: #020;
+  font-weight: bold;
+
+  border-radius:5px;
+  border:1px solid #77dd77;
+  box-shadow:inset #fff 0 1px 0, inset rgba(0,0,0,0.03) 0 -1px 0;
+  width:270px;
+}
+
 header li {
   width:89px;
   float:left;
