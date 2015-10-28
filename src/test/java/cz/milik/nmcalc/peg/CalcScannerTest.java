@@ -34,7 +34,12 @@ public class CalcScannerTest {
     }
 
     protected void assertTokens(List<Token> tokens, Token.Types... types) {
-        System.err.println(tokens.toString());
+        //System.err.println(tokens.toString());
+        if (types.length != tokens.size()) {
+            for (int i = 0; i < tokens.size(); i++) {
+                System.err.println(String.format("   [%d] %s", i, tokens.get(i).toString()));
+            }
+        }
         assertEquals(types.length, tokens.size());
         for (int i = 0; i < types.length; i++) {
             assertEquals(types[i], tokens.get(i).getType());
@@ -42,7 +47,7 @@ public class CalcScannerTest {
     }
     
     protected void assertTokens(String input, Token.Types... types) {
-        scanner.reset(input);
+        scanner.reset(input, "<string>");
         List<Token> tokens = scanner.readTokens();
         assertTokens(tokens, types);
     }
@@ -63,6 +68,8 @@ public class CalcScannerTest {
         assertTokens("123.", Token.Types.FLOAT);
         assertTokens("123.456", Token.Types.FLOAT);
         assertTokens("0.456", Token.Types.FLOAT);
+        
+        assertTokens("1_234", Token.Types.FLOAT);
     }
     
     @Test
@@ -84,5 +91,12 @@ public class CalcScannerTest {
         //assertTokens("0x", Token.Types.UNKNOWN);
         //assertTokens("0x123456789abcdefg", Token.Types.UNKNOWN);
     }
-}
 
+
+    @Test
+    public void testColonVsCons() {
+        assertTokens("::", Token.Types.CONS);
+        assertTokens(":", Token.Types.COLON);
+        assertTokens(": : :", Token.Types.COLON, Token.Types.COLON, Token.Types.COLON);
+    }
+}

@@ -5,8 +5,9 @@
  */
 package cz.milik.nmcalc.gui;
 
-import cz.milik.nmcalc.parser.Scanner;
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.peg.CalcScanner;
+import cz.milik.nmcalc.peg.IScanner;
 import cz.milik.nmcalc.peg.ITokenSequence;
 import cz.milik.nmcalc.peg.TokenList;
 import java.awt.Color;
@@ -32,7 +33,7 @@ public class HighlightedCodePane extends JTextPane {
     private MutableAttributeSet unknownToken = new SimpleAttributeSet();
     
     private ITokenSequence tokens;
-    private Scanner scanner = new Scanner();
+    private IScanner scanner = new CalcScanner();
     
     {
         StyleConstants.setBold(defaultStyle, false);
@@ -102,7 +103,7 @@ public class HighlightedCodePane extends JTextPane {
     
     public void updateSyntax() {
         if (!getText().isEmpty()) {
-            scanner.reset(getText());
+            scanner.reset(getText(), "<string>");
             tokens = new TokenList(scanner.readTokens());
             setSyntax(tokens);
         }
@@ -122,7 +123,7 @@ public class HighlightedCodePane extends JTextPane {
     }
     
     public void append(String text) {
-        scanner.reset(text);
+        scanner.reset(text, "<string>");
         append(text, new TokenList(scanner.readTokens()));
     }
     

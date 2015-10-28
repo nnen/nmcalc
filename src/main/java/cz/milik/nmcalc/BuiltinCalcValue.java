@@ -13,6 +13,7 @@ import cz.milik.nmcalc.utils.StringUtils;
 import cz.milik.nmcalc.utils.Utils;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,6 +78,9 @@ public abstract class BuiltinCalcValue extends CalcValue {
         env.setVariable(GT);
         env.setVariable(GTE);
         
+        env.setVariable(LSHIFT);
+        env.setVariable(RSHIFT);
+        
         env.setVariable(HEX);
         env.setVariable(OCT);
         env.setVariable(BIN);
@@ -115,6 +119,12 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 return Monad.just(MULT);
             case SLASH:
                 return Monad.just(DIV);
+            
+            case LSHIFT:
+                return Monad.just(LSHIFT);
+            case RSHIFT:
+                return Monad.just(RSHIFT);
+                
             default:
                 return Monad.nothing();
         }
@@ -1225,6 +1235,24 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
+    
+    public static final BuiltinCalcValue LSHIFT = new BinaryOperator("lshift", "<<") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b, Context ctx) throws NMCalcException {
+            BigInteger aInt = a.getDecimalValue().toBigInteger();
+            BigInteger shift = b.getDecimalValue().toBigInteger();
+            return CalcValue.make(aInt.shiftLeft(shift.intValue()));
+        }
+    };
+    
+    public static final BuiltinCalcValue RSHIFT = new BinaryOperator("rshift", ">>") {
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b, Context ctx) throws NMCalcException {
+            BigInteger aInt = a.getDecimalValue().toBigInteger();
+            BigInteger shift = b.getDecimalValue().toBigInteger();
+            return CalcValue.make(aInt.shiftRight(shift.intValue()));
+        }
+    };
     
     
     public static class ReprFlagUnaryOperator extends UnaryOperator {

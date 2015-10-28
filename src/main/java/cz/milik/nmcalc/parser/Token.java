@@ -36,6 +36,8 @@ public class Token {
         ASTERISK('*'),
         DOUBLE_ASTERISK,
         SLASH('/'),
+        LSHIFT,
+        RSHIFT,
         
         LPAR('('),
         RPAR(')'),

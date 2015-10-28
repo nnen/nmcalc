@@ -11,7 +11,6 @@ import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.text.Font;
 import javax.swing.JTextPane;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;

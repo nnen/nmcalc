@@ -75,9 +75,9 @@ public class FunctionValue extends CalcValue {
         sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
         sb.append(") ");
         if (getHelp().isPresent()) {
-            sb.append("\"");
+            sb.append("\n  \"");
             sb.append(getHelp().get());
-            sb.append("\" ");
+            sb.append("\"\n  ");
         }
         sb.append(functionBody.getExprRepr(ctx));
         return sb.toString();

@@ -61,12 +61,39 @@ public class InterpreterTest {
     }
  
     @Test
+    public void testEvaluateComp() {
+        testEvaluate("1 == 2", CalcValue.make(false));
+        testEvaluate("2 == 2", CalcValue.make(true));
+        
+        testEvaluate("2 > 1", CalcValue.make(true));
+        testEvaluate("1 > 2", CalcValue.make(false));
+        testEvaluate("1 < 2", CalcValue.make(true));
+        testEvaluate("2 < 1", CalcValue.make(false));
+    }
+    
+    @Test
+    public void testEvaluateMatch() {
+        testEvaluate("match [] { case first :: rest -> first }", CalcValue.nothing());
+        testEvaluate("match [1, 2, 3] { case first :: rest -> first }", CalcValue.make(1));
+        //testEvaluate(
+        //        "match [1, 2, 3] { case first :: rest -> rest }",
+        //        CalcValue.list(CalcValue.make(2), CalcValue.make(3)));
+        testEvaluate("match [] { case [] -> true }", CalcValue.make(true));
+    }
+    
+    @Test
+    public void testFactorialFunction() {
+        testEvaluate("(def fact(x) if x > 1 then x * fact(x - 1) else 1)(5)", CalcValue.make(120));
+    }
+    
+    @Test
     public void testEvaluateDef() {
         ICalcValue result = interpreter.evaluate("def fn(x) x * x");
         assertNotNull(result);
         System.err.println(result.getClass().getSimpleName());
         System.err.println(result.getRepr(ReprContext.getDefault()));
-        assertTrue(result instanceof FunctionValue);
+        assertThat(result, org.hamcrest.CoreMatchers.instanceOf(FunctionValue.class));
+        //assertTrue(result instanceof FunctionValue);
         
         FunctionValue fn = (FunctionValue)result;
         assertEquals(

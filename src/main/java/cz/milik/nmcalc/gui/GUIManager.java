@@ -30,8 +30,8 @@ public class GUIManager {
                 
                 ValueViewForm frame = new ValueViewForm();
                 frame.setComponent(component);
-        
-                frame.setFocusableWindowState(false);
+                
+                //frame.setFocusableWindowState(false);
                 frame.setVisible(true);
             }
         });

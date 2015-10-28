@@ -52,6 +52,7 @@ public class DictionaryView extends CalcViewBase {
         
         for (Pair<ICalcValue, ICalcValue> pair : pairs) {
             c.fill = GridBagConstraints.HORIZONTAL;
+            c.anchor = GridBagConstraints.FIRST_LINE_START;
             c.weightx = 0f;
             c.gridx = 0;
             c.gridy = row;
@@ -62,6 +63,7 @@ public class DictionaryView extends CalcViewBase {
             add(key, c);
             
             c.fill = GridBagConstraints.HORIZONTAL;
+            c.anchor = GridBagConstraints.FIRST_LINE_START;
             c.weightx = 1.0f;
             c.gridx = 1;
             c.gridy = row;

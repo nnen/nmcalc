@@ -44,7 +44,7 @@ public class SimpleForm extends javax.swing.JFrame {
      */
     public SimpleForm() {
         initComponents();
-        
+         
         /*
         File envFile = new File(getEnvironmentFile());
         if (envFile.exists()) {

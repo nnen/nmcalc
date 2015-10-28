@@ -8,6 +8,7 @@ package cz.milik.nmcalc.gui;
 import cz.milik.nmcalc.ICalcValue;
 import cz.milik.nmcalc.Interpreter;
 import cz.milik.nmcalc.ReprContext;
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -16,7 +17,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 
@@ -36,7 +39,20 @@ public class InspectorView extends CalcViewBase {
     }
     
     protected void initializeComponent() {
-        setLayout(new GridBagLayout());
+        //setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
+        setPreferredSize(new Dimension(300, 400));
+        
+        splitPane = new JSplitPane();
+        splitPane.setBorder(null);
+        splitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        splitPane.setResizeWeight(1.0);
+        splitPane.setDividerLocation(0.5 * splitPane.getHeight());
+        add(splitPane, BorderLayout.CENTER);
+        
+        upperPanel = new JPanel();
+        upperPanel.setLayout(new BorderLayout());
+        splitPane.setTopComponent(upperPanel);
         
         classLabel = new JLabel();
         classLabelConstraints = new GridBagConstraints();
@@ -46,7 +62,8 @@ public class InspectorView extends CalcViewBase {
         classLabelConstraints.gridx = 0;
         classLabelConstraints.gridx = 0;
         classLabelConstraints.anchor = GridBagConstraints.PAGE_START;
-        add(classLabel, classLabelConstraints);
+        upperPanel.add(classLabel, BorderLayout.PAGE_START);
+        // add(classLabel, classLabelConstraints);
         
         innerViewConstraints = new GridBagConstraints();
         innerViewConstraints.fill = GridBagConstraints.BOTH;
@@ -69,11 +86,16 @@ public class InspectorView extends CalcViewBase {
         //add(helpPane, helpPaneConstraints);
         
         helpScrollPane.setViewportView(helpPane);
-        add(helpScrollPane, helpPaneConstraints);
+        splitPane.setBottomComponent(helpScrollPane);
+        //add(helpScrollPane, helpPaneConstraints);
         
         setSize(300, 400);
     }
     
+    
+    private JSplitPane splitPane;
+    
+    private JPanel upperPanel;
     
     private JLabel classLabel;
     private GridBagConstraints classLabelConstraints;
@@ -95,7 +117,9 @@ public class InspectorView extends CalcViewBase {
         }
         this.innerView = innerView;
         if (this.innerView != null) {
-            add(this.innerView, innerViewConstraints);
+            upperPanel.add(this.innerView, BorderLayout.CENTER);
+            //add(this.innerView, BorderLayout.CENTER);
+            //add(this.innerView, innerViewConstraints);
         }
     }
     
@@ -134,6 +158,9 @@ public class InspectorView extends CalcViewBase {
     }
 
     
+    
+    
+    /*
     @Override
     public Dimension getPreferredSize() {
         int width = 1;
@@ -153,5 +180,6 @@ public class InspectorView extends CalcViewBase {
         
         return new Dimension(width, height);
     }
+    */
     
 }

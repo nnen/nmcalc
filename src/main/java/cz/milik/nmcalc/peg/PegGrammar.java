@@ -6,9 +6,7 @@
 package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.parser.Token;
-import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +49,12 @@ public class PegGrammar<T> {
     
     protected PegParser<T> s(String name, String ctxName) {
         return s(name).named(ctxName);
+    }
+    
+    protected PegParser<Token> keyword(String value) {
+        return s(Token.Types.IDENTIFIER).test(
+                t -> t.getValue().equals(value),
+                "Expected keyword \"" + value + "\".");
     }
     
     protected PegParser<Token> token() { return TOKEN_PARSER; }
