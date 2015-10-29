@@ -3,8 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
 
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ICalcValueAnnotation;
+import cz.milik.nmcalc.ICalcValueVisitor;
+import cz.milik.nmcalc.NMCalcException;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.SerializationContext;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,8 +47,22 @@ public abstract class ProxyValue implements ICalcValue {
     public ProxyValue() {
         this.target = CalcValue.nothing();
     }
-    
 
+    @Override
+    public Context bitwiseAnd(ICalcValue other, Context ctx) {
+        return target.bitwiseAnd(other, ctx);
+    }
+
+    @Override
+    public Context bitwiseOr(ICalcValue other, Context ctx) {
+        return target.bitwiseOr(other, ctx);
+    }
+
+    @Override
+    public Context bitwiseXor(ICalcValue other, Context ctx) {
+        return target.bitwiseXor(other, ctx);
+    }
+    
     @Override
     public boolean serialize(SerializationContext ctx) throws NMCalcException {
         return getTarget().serialize(ctx);

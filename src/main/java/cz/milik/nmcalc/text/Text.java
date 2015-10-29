@@ -5,7 +5,7 @@
  */
 package cz.milik.nmcalc.text;
 
-import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import java.util.ArrayList;
 import java.util.Collections;

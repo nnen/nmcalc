@@ -3,8 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
 
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ICalcValueAnnotation;
+import cz.milik.nmcalc.ICalcValueVisitor;
+import cz.milik.nmcalc.NMCalcException;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
 import java.util.List;
@@ -64,6 +70,10 @@ public interface ICalcValue extends java.io.Serializable {
     public ICalcValue multiply(ICalcValue other, Context ctx);
     public ICalcValue divide(ICalcValue other, Context ctx);
     
+    public Context bitwiseAnd(ICalcValue other, Context ctx);
+    public Context bitwiseOr(ICalcValue other, Context ctx);
+    public Context bitwiseXor(ICalcValue other, Context ctx);
+    
     public boolean hasLength();
     public int length();
     public ICalcValue getItem(int index);
@@ -92,3 +102,4 @@ public interface ICalcValue extends java.io.Serializable {
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context);
     
 }
+

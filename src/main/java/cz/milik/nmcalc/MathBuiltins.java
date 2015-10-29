@@ -5,6 +5,8 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;

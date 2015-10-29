@@ -5,6 +5,16 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.StringValue;
+import cz.milik.nmcalc.values.MapValue;
+import cz.milik.nmcalc.values.ListValue;
+import cz.milik.nmcalc.values.FunctionValue;
+import cz.milik.nmcalc.values.ReprCtxValue;
+import cz.milik.nmcalc.values.MacroValue;
+import cz.milik.nmcalc.values.SymbolValue;
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.loader.CalcLoader;
 import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IMonad;
@@ -1037,6 +1047,53 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     }
     
+    public static abstract class CollectBuiltin2 extends BuiltinCalcValue {
+        private final String name;
+        private final String operator;
+
+        public CollectBuiltin2(String name, String operator) {
+            this.name = name;
+            this.operator = operator;
+        }
+        
+        @Override
+        public String getName() { return name; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (arguments.size() < 1) {
+                ctx.setReturnedError(
+                        "%s expects at least one argument.",
+                        getName()
+                );
+                return ctx;
+            }
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                private ICalcValue result = arguments.get(0);
+                
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    
+                    if (this.getReturnedValue() != null) {
+                        result = this.getReturnedValue();
+                    }
+                    
+                    
+                    
+                    /*
+                    if (pc < (arguments.size() - 1)) {
+                        
+                    }
+                            */
+                    
+                    return invalidPC(pc);
+                }
+            };
+        }
+    }
+    
     public static abstract class UnaryFunction extends BuiltinCalcValue {
         private final String name;
         
@@ -1251,6 +1308,19 @@ public abstract class BuiltinCalcValue extends CalcValue {
             BigInteger aInt = a.getDecimalValue().toBigInteger();
             BigInteger shift = b.getDecimalValue().toBigInteger();
             return CalcValue.make(aInt.shiftRight(shift.intValue()));
+        }
+    };
+    
+    
+    public static final BuiltinCalcValue BAND = new BinaryOperator("band", "&") {
+        @Override
+        public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+            return super.apply(ctx, arguments); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+        @Override
+        protected ICalcValue applyInner(ICalcValue a, ICalcValue b, Context ctx) throws NMCalcException {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
     

@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.FloatValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;

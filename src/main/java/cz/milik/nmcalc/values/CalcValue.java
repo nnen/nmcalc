@@ -3,9 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
 
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
+import cz.milik.nmcalc.CalcAnnotation;
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ICalcValueAnnotation;
+import cz.milik.nmcalc.ListBuilder;
+import cz.milik.nmcalc.NMCalcException;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
@@ -373,6 +381,37 @@ public abstract class CalcValue implements ICalcValue {
                 "Cannot divide %s.",
                 getRepr(ctx.getReprContext())
         );
+    }
+
+    
+    @Override
+    public Context bitwiseAnd(ICalcValue other, Context ctx) {
+        ctx.setReturnedError(
+                "Cannot perform bitwise AND on %s and %s.",
+                getRepr(ctx.getReprContext()),
+                other.getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
+
+    @Override
+    public Context bitwiseOr(ICalcValue other, Context ctx) {
+        ctx.setReturnedError(
+                "Cannot perform bitwise OR on %s and %s.",
+                getRepr(ctx.getReprContext()),
+                other.getRepr(ctx.getReprContext())
+        );
+        return ctx;
+    }
+
+    @Override
+    public Context bitwiseXor(ICalcValue other, Context ctx) {
+        ctx.setReturnedError(
+                "Cannot perform bitwise XOR on %s and %s.",
+                getRepr(ctx.getReprContext()),
+                other.getRepr(ctx.getReprContext())
+        );
+        return ctx;
     }
     
     

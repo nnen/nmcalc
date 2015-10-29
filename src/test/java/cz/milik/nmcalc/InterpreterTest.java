@@ -5,6 +5,9 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.FunctionValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

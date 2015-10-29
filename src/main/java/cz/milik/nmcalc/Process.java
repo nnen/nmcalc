@@ -5,6 +5,10 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.SymbolValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.ListenerCollection;
 import java.util.List;
 

@@ -5,8 +5,8 @@
  */
 package cz.milik.nmcalc.gui;
 
-import cz.milik.nmcalc.ErrorValue;
-import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.Interpreter;
 import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;

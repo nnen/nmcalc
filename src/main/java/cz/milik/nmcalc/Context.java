@@ -5,6 +5,9 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.IMonad;
 import java.math.MathContext;
 import java.util.ArrayList;

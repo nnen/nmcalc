@@ -6,7 +6,7 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.BuiltinCalcValue;
-import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.utils.IMonad;

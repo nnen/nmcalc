@@ -5,6 +5,8 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.ListValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

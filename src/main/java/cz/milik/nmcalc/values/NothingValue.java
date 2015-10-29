@@ -3,35 +3,32 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
+
+import cz.milik.nmcalc.ICalcValueVisitor;
+import cz.milik.nmcalc.ReprContext;
 
 /**
  *
  * @author jan
  */
-public class SomeValue extends CalcValue {
-    
-    private final ICalcValue value;
+public class NothingValue extends CalcValue {
 
-    
-    public SomeValue(ICalcValue value) {
-        this.value = value;
-    }
-
+    public static final NothingValue INSTANCE = new NothingValue();
     
     @Override
-    public boolean isSome() { return true; }
-
-    
-    @Override
-    public ICalcValue unwrap(Context ctx) {
-        return value;
+    public boolean isNothing() {
+        return true;
     }
-    
     
     @Override
     public String getRepr(ReprContext ctx) {
-        return "some(" + value.getRepr(ctx) + ")";
+        return "nothing";
+    }
+    
+    @Override
+    public String getExprRepr(ReprContext ctx) {
+        return getRepr(ctx);
     }
     
     @Override

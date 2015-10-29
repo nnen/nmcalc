@@ -5,8 +5,8 @@
  */
 package cz.milik.nmcalc.gui;
 
-import cz.milik.nmcalc.ICalcValue;
-import cz.milik.nmcalc.MapValue;
+import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.values.MapValue;
 import cz.milik.nmcalc.utils.Pair;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

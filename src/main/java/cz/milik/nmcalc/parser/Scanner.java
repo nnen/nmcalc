@@ -5,7 +5,7 @@
  */
 package cz.milik.nmcalc.parser;
 
-import cz.milik.nmcalc.FloatValue;
+import cz.milik.nmcalc.values.FloatValue;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayDeque;

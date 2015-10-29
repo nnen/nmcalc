@@ -3,8 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
 
+import cz.milik.nmcalc.CalcAnnotation;
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ICalcValueVisitor;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.parser.Token;
 import java.math.BigDecimal;
 import java.util.Objects;

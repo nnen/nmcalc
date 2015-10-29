@@ -5,6 +5,17 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.SomeValue;
+import cz.milik.nmcalc.values.FloatValue;
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.StringValue;
+import cz.milik.nmcalc.values.ListValue;
+import cz.milik.nmcalc.values.FunctionValue;
+import cz.milik.nmcalc.values.NothingValue;
+import cz.milik.nmcalc.values.SymbolValue;
+import cz.milik.nmcalc.values.BoolValue;
+import cz.milik.nmcalc.values.ICalcValue;
+
 /**
  *
  * @author jan

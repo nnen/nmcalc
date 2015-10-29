@@ -5,6 +5,9 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.values.ErrorValue;
+import cz.milik.nmcalc.values.SymbolValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.gui.GUIManager;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;

@@ -5,9 +5,9 @@
  */
 package cz.milik.nmcalc.gui;
 
-import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.Interpreter;
-import cz.milik.nmcalc.MapValue;
+import cz.milik.nmcalc.values.MapValue;
 import cz.milik.nmcalc.ReprContext;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;

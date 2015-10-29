@@ -6,13 +6,13 @@
 package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.BuiltinCalcValue;
-import cz.milik.nmcalc.CalcValue;
-import cz.milik.nmcalc.FloatValue;
-import cz.milik.nmcalc.ICalcValue;
+import cz.milik.nmcalc.values.CalcValue;
+import cz.milik.nmcalc.values.FloatValue;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ListBuilder;
 import cz.milik.nmcalc.MathBuiltins;
-import cz.milik.nmcalc.NothingValue;
-import cz.milik.nmcalc.SymbolValue;
+import cz.milik.nmcalc.values.NothingValue;
+import cz.milik.nmcalc.values.SymbolValue;
 import cz.milik.nmcalc.ast.ASTBuilder;
 import cz.milik.nmcalc.ast.ASTNode;
 import cz.milik.nmcalc.parser.Scanner;

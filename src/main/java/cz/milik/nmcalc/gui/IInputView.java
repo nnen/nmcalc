@@ -5,7 +5,7 @@
  */
 package cz.milik.nmcalc.gui;
 
-import cz.milik.nmcalc.ErrorValue;
+import cz.milik.nmcalc.values.ErrorValue;
 import cz.milik.nmcalc.peg.ITokenSequence;
 
 /**

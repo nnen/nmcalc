@@ -3,8 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc;
+package cz.milik.nmcalc.values;
 
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.Environment;
+import cz.milik.nmcalc.ExecResult;
+import cz.milik.nmcalc.ICalcValueVisitor;
+import cz.milik.nmcalc.Process;
+import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
