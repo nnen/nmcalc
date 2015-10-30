@@ -140,11 +140,13 @@ public abstract class PegParser<T> {
     
     public PegParser<List<T>> repeat(PegParser<?> glue, Class<T> cls) {
         return concatAny(
-                this.named("__items"),
-                concat(
-                        glue.ignore(),
-                        this.named("__items")
-                ).repeat()
+                concatAny(
+                    this.named("__items"),
+                    concat(
+                            glue.ignore(),
+                            this.named("__items")
+                    ).repeat()
+                ).maybe()
         ).map(ctx -> {
             return ctx.getNamedValues("__items", cls);
         });
