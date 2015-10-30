@@ -12,8 +12,8 @@ import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.text.TextLoc;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
-import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +50,7 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
-    public void printDebug(PrintStream out, ReprContext ctx) {
+    public void printDebug(TextWriter out, ReprContext ctx) {
         getTarget().printDebug(out, ctx);
     }
     

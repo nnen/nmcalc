@@ -8,6 +8,7 @@ package cz.milik.nmcalc.values;
 import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.text.TextWriter;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -87,6 +88,33 @@ public class ErrorValue extends CalcValue {
         }
         return "error(\"" + getMessage() + "\")";
     }
+    
+    @Override
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        out.headline(3, "Message");
+        out.par(getMessage());
+        
+        if (getOrigin() != null) {
+            out.headline(3, "Stack Trace");
+            out.append(getOrigin(), ctx);
+        }
+        
+        /*
+        int ctxIndex = 0;
+        Context current = getOrigin();
+        while (current != null) {
+            out.startPar();
+            if (current.getMethod() != null) {
+                out.monospace("[%d] %d %s", ctxIndex++, current.getPC(), current.getMethod().getExprRepr(ctx));
+            } else {
+                out.monospace("[%d] %d", ctxIndex++, current.getPC());
+            }
+            out.end();
+            current = current.getParent();
+        }
+                */
+    }
+    
     
     @Override
     public boolean isError() {

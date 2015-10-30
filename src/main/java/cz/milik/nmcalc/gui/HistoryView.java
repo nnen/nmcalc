@@ -10,6 +10,7 @@ import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.text.ITextElement;
 import cz.milik.nmcalc.text.MarkupParser;
+import cz.milik.nmcalc.text.TextWriter;
 import java.awt.Rectangle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -119,6 +120,12 @@ public class HistoryView extends javax.swing.JPanel {
         if (value.isHelp()) {
             //appendHelp(expr, value.get)
             appendHelp(expr, value.getRepr(getReprContext()));
+        } else if (value.isError()) {
+            TextWriter out = new TextWriter();
+            value.printDebug(out, getReprContext());
+            append(">>> ");
+            append(expr + "\n", lhsStyle, lhsParStyle);
+            HyperTextPane.append(outputPane.getStyledDocument(), out.getResult());
         } else {
             append(expr, value.getRepr(getReprContext()));
         }

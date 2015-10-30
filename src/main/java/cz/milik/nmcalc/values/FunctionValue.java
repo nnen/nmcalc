@@ -11,6 +11,7 @@ import cz.milik.nmcalc.ExecResult;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.Process;
 import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
@@ -90,6 +91,7 @@ public class FunctionValue extends CalcValue {
         return sb.toString();
     }
     
+    
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
         final List<SymbolValue> argNames = getArgumentNames();
@@ -116,7 +118,23 @@ public class FunctionValue extends CalcValue {
                     default:
                         return invalidPC(pc);
                 }
-            }  
+            }
+            
+            @Override
+            protected void printDescription(TextWriter out, ReprContext ctx) {
+                SymbolValue name = FunctionValue.this.getFunctionName();
+                List<SymbolValue> argNames = FunctionValue.this.getArgumentNames();
+                if (name == null) {
+                    out.plain("executing anonymous function");
+                } else {
+                    out.plain("executing function ");
+                    out.monospace(
+                            "%s(%s)",
+                            name.getValue(),
+                            StringUtils.join(", ", argNames.stream().map(s -> s.getValue()))
+                    );
+                }
+            }   
         };
     }
     

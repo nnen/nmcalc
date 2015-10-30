@@ -30,6 +30,11 @@ public class MarkupStyle {
             }
 
             @Override
+            public AttributeSet visitBlockQuote(Text.BlockQuote blockQuote, MarkupStyle ctx) {
+                return null;
+            }
+            
+            @Override
             public AttributeSet visitCodeBlock(Text.CodeBlock codeBlock, MarkupStyle ctx) {
                 return null;
             }
@@ -95,6 +100,11 @@ public class MarkupStyle {
                 return null;
             }
 
+            @Override
+            public AttributeSet visitBlockQuote(Text.BlockQuote blockQuote, MarkupStyle ctx) {
+                return null;
+            }
+            
             @Override
             public AttributeSet visitCodeBlock(Text.CodeBlock codeBlock, MarkupStyle ctx) {
                 return null;

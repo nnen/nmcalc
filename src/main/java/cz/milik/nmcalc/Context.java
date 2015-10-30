@@ -5,6 +5,8 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.text.IPrintable;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.values.ErrorValue;
 import cz.milik.nmcalc.values.CalcValue;
 import cz.milik.nmcalc.values.ICalcValue;
@@ -17,7 +19,7 @@ import java.util.List;
  *
  * @author jan
  */
-public class Context {
+public class Context implements IPrintable {
     
     private final Context parent;
     
@@ -123,6 +125,42 @@ public class Context {
     public void setVariable(String aName, ICalcValue aValue) {
         getEnvironment().setVariable(aName, aValue);
     }
+
+    
+    @Override
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        Context current = this;
+        Environment lastEnv = null;
+        int index = 0;
+        
+        while (current != null) {
+            Environment env = current.getEnvironment();
+            
+            out.startPar();
+            out.monospace("[%d] (%d) ", index, current.getPC());
+            current.printDescription(out, ctx);
+            out.end();
+            
+            if (env != lastEnv) {
+                out.startBlockQuote();
+                env.printDebug(out, ctx);
+                out.end();
+                lastEnv = env;
+            }
+            
+            current = current.getParent();
+            index++;
+        }
+    }
+    
+    protected void printDescription(TextWriter out, ReprContext ctx) {
+        out.plain("executing ");
+        if (getMethod() == null) {
+            out.monospace(getClass().getName());
+        } else {
+            out.monospace(getMethod().getExprRepr(ctx));
+        }
+    }
     
     
     public static Context createRoot() { return createRoot(new Environment()); }
@@ -199,6 +237,11 @@ public class Context {
                     this,
                     getReturnedValue()
             );
+        }
+        
+        @Override
+        protected void printDescription(TextWriter out, ReprContext ctx) {
+            out.plain("root");
         }
         
     }
@@ -279,6 +322,13 @@ public class Context {
         }
         
         protected abstract ExecResult innerApply(ICalcValue function, List<ICalcValue> arguments);
+
+        
+        @Override
+        protected void printDescription(TextWriter out, ReprContext ctx) {
+            out.plain("applying ");
+            out.monospace(getMethod().getExprRepr(ctx));
+        }
         
     }
     

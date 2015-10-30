@@ -14,9 +14,9 @@ import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.text.TextLoc;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
-import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -160,8 +160,8 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     @Override
-    public void printDebug(PrintStream out, ReprContext ctx) {
-        out.print(getRepr(ctx));
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        out.monospace(getRepr(ctx));
     }
     
     

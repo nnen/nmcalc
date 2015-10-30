@@ -5,6 +5,8 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.text.IPrintable;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
@@ -28,7 +30,7 @@ import java.util.Map;
  *
  * @author jan
  */
-public class Environment implements Serializable {
+public class Environment implements Serializable, IPrintable {
     
     private final Environment parent;
     
@@ -131,4 +133,20 @@ public class Environment implements Serializable {
             Utils.closeSilently(in);
         }
     }
+
+    
+    @Override
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        List<String> names = new ArrayList(variables.keySet());
+        names.sort(Comparator.naturalOrder());
+        
+        for (String name : names) {
+            ICalcValue value = variables.get(name);
+            
+            out.startPar();
+            out.monospace("%s: %s", name, value.getRepr(ctx));
+            out.end();
+        }
+    }
+    
 }

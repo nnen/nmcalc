@@ -37,7 +37,7 @@ public abstract class Text implements IText {
     public void addChild(ITextElement child) {
         throw new UnsupportedOperationException();
     }
-
+    
     
     @Override
     public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
@@ -49,8 +49,11 @@ public abstract class Text implements IText {
         return new PlainText(value);
     }
     
-    public static Monospace monospace(String value) {
-        return new Monospace(value);
+    public static Monospace monospace(String value, Object... args) {
+        if (args.length == 0) {
+            return new Monospace(value);
+        }
+        return new Monospace(String.format(value, args));
     }
     
     public static Italic italic(String value) {
@@ -77,6 +80,10 @@ public abstract class Text implements IText {
         return paragraph(plain(value));
     }
     
+    public static BlockQuote blockQuote(ITextElement... elements) {
+        return new BlockQuote(elements);
+    }
+    
     public static CodeBlock codeBlock(String value) {
         CodeBlock result = new CodeBlock();
         result.addChild(plain(value));
@@ -93,6 +100,10 @@ public abstract class Text implements IText {
     
     public static Headline headline(String value, int level) {
         return new Headline(value, level);
+    }
+    
+    public static Link link(String text, Consumer<Link> action) {
+        return new Link(text, action);
     }
     
     
@@ -139,9 +150,25 @@ public abstract class Text implements IText {
     
     
     public static class Paragraph extends ParentElement {
+        public Paragraph(ITextElement... children) {
+            super(children);
+        }
+        
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
             return visitor.visitParagraph(this, ctx);
+        }
+    }
+    
+    
+    public static class BlockQuote extends ParentElement {
+        public BlockQuote(ITextElement... children) {
+            super(children);
+        }
+
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitBlockQuote(this, ctx);
         }
     }
     
@@ -280,11 +307,24 @@ public abstract class Text implements IText {
     
     
     public abstract static class AbstractLink extends PlainText {
+        public AbstractLink() {
+        }
+
+        public AbstractLink(String text) {
+            super(text);
+        }
+        
         public abstract void activateLink();
     }
     
     
     public static class Link extends AbstractLink {
+        public Link(String text, Consumer<Link> callback) {
+            super(text);
+            this.callback = callback;
+        }
+        
+        
         private Consumer<Link> callback;
         
         public Consumer<Link> getCallback() {

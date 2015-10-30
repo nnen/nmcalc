@@ -15,6 +15,8 @@ public interface ITextElementVisitor<C, R> {
     
     public R visitParagraph(Text.Paragraph paragraph, C ctx);
     
+    public R visitBlockQuote(Text.BlockQuote blockQuote, C ctx);
+    
     public R visitCodeBlock(Text.CodeBlock codeBlock, C ctx);
     
     public R visitHeadline(Text.Headline headline, C ctx);

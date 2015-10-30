@@ -34,6 +34,8 @@ public class HyperTextPane extends JTextPane {
     
     public static final MutableAttributeSet PARAGRAPH_BLOCK = new SimpleAttributeSet();
     
+    public static final MutableAttributeSet BLOCK_QUOTE = new SimpleAttributeSet();
+    
     public static final MutableAttributeSet CODE_BLOCK = new SimpleAttributeSet();
     public static final MutableAttributeSet CODE_BLOCK_BLOCK = new SimpleAttributeSet();
     
@@ -62,6 +64,8 @@ public class HyperTextPane extends JTextPane {
         StyleConstants.setAlignment(PARAGRAPH_BLOCK, StyleConstants.ALIGN_JUSTIFIED);
         StyleConstants.setSpaceBelow(PARAGRAPH_BLOCK, 12);
         
+        StyleConstants.setLeftIndent(BLOCK_QUOTE, 12);
+        
         StyleConstants.setFontFamily(CODE_BLOCK, "consolas");
         
         StyleConstants.setAlignment(CODE_BLOCK_BLOCK, StyleConstants.ALIGN_LEFT);
@@ -71,6 +75,28 @@ public class HyperTextPane extends JTextPane {
         StyleConstants.setItalic(ITALIC, true);
         
         StyleConstants.setBold(BOLD, true);
+    }
+    
+    
+    public static int append(StyledDocument doc, String text, AttributeSet charAttrs, AttributeSet parAttrs) {
+        int offset = doc.getLength();
+        try {
+            doc.insertString(offset, text, null);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        int length = doc.getLength() - offset;
+        if (charAttrs != null) {
+            doc.setCharacterAttributes(offset, length, charAttrs, true);
+        }
+        if (parAttrs != null) {
+            doc.setCharacterAttributes(offset, length, parAttrs, true);
+        }
+        return length;
+    }
+    
+    public static int append(StyledDocument doc, String text) {
+        return append(doc, text, null, null);
     }
     
     public static void append(StyledDocument doc, ITextElement element) {
@@ -97,6 +123,18 @@ public class HyperTextPane extends JTextPane {
                 }
                 int length = doc.getLength() - offset;
                 doc.setParagraphAttributes(offset, length, PARAGRAPH_BLOCK, false);
+                return null;
+            }
+            
+            @Override
+            public Object visitBlockQuote(Text.BlockQuote blockQuote, Object ctx) {
+                int offset = doc.getLength();
+                for (ITextElement child : blockQuote.getChildren()) {
+                    child.visit(this, ctx);
+                }
+                append(doc, "\n");
+                int length = doc.getLength() - offset;
+                doc.setParagraphAttributes(offset, length, BLOCK_QUOTE, true);
                 return null;
             }
             
