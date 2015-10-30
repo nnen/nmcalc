@@ -11,8 +11,9 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
-import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.text.TextLoc;
 import cz.milik.nmcalc.utils.LinkedList;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -49,18 +50,33 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
+    public void printDebug(PrintStream out, ReprContext ctx) {
+        getTarget().printDebug(out, ctx);
+    }
+    
+    @Override
+    public void setTextLoc(TextLoc loc) {
+        getTarget().setTextLoc(loc);
+    }
+    
+    @Override
+    public Optional<TextLoc> getTextLoc() {
+        return getTarget().getTextLoc();
+    }
+    
+    @Override
     public Context bitwiseAnd(ICalcValue other, Context ctx) {
-        return target.bitwiseAnd(other, ctx);
+        return getTarget().bitwiseAnd(other, ctx);
     }
 
     @Override
     public Context bitwiseOr(ICalcValue other, Context ctx) {
-        return target.bitwiseOr(other, ctx);
+        return getTarget().bitwiseOr(other, ctx);
     }
 
     @Override
     public Context bitwiseXor(ICalcValue other, Context ctx) {
-        return target.bitwiseXor(other, ctx);
+        return getTarget().bitwiseXor(other, ctx);
     }
     
     @Override

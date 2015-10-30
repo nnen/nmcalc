@@ -6,7 +6,6 @@
 package cz.milik.nmcalc.values;
 
 import cz.milik.nmcalc.Environment;
-import cz.milik.nmcalc.values.ICalcValue;
 
 /**
  *

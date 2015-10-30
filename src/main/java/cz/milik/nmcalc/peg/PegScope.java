@@ -81,6 +81,9 @@ public class PegScope {
             }
             values = new LinkedList();
         }
+        if (other.values == null) {
+            return;
+        }
         values.addAll(other.values);
     }
     

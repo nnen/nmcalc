@@ -233,6 +233,17 @@ public class ParseResult<T> {
         );
     }
     
+    public <U> ParseResult<U> makeError() {
+        return new ParseResult<>(
+                getContext(),
+                true,
+                getRest(),
+                getCause(),
+                getErrorMessage(),
+                getErrorToken()
+        );
+    }
+    
     
     public <U> ParseResult<U> parse(PegParser<U> parser, IPegContext ctx) throws PegException
     {

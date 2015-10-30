@@ -5,7 +5,6 @@
  */
 package cz.milik.nmcalc.values;
 
-import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.BuiltinCalcValue.QuoteValue;
 import cz.milik.nmcalc.CalcAnnotation;
 import cz.milik.nmcalc.Context;
@@ -14,8 +13,10 @@ import cz.milik.nmcalc.ListBuilder;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
+import cz.milik.nmcalc.text.TextLoc;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -26,8 +27,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -160,6 +159,22 @@ public abstract class CalcValue implements ICalcValue {
         return getExprRepr(ctx) + "(" + StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr(ctx))) + ")";
     }
     
+    @Override
+    public void printDebug(PrintStream out, ReprContext ctx) {
+        out.print(getRepr(ctx));
+    }
+    
+    
+    @Override
+    public Optional<TextLoc> getTextLoc() {
+        return getAnnotation(TextLoc.class);
+    }
+    
+    @Override
+    public void setTextLoc(TextLoc loc) {
+        addAnnotation(loc);
+    }
+    
     
     @Override
     public boolean isError() {
@@ -205,7 +220,7 @@ public abstract class CalcValue implements ICalcValue {
         annotations = annotations.add(value);
         return this;
     }
-
+    
     @Override
     public <T extends ICalcValueAnnotation> Optional<T> getAnnotation(Class<T> cls) {
         return annotations.mapFirst(item -> {

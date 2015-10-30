@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.utils.Pair;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,7 +137,31 @@ public abstract class PegParser<T> {
     public PegParser<List<T>> repeat() {
         return new RepeatParser(this);
     }
-
+    
+    public PegParser<List<T>> repeat(PegParser<?> glue, Class<T> cls) {
+        return concatAny(
+                this.named("__items"),
+                concat(
+                        glue.ignore(),
+                        this.named("__items")
+                ).repeat()
+        ).map(ctx -> {
+            return ctx.getNamedValues("__items", cls);
+        });
+    }
+    
+    public PegParser<List<T>> repeat(PegParser<?> prefix, PegParser<?> glue, PegParser<?> postfix, Class<T> cls) {
+        return flatten(concat(
+                prefix.ignore(),
+                this.repeat(glue, cls),
+                postfix.ignore()
+        ));
+    }
+    
+    public static <T> PegParser<List<T>> flatten(PegParser<List<List<T>>> parser) {
+        return new FlattenParser(parser);
+    }
+    
     public PegParser<T> test(Predicate<T> condition, String description) {
         ConditionalParser p = new ConditionalParser(this, condition);
         p.setShortDescription(description);
@@ -171,12 +196,38 @@ public abstract class PegParser<T> {
         return new SequenceCtxParser(parsers);
     }
     
+    public static <U, V> PegParser<Pair<U, V>> pair(PegParser<U> first, PegParser<V> second) {
+        return new PairParser(first, second);
+    }
+    
+    public <U> PegParser<Pair<T, U>> pair(PegParser<U> second) {
+        return new PairParser(this, second);
+    }
+    
+    public static <U> PegParser<U> value(U val) {
+        return new ValueParser(val);
+    }
+    
     public PegParser<T> end() {
         return new EndParser(this);
     }
     
     public <U> PegParser<U> ignore() {
         return new IgnoreParser(this);
+    }
+    
+    
+    public static class ValueParser<T> extends PegParser<T> {
+        private final T value;
+        
+        public ValueParser(T value) {
+            this.value = value;
+        }
+        
+        @Override
+        public ParseResult<T> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
+            return new ParseResult(ctx, value, input);
+        }
     }
     
     
@@ -282,6 +333,106 @@ public abstract class PegParser<T> {
         }
 
     }
+    
+    public static class RepeatJoinedParser<T> extends UnaryParser<List<T>, T> {
+
+        private final PegParser<?> prefix;
+        private final PegParser<?> postfix;
+        private final PegParser<?> glueParser;
+        
+        public RepeatJoinedParser(PegParser<T> anInnerParser, PegParser<?> glue) {
+            super(anInnerParser);
+            this.glueParser = glue;
+            this.prefix = null;
+            this.postfix = null;
+        }
+        
+        public RepeatJoinedParser(PegParser<T> anInnerParser, PegParser<?> aPrefix, PegParser<?> glue, PegParser<?> aPostfix) {
+            super(anInnerParser);
+            this.glueParser = glue;
+            this.prefix = aPrefix;
+            this.postfix = aPostfix;
+        }
+        
+        @Override
+        public ParseResult<List<T>> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
+            List<T> result = new ArrayList();
+            ITokenSequence rest = input;
+            
+            ParseResult<?> delimiter = null;
+            if (prefix != null) {
+                delimiter = prefix.parse(rest, ctx);
+                if (!delimiter.isSuccess()) {
+                    return delimiter.castFailure();
+                }
+                rest = delimiter.getRest();
+            }
+            
+            ParseResult<T> item = innerParse(rest, ctx);
+            if (item.isError()) {
+                return item.castFailure();
+            } else if (!item.isSuccess()) {
+                return new ParseResult(ctx, result, rest);
+            }
+            result.add(item.getValue());
+            
+            while (true) {
+                ParseResult<?> glue = glueParser.parse(rest, ctx);
+                if (glue.isError()) {
+                    return glue.castFailure();
+                } else if (!glue.isSuccess()) {
+                    break;
+                }
+                
+                item = innerParse(glue.getRest(), ctx);
+                if (item.isError()) {
+                    return item.castFailure();
+                } else if (!item.isSuccess()) {
+                    return item.makeError();
+                }
+                
+                result.add(item.getValue());
+                rest = item.getRest();
+            }
+            
+            if (postfix != null) {
+                delimiter = postfix.parse(rest, ctx);
+                if (delimiter.isError()) {
+                    return delimiter.castFailure();
+                } else if (!delimiter.isSuccess()) {
+                    return delimiter.makeError();
+                }
+                rest = delimiter.getRest();
+            }
+            
+            return new ParseResult(ctx, result, rest);
+        }
+        
+    }
+    
+    public static class FlattenParser<T> extends UnaryParser<List<T>, List<List<T>>> {
+
+        public FlattenParser(PegParser<List<List<T>>> anInnerParser) {
+            super(anInnerParser);
+        }
+        
+        @Override
+        public ParseResult<List<T>> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
+            ParseResult<List<List<T>>> parsed = innerParse(input, ctx);
+            if (!parsed.isSuccess()) {
+                return parsed.castFailure();
+            }
+            
+            List<T> result = new ArrayList();
+            for (List<T> part : parsed.getValue()) {
+                result.addAll(part);
+            }
+            
+            return new ParseResult(ctx, result, parsed.getRest());
+        }
+        
+    }
+    
 
     public static class ConditionalParser<T> extends UnaryParser<T, T> {
 
@@ -381,6 +532,45 @@ public abstract class PegParser<T> {
         public ParseResult<T> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
             return innerParse(input, ctx).ignore();
         }
+    }
+    
+    
+    public static abstract class BinaryParser<T, U, V> extends PegParser<T> {
+        
+        protected final PegParser<U> firstParser;
+        protected final PegParser<V> secondParser;
+        
+        public BinaryParser(PegParser<U> firstParser, PegParser<V> secondParser) {
+            this.firstParser = firstParser;
+            this.secondParser = secondParser;
+        }
+        
+    }
+    
+    public static class PairParser<U, V> extends BinaryParser<Pair<U, V>, U, V> {
+
+        public PairParser(PegParser<U> firstParser, PegParser<V> secondParser) {
+            super(firstParser, secondParser);
+        }
+
+        @Override
+        public ParseResult<Pair<U, V>> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
+            ParseResult<U> first = firstParser.parse(input, ctx);
+            if (!first.isSuccess()) {
+                return first.castFailure();
+            }
+            
+            ParseResult<V> second = secondParser.parse(first.getRest(), ctx);
+            if (!second.isSuccess()) {
+                return second.makeError();
+            }
+            
+            return new ParseResult(
+                    ctx,
+                    Pair.of(first.getValue(), second.getValue()),
+                    second.getRest());
+        }
+        
     }
     
     

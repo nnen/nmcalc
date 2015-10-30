@@ -111,4 +111,9 @@ public class InterpreterTest {
                 fn.getFunctionBody());
                 */
     }
+    
+    @Test
+    public void testEvaluateCall() {
+        testEvaluate("(def mkadd(x) def addr(y) x + y)(1)(2)", CalcValue.make(3));
+    }
 }

@@ -11,7 +11,9 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
+import cz.milik.nmcalc.text.TextLoc;
 import cz.milik.nmcalc.utils.LinkedList;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,10 @@ public interface ICalcValue extends java.io.Serializable {
     public String getRepr(ReprContext ctx);
     public String getExprRepr(ReprContext ctx);
     public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx);
+    public void printDebug(PrintStream out, ReprContext ctx);
+    
+    public Optional<TextLoc> getTextLoc();
+    public void setTextLoc(TextLoc loc);
     
     public boolean isError();
     public boolean isSpecialForm();

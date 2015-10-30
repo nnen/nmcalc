@@ -8,7 +8,6 @@ package cz.milik.nmcalc.values;
 import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -24,7 +23,7 @@ public class ErrorValue extends CalcValue {
     public String getMessage() {
         return message;
     }
-
+    
     
     private final Context origin;
     
