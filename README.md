@@ -1,5 +1,9 @@
 # NMCalc v0.5 dev [![Build Status](https://travis-ci.org/nnen/nmcalc.svg?branch=master)](https://travis-ci.org/nnen/nmcalc)
-NMCalc is primarily a desktop calculator application.  It is very young project, but already has useful functions.
+NMCalc is primarily a desktop calculator application.  It is very young
+project, but already has useful functions.
+
+![NMCalc Screenshot](nmcalc.png)
+
 
 ## Usage
 The application window is divided into three parts (from top to bottom):
@@ -8,7 +12,19 @@ the input window (the middle one), the result is shown as you type in the
 result window (the bottom one).  To commit the expression into the history
 window, press `Ctrl + Enter`.
 
-![NMCalc Screenshot](nmcalc.png)
+
+## Feedback
+To report any issues, make requests or submit suggestions for improvement,
+please use either [github issue tracking system](https://github.com/nnen/nmcalc/issues),
+or send an email to <jan.milik@gmail.com>.  I will be glad for any feedback.
+
+
+## Documentation
+Documentation consists of this readme and a built-in help system, such as it
+is. Type `help()` into the input field and press `Ctrl + Enter` to get more
+information about the application, or type `help(help)` and press `Ctrl + Enter`
+to get more information about the `help()` function itself.
+
 
 ## Features
 
