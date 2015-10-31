@@ -114,6 +114,7 @@ public class InterpreterTest {
     
     @Test
     public void testEvaluateCall() {
+        testEvaluate("(def foo() 7)()", CalcValue.make(7));
         testEvaluate("(def mkadd(x) def addr(y) x + y)(1)(2)", CalcValue.make(3));
     }
 }

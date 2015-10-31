@@ -5,7 +5,7 @@
  */
 package cz.milik.nmcalc.values;
 
-import cz.milik.nmcalc.Environment;
+import cz.milik.nmcalc.BuiltinCalcValue;
 
 /**
  *
@@ -13,28 +13,28 @@ import cz.milik.nmcalc.Environment;
  */
 public class BuiltinProxy extends ProxyValue {
     
-    private transient Environment env;
-    
-    private String name;
+    private final int builtinId;
 
     
-    public BuiltinProxy(Environment env, String name) {
-        this.env = env;
-        this.name = name;
+    public BuiltinProxy(int builtinId) {
+        this.builtinId = builtinId;
     }
-
+    
     
     @Override
     public ICalcValue getTarget() {
-        ICalcValue target = super.getTarget();
-        
-        if (target.isNothing()) {
-            env.getVariable(name).bind(var -> {
-                setTarget(var);
-            });
+        ICalcValue value = BuiltinCalcValue.getBuiltinSet().get(builtinId);
+        if (value == null) {
+            return CalcValue.nothing();
         }
-        
-        return super.getTarget();
+        return value;
+    }
+    
+    
+    protected Object readResolve()
+        throws java.io.ObjectStreamException
+    {
+        return getTarget();
     }
     
 }

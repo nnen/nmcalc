@@ -21,6 +21,7 @@ import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
 import cz.milik.nmcalc.utils.Utils;
+import cz.milik.nmcalc.values.BuiltinProxy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -30,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -51,57 +54,18 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     
     public static void initialize(Environment env) {
-        env.setVariable("let", LET);
-        env.setVariable(DEF);
-        env.setVariable(DEFMACRO);
-        
-        env.setVariable(IF_ELSE);
-        env.setVariable(MATCH);
-        env.setVariable(SEQUENCE);
-        
-        env.setVariable(GETATTR);
-        env.setVariable(SETATTR);
-        
-        env.setVariable(LEN);
-        
-        env.setVariable(SOME);
-        
-        env.setVariable(QUOTE);
-        env.setVariable(LIST);
-        env.setVariable(CONS);
-        env.setVariable(HEAD);
-        env.setVariable(TAIL);
-        
-        env.setVariable(DICT);
-        env.setVariable(GET_ITEM);
-        env.setVariable(SET_ITEM);
-        
-        env.setVariable(APPLY);
-        env.setVariable(UNAPPLY);
-        env.setVariable(EVAL);
-        
-        env.setVariable(SUBSTITUTE);
-        
-        env.setVariable(EQUALS);
-        env.setVariable(LT);
-        env.setVariable(LTE);
-        env.setVariable(GT);
-        env.setVariable(GTE);
-        
-        env.setVariable(LSHIFT);
-        env.setVariable(RSHIFT);
-        
-        env.setVariable(HEX);
-        env.setVariable(OCT);
-        env.setVariable(BIN);
-        
-        env.setVariable(ENV);
-        
-        env.setVariable(HELP);
-        
-        env.setVariable(DEBUG_BREAK);
-        env.setVariable(INTERRUPT);
-        env.setVariable(INSPECT);
+        env.setVariables(builtinSet);
+    }
+    
+    
+    private int builtinId = -1;
+
+    public int getBuiltinId() {
+        return builtinId;
+    }
+    
+    public void setBuiltinId(int builtinId) {
+        this.builtinId = builtinId;
     }
     
     
@@ -110,7 +74,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     @Override
     public String getRepr(ReprContext ctx) {
         //return "$" + getName();
-        return "<builtin " + getName() + ">";
+        return "<builtin " + Integer.toString(getBuiltinId()) + " " + getName() + ">";
     }
     
     @Override
@@ -141,13 +105,19 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
-    /*
     protected Object writeReplace()
         throws java.io.ObjectStreamException
     {
-        return new BuiltinProxy(null, getName());
+        if (getBuiltinId() < 0) {
+            Logger.getLogger(BuiltinCalcValue.class.getName()).log(
+                    Level.WARNING,
+                    String.format(
+                            "Builtin value %s has invalid id (%d) and cannot be properly serialized.",
+                            this,
+                            this.getBuiltinId()));
+        }
+        return new BuiltinProxy(getBuiltinId());
     }
-    */
     
     
     public static class QuoteValue extends BuiltinCalcValue {
@@ -177,10 +147,10 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
-    public static final ICalcValue LET = new BuiltinCalcValue() {
+    public static final BuiltinCalcValue LET = new BuiltinCalcValue() {
         @Override
         public String getName() { return "let"; }
-
+        
         @Override
         public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
             if (!checkArguments(ctx, arguments, 2)) {
@@ -1244,7 +1214,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
             
-    public static final ICalcValue ADD = new CollectBuiltin("+") {
+    public static final BuiltinCalcValue ADD = new CollectBuiltin("+") {
         
         @Override
         public String getName() { return "+"; }
@@ -1256,7 +1226,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
-    public static final ICalcValue SUB = new CollectBuiltin("-") {
+    public static final BuiltinCalcValue SUB = new CollectBuiltin("-") {
         
         @Override
         public String getName() { return "-"; }
@@ -1268,7 +1238,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
-    public static final ICalcValue MULT = new CollectBuiltin("*") {
+    public static final BuiltinCalcValue MULT = new CollectBuiltin("*") {
         
         @Override
         public String getName() { return "*"; }
@@ -1280,7 +1250,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
     
-    public static final ICalcValue DIV = new CollectBuiltin("/") {
+    public static final BuiltinCalcValue DIV = new CollectBuiltin("/") {
         
         @Override
         public String getName() { return "/"; }
@@ -1345,6 +1315,30 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static final BuiltinCalcValue BIN = new ReprFlagUnaryOperator(ReprContext.Flags.BINARY, "bin");
     
     
+    public static final BuiltinCalcValue UUID_PAIR = new BuiltinCalcValue() {
+        @Override
+        public String getName() {
+            return "uuid_pair";
+        }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0)) {
+                return ctx;
+            }
+            
+            UUID id = UUID.randomUUID();
+            
+            ctx.setReturnedValue(CalcValue.list(
+                    CalcValue.make(BigInteger.valueOf(id.getMostSignificantBits())),
+                    CalcValue.make(BigInteger.valueOf(id.getLeastSignificantBits()))
+            ));
+            
+            return ctx;
+        }
+    };
+    
+    
     public static final BuiltinCalcValue ENV = new BuiltinCalcValue() {
 
         @Override
@@ -1380,6 +1374,34 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
     };
             
+    
+    public static final BuiltinCalcValue REPR = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "repr"; }
+        
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "repr(value)",
+                    "Returns a string representation of `value`."
+            );
+        }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 1)) {
+                return ctx;
+            }
+            
+            ICalcValue val = arguments.get(0);
+            
+            ctx.setReturnedValue(
+                    CalcValue.make(val.getRepr(ctx.getReprContext()))
+            );
+            
+            return ctx;
+        }
+    };
     
     public static final BuiltinCalcValue HELP = new BuiltinCalcValue() {
         
@@ -1507,7 +1529,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
             };
         }
     };
-
+    
     public static final BuiltinCalcValue INSPECT = new BuiltinCalcValue() {
         @Override
         public String getName() { return "inspect"; }
@@ -1544,4 +1566,76 @@ public abstract class BuiltinCalcValue extends CalcValue {
             };
         }
     };
+
+    
+    private static final BuiltinSet builtinSet = new BuiltinSet();
+
+    public static BuiltinSet getBuiltinSet() {
+        return builtinSet;
+    }
+    
+    static {    
+        builtinSet.register(LET);
+        builtinSet.register(DEF);
+        builtinSet.register(DEFMACRO);
+        
+        builtinSet.register(IF_ELSE);
+        builtinSet.register(MATCH);
+        builtinSet.register(SEQUENCE);
+        
+        builtinSet.register(GETATTR);
+        builtinSet.register(SETATTR);
+        
+        builtinSet.register(LEN);
+        
+        builtinSet.register(SOME);
+        
+        builtinSet.register(QUOTE);
+        builtinSet.register(LIST);
+        builtinSet.register(CONS);
+        builtinSet.register(HEAD);
+        builtinSet.register(TAIL);
+        
+        builtinSet.register(DICT);
+        builtinSet.register(GET_ITEM);
+        builtinSet.register(SET_ITEM);
+        
+        builtinSet.register(APPLY);
+        builtinSet.register(UNAPPLY);
+        builtinSet.register(EVAL);
+        
+        builtinSet.register(SUBSTITUTE);
+        
+        builtinSet.register(EQUALS);
+        builtinSet.register(LT);
+        builtinSet.register(LTE);
+        builtinSet.register(GT);
+        builtinSet.register(GTE);
+        
+        builtinSet.register(ADD);
+        builtinSet.register(SUB);
+        builtinSet.register(MULT);
+        builtinSet.register(DIV);
+        
+        builtinSet.register(LSHIFT);
+        builtinSet.register(RSHIFT);
+        
+        builtinSet.register(HEX);
+        builtinSet.register(OCT);
+        builtinSet.register(BIN);
+        
+        builtinSet.register(UUID_PAIR);
+        
+        builtinSet.register(ENV);
+        
+        builtinSet.register(REPR);
+        builtinSet.register(HELP);
+        
+        builtinSet.register(DEBUG_BREAK);
+        builtinSet.register(INTERRUPT);
+        builtinSet.register(INSPECT);
+    }
+
 }
+
+
