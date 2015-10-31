@@ -22,6 +22,7 @@ public class Token {
         IDENTIFIER,
         SYMBOL,
         STRING,
+        BUILTIN,
         
         EQUALS,
         EQUALS_COMP,
@@ -48,6 +49,7 @@ public class Token {
         QUOTE('\''),
         COMMA(','),
         COLON(':'),
+        SEMICOLON(';'),
         
         KW_DEF("def"),
         KW_IF("if"),

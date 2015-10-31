@@ -52,8 +52,29 @@ public class Environment implements Serializable, IPrintable {
         return Monad.nothing();
     }
     
-    public void setVariable(String name, ICalcValue value) {
+    public boolean setVariableLocal(String name, ICalcValue value) {
+        if (!variables.containsKey(name)) {
+            return false;
+        }
         variables.put(name, value);
+        return true;
+    }
+    
+    public void defVariableLocal(String name, ICalcValue value) {
+        variables.put(name, value);
+    }
+    
+    public void setVariable(String name, ICalcValue value) {
+        Environment current = this;
+        
+        while (current != null) {
+            if (current.setVariableLocal(name, value)) {
+                return;
+            }
+            current = current.getParent();
+        }
+        
+        defVariableLocal(name, value);
     }
     
     public void setVariable(BuiltinCalcValue value) {

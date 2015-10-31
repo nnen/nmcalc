@@ -74,7 +74,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     @Override
     public String getRepr(ReprContext ctx) {
         //return "$" + getName();
-        return "<builtin " + Integer.toString(getBuiltinId()) + " " + getName() + ">";
+        return "#<" + Integer.toString(getBuiltinId()) + " " + getName() + ">";
     }
     
     @Override
@@ -643,6 +643,45 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
+    public static final BuiltinCalcValue DO = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "do"; }
+        
+        @Override
+        public boolean isSpecialForm() { return true; }
+        
+        @Override
+        protected Context applySpecialInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    
+                    if (pc == 0) {
+                        setReturnedValue(CalcValue.nothing());
+                    }
+                    
+                    if (pc > 0) {
+                        if (getReturnedValue().isError()) {
+                            return ctxReturn(getReturnedValue());
+                        }
+                    }
+                    
+                    if (pc < arguments.size()) {
+                        ICalcValue arg = arguments.get(pc);
+                        setPC(pc + 1);
+                        return ctxContinue(arg.eval(this));
+                    } else if (pc == arguments.size()) {
+                        setPC(pc + 1);
+                        return ctxReturn(getReturnedValue());
+                    } else {
+                        return invalidPC(pc);
+                    }
+                }
+            };
+        }
+    };
+            
     public static final BuiltinCalcValue SUBSTITUTE = new BuiltinCalcValue() {
 
         @Override
@@ -1579,6 +1618,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         builtinSet.register(DEF);
         builtinSet.register(DEFMACRO);
         
+        builtinSet.register(DO);
         builtinSet.register(IF_ELSE);
         builtinSet.register(MATCH);
         builtinSet.register(SEQUENCE);

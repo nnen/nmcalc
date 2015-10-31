@@ -25,6 +25,7 @@ public class CalcScanner extends RegExScanner<Token.Types, Token> implements ISc
         addPattern(Token.Types.OCT_LITERAL, "0[0-7]+");
         addPattern(Token.Types.FLOAT, "[1-9][0-9_]*(\\.[0-9_]*)?|0(\\.[0-9_]*)?", 2);
         addPattern(Token.Types.STRING, "\\\"(\\\\\\\"|[^\"])*\\\"", 1);
+        addPattern(Token.Types.BUILTIN, "#<\\s*[0-9]+\\s*[a-zA-Z_][a-zA-Z0-9_]*\\s*>");
         
         addPattern(Token.Types.EQUALS_COMP, "==");
         addPattern(Token.Types.EQUALS, "=");
@@ -49,6 +50,7 @@ public class CalcScanner extends RegExScanner<Token.Types, Token> implements ISc
         addPattern(Token.Types.COMMA, ",");
         addPattern(Token.Types.CONS, "::");
         addPattern(Token.Types.COLON, ":");
+        addPattern(Token.Types.SEMICOLON, ";");
         
         //addLiteral(Token.Types.KW_DEF, "def");
         

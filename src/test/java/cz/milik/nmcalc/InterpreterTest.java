@@ -117,4 +117,9 @@ public class InterpreterTest {
         testEvaluate("(def foo() 7)()", CalcValue.make(7));
         testEvaluate("(def mkadd(x) def addr(y) x + y)(1)(2)", CalcValue.make(3));
     }
+
+    @Test
+    public void textSetFreeVariable() {
+        testEvaluate("x = 100; def xadd() x = x + 1; xadd(); x", CalcValue.make(101));
+    }
 }

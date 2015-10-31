@@ -152,6 +152,18 @@ public abstract class PegParser<T> {
         });
     }
     
+    public PegParser<List<T>> repeatPlus(PegParser<?> glue, Class<T> cls) {
+        return concatAny(
+                this.named("__items"),
+                concat(
+                        glue.ignore(),
+                        this.named("__items")
+                ).repeat()
+        ).map(ctx -> {
+            return ctx.getNamedValues("__items", cls);
+        });
+    }
+    
     public PegParser<List<T>> repeat(PegParser<?> prefix, PegParser<?> glue, PegParser<?> postfix, Class<T> cls) {
         return flatten(concat(
                 prefix.ignore(),

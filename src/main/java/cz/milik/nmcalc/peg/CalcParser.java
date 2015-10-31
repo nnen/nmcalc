@@ -40,6 +40,8 @@ public class CalcParser extends PegParser<ASTNode> {
         protected void initializeGrammar() {
             nt("expr", s("assignment"));
             
+            
+            
             nt("assignment",
                 concatAny(
                         concatAny(
@@ -153,7 +155,26 @@ public class CalcParser extends PegParser<ASTNode> {
     private final PegGrammar<ICalcValue> listGrammar = new PegGrammar<ICalcValue>() {
         @Override
         protected void initializeGrammar() {
-            nt("expr", or(s("def"), s("ifElse"), s("match"), s("comparison")));
+            nt("expr", s("singleExpr").repeatPlus(
+                    s(Token.Types.SEMICOLON),
+                    ICalcValue.class
+            ).map(exprs -> {
+                if (exprs.size() == 1) {
+                    return exprs.get(0);
+                }
+                return CalcValue.list(
+                        BuiltinCalcValue.DO,
+                        exprs
+                );
+            }));
+            
+            nt("singleExpr", or(
+                    s("def"),
+                    s("ifElse"),
+                    s("match"),
+                    s("do"),
+                    s("comparison")
+            ));
             
             nt("def", concatAny(
                     //s(Token.Types.KW_DEF),
@@ -173,7 +194,7 @@ public class CalcParser extends PegParser<ASTNode> {
                                     s("expr", "body").maybe()
                             ),
                             concatAny(
-                                s("expr", "body")
+                                s("singleExpr", "body")
                             )
                     )
             ).map(ctx -> {
@@ -220,7 +241,7 @@ public class CalcParser extends PegParser<ASTNode> {
                             s("expr", "true"),
                             //s(Token.Types.KW_ELSE),
                             keyword("else"),
-                            s("expr", "false")
+                            s("singleExpr", "false")
                     ).map(ctx -> {
                         return CalcValue.list(
                                 BuiltinCalcValue.IF_ELSE,
@@ -267,6 +288,15 @@ public class CalcParser extends PegParser<ASTNode> {
                         );
                     })
             );
+            
+            nt("do", concatAny(
+                    keyword("do").ignore(),
+                    s(Token.Types.LBRACE).ignore(),
+                    s("expr", "body"),
+                    s(Token.Types.RBRACE).ignore()
+            ).map(ctx -> {
+                return ctx.getNamedValue("body", ICalcValue.class);
+            }));
             
             nt("comparison",
                     concatAny(

@@ -31,6 +31,7 @@ public class HighlightedCodePane extends JTextPane {
     private MutableAttributeSet symbolLiteral = new SimpleAttributeSet();
     private MutableAttributeSet keyword = new SimpleAttributeSet();
     private MutableAttributeSet unknownToken = new SimpleAttributeSet();
+    private MutableAttributeSet builtinLiteral = new SimpleAttributeSet();
     
     private ITokenSequence tokens;
     private IScanner scanner = new CalcScanner();
@@ -52,6 +53,8 @@ public class HighlightedCodePane extends JTextPane {
         StyleConstants.setUnderline(unknownToken, true);
         StyleConstants.setItalic(unknownToken, true);
         StyleConstants.setForeground(unknownToken, Color.red);
+        
+        StyleConstants.setForeground(builtinLiteral, Color.magenta);
         
         setFont(GUIUtils.getCodeFont());
     }
@@ -92,6 +95,9 @@ public class HighlightedCodePane extends JTextPane {
                     break;
                 case SYMBOL:
                     doc.setCharacterAttributes(offset + token.getOffset(), token.getValue().length(), symbolLiteral, true);
+                    break;
+                case BUILTIN:
+                    doc.setCharacterAttributes(offset + token.getOffset(), token.getValue().length(), builtinLiteral, true);
                     break;
                 case UNKNOWN:
                     doc.setCharacterAttributes(offset + token.getOffset(), token.getValue().length(), unknownToken, true);
