@@ -56,6 +56,7 @@ public class InterpreterTest {
     @Test
     public void testEvaluate() {
         testEvaluate("123", CalcValue.make(123));
+        testEvaluate("-123", CalcValue.make(-123));
         testEvaluate("1 + 1", CalcValue.make(2));
         testEvaluate("2 * 3", CalcValue.make(6));
         testEvaluate("1 + 2 + 3", CalcValue.make(6));

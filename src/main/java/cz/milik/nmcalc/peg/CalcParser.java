@@ -519,6 +519,15 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("primary", or(
                     concatAny(
+                            s(Token.Types.MINUS).ignore(),
+                            s("primary", "primary")
+                    ).map(ctx -> {
+                        return CalcValue.list(
+                                BuiltinCalcValue.NEGATE,
+                                ctx.getNamedValue("primary", ICalcValue.class)
+                        );
+                    }),
+                    concatAny(
                             s(Token.Types.QUOTE, "quote"),
                             s("primary", "primary")
                     ).map(ctx -> {

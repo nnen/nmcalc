@@ -1252,7 +1252,14 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
     };
     
-            
+    
+    public static final BuiltinCalcValue NEGATE = new UnaryOperator("negate") {
+        @Override
+        protected ICalcValue applyInner(Context ctx, ICalcValue argument) throws NMCalcException {
+            return argument.negate(ctx);
+        }
+    };
+    
     public static final BuiltinCalcValue ADD = new CollectBuiltin("+") {
         
         @Override
@@ -1652,6 +1659,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         builtinSet.register(GT);
         builtinSet.register(GTE);
         
+        builtinSet.register(NEGATE);
         builtinSet.register(ADD);
         builtinSet.register(SUB);
         builtinSet.register(MULT);
