@@ -113,7 +113,7 @@ public class SimpleForm extends javax.swing.JFrame {
         	public void componentShown(java.awt.event.ComponentEvent e) {
         		javax.swing.SwingUtilities.invokeLater(new java.lang.Runnable() {
         			public void run() {
-        				historyView.appendMarkup("# NMCalc\n" +
+        				historyView.prependMarkup("# NMCalc\n" +
 				            "\n" +
 				            "Type an expression into the middle text area. The bottom area "
 				                + "shows the result being evaluated as you type. Press "

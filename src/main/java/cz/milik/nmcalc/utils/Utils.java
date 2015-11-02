@@ -9,10 +9,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -84,6 +86,32 @@ public class Utils {
         }
     }
     
+
+    public static String[] toArray(Collection<String> strings) {
+        String[] result = new String[strings.size()];
+        int i = 0;
+        for (String str : strings) {
+            result[i] = str;
+            i++;
+        }
+        return result;
+    }
+    
+    
+    public static int copy(InputStream source, OutputStream target) throws IOException
+    {
+        byte buffer[] = new byte[1024];
+        int length = 0;
+        int read = 0;
+        
+        if ((read = source.read(buffer)) >= 0) {
+            target.write(buffer, 0, read);
+            length += read;
+        }
+        
+        return length;
+    }
+    
     
     public static void readAll(Reader reader, Writer writer) throws IOException
     {
@@ -96,6 +124,12 @@ public class Utils {
                 writer.write(buffer, 0, count);
             }
         } while (count > 0);
+    }
+    
+    public static String toString(Reader reader) throws IOException {
+        StringWriter sw = new StringWriter();
+        readAll(reader, sw);
+        return sw.toString();
     }
     
     public static void readAll(InputStream input, Writer writer) throws IOException

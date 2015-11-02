@@ -8,6 +8,7 @@ package cz.milik.nmcalc.text;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.Text.Fragment;
 import cz.milik.nmcalc.text.Text.Link;
+import cz.milik.nmcalc.values.ICalcValue;
 import java.util.Stack;
 import java.util.function.Consumer;
 
@@ -110,6 +111,10 @@ public class TextWriter {
     
     public TextWriter codeBlock(String text) {
         return append(Text.codeBlock(text));
+    }
+    
+    public TextWriter append(ICalcValue value) {
+        return append(Text.value(value));
     }
     
     public TextWriter append(IPrintable printable, ReprContext ctx) {

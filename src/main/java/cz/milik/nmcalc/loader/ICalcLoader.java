@@ -5,12 +5,14 @@
  */
 package cz.milik.nmcalc.loader;
 
-import java.io.InputStream;
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ISource;
+import cz.milik.nmcalc.NMCalcException;
 
 /**
  *
  * @author jan
  */
 public interface ICalcLoader {
-    public InputStream getStream(String name);
+    public ISource getSource(String name, Context ctx) throws NMCalcException;
 }

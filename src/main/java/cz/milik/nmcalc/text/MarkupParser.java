@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.text;
 
 import cz.milik.nmcalc.utils.StringUtils;
+import cz.milik.nmcalc.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -17,8 +18,12 @@ import java.util.regex.Pattern;
  */
 public class MarkupParser {
     
-    public static final Pattern PAR_SEPARATOR = Pattern.compile("\\r?\\n(\\r?\\n)+");
+    public static final Pattern INDENT_PATTERN = Pattern.compile("^[ \\t]*");
+    
+    public static final Pattern PAR_SEPARATOR = Pattern.compile("\\r?\\n(\\s*\\r?\\n)+");
     public static final Pattern LINE_SEPARATOR = Pattern.compile("\\s*\\n\\s*");
+    
+    public static final Pattern CODE_TAG = Pattern.compile("\\s*    \\[([a-z][a-zA-Z0-9_]*)\\]");
     
     public static final Pattern BULLET_LIST_START = Pattern.compile("\\s*^  [ \\t]*-");
     public static final Pattern BULLET_POINT = Pattern.compile("(\\r\\n)*^  [ \\t]*-", Pattern.MULTILINE);
@@ -38,7 +43,7 @@ public class MarkupParser {
             return parseList(input);
         }
         
-        String[] lines = input.split("\\r?\\n");
+        String[] lines = trimLines(input.split("\\r?\\n"));
         
         if ((lines.length == 1) || (lines.length == 2 && lines[1].isEmpty())) {
             String line = lines[0].trim();
@@ -63,7 +68,35 @@ public class MarkupParser {
             }
         }
         
+        String indent = getParIndent(lines);
+        if (indent.startsWith("    ")) {
+            String[] unindented = unindent(lines, indent);
+            String codeLang = null;
+            int from = 0;
+            
+            Matcher codeTag = CODE_TAG.matcher(lines[0]);
+            if (codeTag.lookingAt()) {
+                codeLang = codeTag.group(1);
+                from = 1;
+            }
+            
+            return Text.codeBlock(
+                    StringUtils.joinStr("\n", unindented, from),
+                    codeLang
+            );
+        }
+        
+        /*
         boolean isCodeBlock = true;
+        String codeLang = null;
+        String body = input;
+        Matcher codeTag = CODE_TAG.matcher(input);
+        if (codeTag.lookingAt()) {
+            codeLang = codeTag.group(1);
+            body = input.substring(codeTag.end());
+        }
+                */
+        /*
         for (String line : lines) {
             if (!line.isEmpty() && !line.startsWith("    ")) {
                 isCodeBlock = false;
@@ -75,8 +108,12 @@ public class MarkupParser {
             for (String line : lines) {
                 newLines.add(line.substring(4));
             }
-            return Text.codeBlock(StringUtils.join("\n", newLines.iterator()).toString());
+            return Text.codeBlock(
+                    StringUtils.join("\n", newLines.iterator()).toString() //,
+                    //codeLang
+            );
         }
+        */
         
         return parseText(input);
         //return Text.paragraph(input);  
@@ -147,4 +184,95 @@ public class MarkupParser {
         return listElement;
     }
     
+    
+    public boolean isEmpty(String str) {
+        if (str == null) {
+            return true;
+        }
+        return str.trim().isEmpty();
+    }
+    
+    public String commonPrefix(CharSequence a, CharSequence b) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < a.length() && i < b.length(); i++) {
+            char charA = a.charAt(i);
+            char charB = b.charAt(i);
+            if (charA != charB) {
+                break;
+            }
+            sb.append(charA);
+        }
+        return sb.toString();
+    }
+    
+    public String getParIndent(String[] lines) {
+        String indent = null;
+        
+        for (String line : lines) {
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+            Matcher m = INDENT_PATTERN.matcher(line);
+            if (indent == null) {
+                if (m.lookingAt()) {
+                    indent = m.group();
+                } else {
+                    indent = "";
+                }
+            } else {
+                indent = commonPrefix(indent, line);
+                if (indent.isEmpty()) {
+                    return indent;
+                }
+            }
+        }
+        
+        if (indent == null) {
+            indent = "";
+        }
+        
+        return indent;
+    }
+    
+    public String[] unindent(String[] lines, String indent) {
+        String[] newLines = new String[lines.length];
+        
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            
+            if (line.trim().isEmpty()) {
+                newLines[i] = "";
+            } else if (line.startsWith(indent)) {
+                newLines[i] = line.substring(indent.length());
+            } else {
+                newLines[i] = line;
+            }
+        }
+        
+        return newLines;
+    }
+    
+    public String[] trimLines(String[] lines) {
+        List<String> newLines = new ArrayList();
+        List<String> emptyLines = new ArrayList();
+        
+        int i = 0;
+        
+        while (isEmpty(lines[i])) {
+            i++;
+        }
+        
+        for (; i < lines.length; i++) {
+            if (isEmpty(lines[i])) {
+                emptyLines.add(lines[i]);
+            } else {
+                newLines.addAll(emptyLines);
+                emptyLines.clear();
+                newLines.add(lines[i]);
+            }
+        }
+        
+        return Utils.toArray(newLines);
+    }
 }
+

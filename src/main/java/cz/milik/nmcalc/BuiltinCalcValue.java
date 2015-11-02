@@ -1472,7 +1472,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 return ctx;
             }
             
-            if (arguments.size() == 0) {
+            if (arguments.isEmpty()) {
                 ClassLoader loader = getClass().getClassLoader();
                 InputStream stream = loader.getResourceAsStream(HELP_FILE);
                 try {
@@ -1488,7 +1488,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 Optional<String> help = Optional.empty();
                 
                 if (arg instanceof StringValue) {
-                    help = Optional.ofNullable(CalcLoader.getInstance().getString(arg.getStringValue(ctx)));
+                    ISource source = CalcLoader.getInstance().getSource(arg.getStringValue(ctx), ctx);
+                    help = Optional.ofNullable(source.getContent(ctx));
                 } else {
                     help = arguments.get(0).getHelp();
                 }
@@ -1614,6 +1615,79 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
 
     
+    public static final BuiltinCalcValue PARSE = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "parse"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            assertArgCount(ctx, arguments, 1);
+            ICalcValue input = arguments.get(0);
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                protected ExecResult execute(Process process, int pc) throws NMCalcException {
+                    if (pc == 0) {
+                        setPC(pc + 1);
+                        return ctxReturn(
+                                process.getInterpreter().parse(
+                                        input.getStringValue(this),
+                                        this
+                                )
+                        );
+                    }
+                    return invalidPC(pc);
+                }
+            };
+        }
+    };
+    
+    public static final BuiltinCalcValue IMPORT = new BuiltinCalcValue() {
+        @Override
+        public String getName() { return "import"; }
+
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            //assertArgCount(ctx, arguments, 1);
+            
+            return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                public ExecResult execute(Process process) {
+                    int pc = getPC();
+                    
+                    if (pc < arguments.size()) {
+                        ICalcValue arg = arguments.get(pc);
+                        String importName = arg.getStringValue(ctx);
+                        ISource source;
+                        try {
+                            source = process.getInterpreter().getLoader().getSource(importName, this);
+                        } catch (NMCalcException ex) {
+                            Logger.getLogger(BuiltinCalcValue.class.getName()).log(Level.SEVERE, null, ex);
+                            setPC(arguments.size() + 1);
+                            return ctxReturn(CalcValue.error(this, ex));
+                        }
+                        try {
+                            setPC(pc + 1);
+                            return ctxContinue(
+                                    process.getInterpreter().evaluate(
+                                            source.getContent(this),
+                                            this));
+                        } catch (NMCalcException ex) {
+                            Logger.getLogger(BuiltinCalcValue.class.getName()).log(Level.SEVERE, null, ex);
+                            setPC(arguments.size() + 1);
+                            return ctxReturn(CalcValue.error(this, ex));
+                        }
+                    } else if (pc == arguments.size()) {
+                        return ctxReturn(getReturnedValue());
+                    }
+                    
+                    return invalidPC(pc);
+                }
+            };
+        }
+    };
+    
+    
     private static final BuiltinSet builtinSet = new BuiltinSet();
 
     public static BuiltinSet getBuiltinSet() {
@@ -1682,6 +1756,9 @@ public abstract class BuiltinCalcValue extends CalcValue {
         builtinSet.register(DEBUG_BREAK);
         builtinSet.register(INTERRUPT);
         builtinSet.register(INSPECT);
+        
+        builtinSet.register(PARSE);
+        builtinSet.register(IMPORT);
     }
 
 }

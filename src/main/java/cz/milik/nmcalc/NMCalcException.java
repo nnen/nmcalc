@@ -56,4 +56,12 @@ public class NMCalcException extends Exception {
     public static NMCalcException format(Context ctx, String fmt, Object... args) {
         return new NMCalcException(String.format(fmt, args), ctx);
     }
+    
+    public static NMCalcException format(Context ctx, Throwable cause, String fmt, Object... args) {
+        return new NMCalcException(String.format(fmt, args), cause, ctx);
+    }
+    
+    public static NMCalcException format(Throwable cause, String fmt, Object... args) {
+        return new NMCalcException(String.format(fmt, args), cause);
+    }
 }

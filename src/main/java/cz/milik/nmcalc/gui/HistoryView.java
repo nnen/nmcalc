@@ -10,6 +10,7 @@ import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.text.ITextElement;
 import cz.milik.nmcalc.text.MarkupParser;
+import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
 import java.awt.Rectangle;
 import java.util.logging.Level;
@@ -78,59 +79,61 @@ public class HistoryView extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        scrollPane = new javax.swing.JScrollPane();
-        outputPane = new javax.swing.JTextPane();
+        textPane = new cz.milik.nmcalc.gui.HyperTextPane();
 
         setLayout(new java.awt.BorderLayout());
-
-        outputPane.setEditable(false);
-        outputPane.setFont(GUIUtils.getCodeFont());
-        scrollPane.setViewportView(outputPane);
-
-        add(scrollPane, java.awt.BorderLayout.CENTER);
+        add(textPane, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
     
-    public void append(String str) {
-        append(str, (AttributeSet)null, null);
+    public void append(ITextElement element) {
+        textPane.append(element);
     }
     
-    public int append(String str, AttributeSet attributes, AttributeSet parAttributes) {
-        StyledDocument doc = outputPane.getStyledDocument();
-        int offset = doc.getLength();
-        try {
-            doc.insertString(offset, str, null);
-            if (attributes != null) {
-                doc.setCharacterAttributes(offset, str.length(), attributes, true);
-            }
-            if (parAttributes != null) {
-                doc.setParagraphAttributes(offset, str.length(), parAttributes, true);
-            }
-        } catch (BadLocationException ex) {
-            Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return offset + str.length();
+    public void prepend(ITextElement element) {
+        textPane.prepend(element);
     }
     
     public void append(ICalcValue expr, ICalcValue value) {
+        /*
         append(expr.getRepr(getReprContext()), value);
+                */
+        
+        TextWriter tw = new TextWriter();
+        
+        tw.startBlockQuote();
+        //tw.monospace(">>> ");
+        tw.append(Text.value(expr));
+        tw.end();
+        tw.startPar();
+        tw.append(Text.value(value));
+        tw.end();
+        
+        textPane.append(tw.getResult());
     }
     
     public void append(String expr, ICalcValue value) {
+        TextWriter tw = new TextWriter();
+        
+        //tw.startBlockQuote();
+        tw.codeBlock(expr);
+        //tw.end();
+        
         if (value.isHelp()) {
-            //appendHelp(expr, value.get)
-            appendHelp(expr, value.getRepr(getReprContext()));
+            textPane.append(tw.getResult());
+            textPane.appendMarkup(value.getRepr(getReprContext()));
         } else if (value.isError()) {
-            TextWriter out = new TextWriter();
-            value.printDebug(out, getReprContext());
-            append(">>> ");
-            append(expr + "\n", lhsStyle, lhsParStyle);
-            HyperTextPane.append(outputPane.getStyledDocument(), out.getResult());
+            value.printDebug(tw, getReprContext());
+            textPane.append(tw.getResult());
         } else {
-            append(expr, value.getRepr(getReprContext()));
+            tw.startPar();
+            tw.append(value);
+            tw.end();
+            textPane.append(tw.getResult());
         }
     }
     
+    /*
     public void append(String expr, String value) {
         append(">>> ");
         append(expr + "\n", lhsStyle, lhsParStyle);
@@ -143,7 +146,9 @@ public class HistoryView extends javax.swing.JPanel {
             Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    */
     
+    /*
     public void appendHelp(String expr, String value) {
         MarkupParser parser = new MarkupParser();
         ITextElement element = parser.parse(value);
@@ -155,22 +160,28 @@ public class HistoryView extends javax.swing.JPanel {
         
         HyperTextPane.append(outputPane.getStyledDocument(), element);
     }
+    */
+    
+    public void prependMarkup(String markup) {
+        textPane.prependMarkup(markup);
+    }
     
     public void appendMarkup(String markup) {
-        HyperTextPane.appendMarkup(outputPane.getStyledDocument(), markup);
+        textPane.appendMarkup(markup);
+        //HyperTextPane.appendMarkup(outputPane.getStyledDocument(), markup);
     }
     
     public void append(String expr, ParseResult<ICalcValue> parsed) {
+        /*
         if (parsed.isSuccess()) {
             append(expr, parsed.getValue());
         } else {
             append(expr, parsed.getErrorMessage());
         }
+                */
     }
-    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextPane outputPane;
-    private javax.swing.JScrollPane scrollPane;
+    private cz.milik.nmcalc.gui.HyperTextPane textPane;
     // End of variables declaration//GEN-END:variables
 }

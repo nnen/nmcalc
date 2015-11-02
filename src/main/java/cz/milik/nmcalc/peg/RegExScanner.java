@@ -22,7 +22,7 @@ public abstract class RegExScanner<TTokenType, TToken> {
     
     private final List<TokenPattern> patterns = new ArrayList<>();
     
-    private Pattern ignorePattern = Pattern.compile("[ \\t\\n]*");
+    private Pattern ignorePattern = Pattern.compile("\\s*");
     private CharSequence input;
     private int offset;
     private String fileName;

@@ -14,6 +14,8 @@ import cz.milik.nmcalc.utils.IMonad;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -110,13 +112,21 @@ public class Context implements IPrintable {
     }
     
     public ExecResult execute(Process process) {
+        try {
+            return execute(process, getPC());
+        } catch (NMCalcException ex) {
+            Logger.getLogger(Context.class.getName()).log(Level.SEVERE, null, ex);
+            return ctxReturn(CalcValue.error(this, ex));
+        }
+    }
+    
+    protected ExecResult execute(Process process, int pc) throws NMCalcException {
         return new ExecResult(
                 ExecResult.ExitCodes.ERROR,
                 this,
                 ErrorValue.formatted("Cannot execute context %s.", this)
         );
     }
-    
     
     public IMonad<ICalcValue> getVariable(String name) {
         return getEnvironment().getVariable(name);

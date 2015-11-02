@@ -51,9 +51,9 @@ public abstract class Text implements IText {
     
     public static Monospace monospace(String value, Object... args) {
         if (args.length == 0) {
-            return new Monospace(value);
+            return new Monospace(plain(value));
         }
-        return new Monospace(String.format(value, args));
+        return new Monospace(plain(String.format(value, args)));
     }
     
     public static Italic italic(String value) {
@@ -85,9 +85,11 @@ public abstract class Text implements IText {
     }
     
     public static CodeBlock codeBlock(String value) {
-        CodeBlock result = new CodeBlock();
-        result.addChild(plain(value));
-        return result;
+        return new CodeBlock(null, plain(value));
+    }
+    
+    public static CodeBlock codeBlock(String value, String language) {
+        return new CodeBlock(language, plain(value));
     }
     
     public static BulletList bulletList(ITextElement... children) {
@@ -99,11 +101,15 @@ public abstract class Text implements IText {
     }
     
     public static Headline headline(String value, int level) {
-        return new Headline(value, level);
+        return new Headline(level, plain(value));
     }
     
     public static Link link(String text, Consumer<Link> action) {
         return new Link(text, action);
+    }
+    
+    public static CalcValue value(ICalcValue value) {
+        return new CalcValue(value, null);
     }
     
     
@@ -174,6 +180,21 @@ public abstract class Text implements IText {
     
     
     public static class CodeBlock extends ParentElement {
+        private String language;
+
+        public String getLanguage() {
+            return language;
+        }
+
+        public void setLanguage(String language) {
+            this.language = language;
+        }
+        
+        public CodeBlock(String language, ITextElement... children) {
+            super(children);
+            this.language = language;
+        }
+        
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
             return visitor.visitCodeBlock(this, ctx);
@@ -266,12 +287,9 @@ public abstract class Text implements IText {
     }
     
     
-    public static class Monospace extends PlainText {
-        public Monospace() {
-        }
-
-        public Monospace(String text) {
-            super(text);
+    public static class Monospace extends ParentElement {
+        public Monospace(ITextElement... children) {
+            super(children);
         }
         
         @Override
@@ -281,7 +299,7 @@ public abstract class Text implements IText {
     }
     
     
-    public static class Headline extends PlainText {
+    public static class Headline extends ParentElement {
         private int level = 0;
         
         public int getLevel() {
@@ -293,8 +311,8 @@ public abstract class Text implements IText {
         }
 
         
-        public Headline(String text, int level) {
-            super(text);
+        public Headline(int level, ITextElement... children) {
+            super(children);
             this.level = level;
         }
         
@@ -364,7 +382,16 @@ public abstract class Text implements IText {
         public void setReprContext(ReprContext reprContext) {
             this.reprContext = reprContext;
         }
-
+        
+        
+        public CalcValue(ICalcValue value, ReprContext ctx) {
+            setValue(value);
+            if (ctx == null) {
+                ctx = ReprContext.getDefault();
+            }
+            setReprContext(ctx);
+        }
+        
         
         @Override
         public String getText() {

@@ -11,7 +11,7 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
-import cz.milik.nmcalc.text.TextLoc;
+import cz.milik.nmcalc.TextLoc;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;

@@ -9,6 +9,8 @@ import cz.milik.nmcalc.values.ErrorValue;
 import cz.milik.nmcalc.values.SymbolValue;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.gui.GUIManager;
+import cz.milik.nmcalc.loader.CalcLoader;
+import cz.milik.nmcalc.loader.ICalcLoader;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.ListenerCollection;
@@ -33,12 +35,48 @@ public class Interpreter {
     public ListBuilder getListBuilder() { return listBuilder; }
     
     
+    private ICalcLoader loader = CalcLoader.getInstance();
+
+    public ICalcLoader getLoader() {
+        return loader;
+    }
+
+    public void setLoader(ICalcLoader loader) {
+        if (loader == null) {
+            throw new NullPointerException("`loader` argument may not be null");
+        }
+        this.loader = loader;
+    }
+    
+    
+    public ICalcValue parse(String input, Context ctx) {
+        ParseResult<ICalcValue> result = parser.parseList(input);
+        if (result.isSuccess()) {
+            return result.getValue();
+        }
+        return ErrorValue.formatted(
+                ctx,
+                "Syntax error: %s",
+                result.toString()
+        );
+    }
+    
+    
+    public Context evaluate(String input, Context ctx) {
+        ICalcValue value = parse(input, ctx);
+        return this.eval(value, ctx);
+    }
+    
     public ICalcValue evaluate(String input) {
+        ICalcValue value = parse(input, null);
+        return eval(value);
+        /*
         ParseResult<ICalcValue> node = parser.parseList(input);
         if (node.isSuccess()) {
             return eval(node.getValue());
         }
         return new ErrorValue("Syntax error: " + node.toString());
+                */
     }
     
     public ICalcValue eval(ICalcValue value) {

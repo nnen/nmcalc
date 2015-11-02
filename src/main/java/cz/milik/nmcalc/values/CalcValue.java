@@ -13,7 +13,7 @@ import cz.milik.nmcalc.ListBuilder;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
-import cz.milik.nmcalc.text.TextLoc;
+import cz.milik.nmcalc.TextLoc;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
@@ -689,6 +689,37 @@ public abstract class CalcValue implements ICalcValue {
     
     protected void invalidArgumentCount(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
         throw new NMCalcException(String.format("Invalid argument count: %d.", arguments.size()), ctx);
+    }
+    
+    protected void assertArgCount(Context ctx, List<? extends ICalcValue> args, int expectedCount, int... expectedCountRest) throws NMCalcException {
+        if (args.size() == expectedCount) {
+            return;
+        }
+        
+        for (int count : expectedCountRest) {
+            if (args.size() == count) {
+                return;
+            }
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(Integer.toString(expectedCount));
+        if (expectedCountRest.length > 0) {
+            for (int i = 0; i< expectedCountRest.length - 1; i++) {
+                sb.append(", ");
+                sb.append(Integer.toString(expectedCountRest[i]));
+            }
+            sb.append(" or ");
+            sb.append(Integer.toString(expectedCountRest[expectedCountRest.length - 1]));
+            
+            throw NMCalcException.format(
+                    ctx,
+                    "%s cannot be applied to %d argument(s). %s argument(s) expected.",
+                    getRepr(ctx.getReprContext()),
+                    args.size(),
+                    sb.toString()
+            );
+        }
     }
     
     protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, int expectedCount, int... expectedCountRest) {

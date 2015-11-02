@@ -33,6 +33,22 @@ public class StringUtils {
         return sb.toString();
     }
     
+    public static String joinStr(CharSequence glu, String[] parts, int from) {
+        StringBuilder sb = new StringBuilder();
+        if ((parts.length - from) > 0) {
+            sb.append(parts[from]);
+            for (int i = (from + 1); i < parts.length; i++) {
+                sb.append(glu);
+                sb.append(parts[i]);
+            }
+        }
+        return sb.toString();
+    }
+    
+    public static String joinStr(CharSequence glu, String[] parts) {
+        return joinStr(glu, parts, 0);
+    }
+    
     public static CharSequence join(CharSequence glue, Iterable<? extends CharSequence> parts) {
         return join(glue, parts.iterator());
     }

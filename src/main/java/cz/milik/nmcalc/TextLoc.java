@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package cz.milik.nmcalc.text;
+package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.ICalcValueAnnotation;
 

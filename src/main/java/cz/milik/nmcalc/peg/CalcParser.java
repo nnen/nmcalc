@@ -18,7 +18,7 @@ import cz.milik.nmcalc.ast.ASTNode;
 import cz.milik.nmcalc.parser.Scanner;
 import cz.milik.nmcalc.parser.Token;
 import static cz.milik.nmcalc.peg.PegParser.concatAny;
-import cz.milik.nmcalc.text.TextLoc;
+import cz.milik.nmcalc.TextLoc;
 import cz.milik.nmcalc.utils.Pair;
 import cz.milik.nmcalc.utils.Utils;
 import java.io.StringReader;

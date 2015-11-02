@@ -5,13 +5,12 @@
  */
 package cz.milik.nmcalc.loader;
 
+import cz.milik.nmcalc.Context;
+import cz.milik.nmcalc.ISource;
 import cz.milik.nmcalc.NMCalcException;
-import cz.milik.nmcalc.utils.Utils;
+import cz.milik.nmcalc.Source;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,9 +23,11 @@ import java.util.logging.Logger;
  */
 public abstract class CalcLoader implements ICalcLoader {
     
-    private static CalcLoader instance;
+    private static final Logger LOGGER = Logger.getLogger(CalcLoader.class.getName());
     
-    public static CalcLoader getInstance() {
+    private static ICalcLoader instance;
+    
+    public static ICalcLoader getInstance() {
         if (instance == null) {
             ChainLoader loader = new ChainLoader();
             loader.append(new DirLoader(System.getProperty("user.home")));
@@ -35,8 +36,9 @@ public abstract class CalcLoader implements ICalcLoader {
         }
         return instance;
     }
+
     
-    
+    /*
     public String getString(String name) throws NMCalcException {
         InputStream input = getStream(name);
         if (input == null) {
@@ -49,6 +51,7 @@ public abstract class CalcLoader implements ICalcLoader {
             throw new NMCalcException(ex);
         }
     }
+    */
     
     
     public static class ResourceLoader extends CalcLoader {
@@ -81,12 +84,26 @@ public abstract class CalcLoader implements ICalcLoader {
         public ResourceLoader(String basePath) {
             this.basePath = basePath;
         }
-        
+
         
         @Override
-        public InputStream getStream(String name) {
-            ClassLoader clsLoader = getClsLoader();
-            return clsLoader.getResourceAsStream(getBasePath() + "/" + name);
+        public ISource getSource(String name, Context ctx) throws NMCalcException {
+            String path = getBasePath() + "/" + name;
+            LOGGER.info(String.format(
+                    "Searching for source %s in resources in %s...",
+                    name, path
+            ));
+            
+            URL url = getClsLoader().getResource(path);
+            if (url == null) {
+                return null;
+            }
+            
+            LOGGER.info(String.format(
+                    "Source %s found in %s.",
+                    name, path
+            ));
+            return Source.fromResource(getClsLoader(), path);
         }
         
     }
@@ -107,20 +124,30 @@ public abstract class CalcLoader implements ICalcLoader {
         public DirLoader(String dirPath) {
             this.dirPath = dirPath;
         }
-        
+
         
         @Override
-        public InputStream getStream(String name) {
+        public ISource getSource(String name, Context ctx) throws NMCalcException {
             File f = new File(getDirPath() + "/" + name);
+            LOGGER.info(String.format(
+                    "Searching for source %s in file '%s'...",
+                    name, f.getAbsolutePath()
+            ));
+            
+            File tf = new File("C:\\Users\\jan\\utils.nmcalc");
+            LOGGER.info(String.format("%s exists: %s", tf.getAbsolutePath(), Boolean.toString(tf.isFile())));
+            
             if (!f.isFile()) {
                 return null;
             }
-            try {
-                return new FileInputStream(f);
-            } catch (FileNotFoundException ex) {
-                return null;
-            }
+            
+            LOGGER.info(String.format(
+                    "Source %s found in %s.",
+                    name, f.getAbsolutePath()
+            ));
+            return Source.fromFile(f.getPath());
         }
+        
     }
     
     
@@ -141,18 +168,26 @@ public abstract class CalcLoader implements ICalcLoader {
         public List<ICalcLoader> getLoaders() {
             return Collections.unmodifiableList(loaders);
         }
-        
+
         
         @Override
-        public InputStream getStream(String name) {
-            InputStream result = null;
+        public ISource getSource(String name, Context ctx) throws NMCalcException {
+            LOGGER.info(String.format(
+                    "Searching for source %s...", 
+                    name
+            ));
             
             for (ICalcLoader loader : loaders) {
-                result = loader.getStream(name);
-                if (result != null) {
-                    return result;
+                ISource source = loader.getSource(name, ctx);
+                if (source != null) {
+                    return source;
                 }
             }
+            
+            LOGGER.warning(String.format(
+                    "Source %s was not found!",
+                    name
+            ));
             
             return null;
         }

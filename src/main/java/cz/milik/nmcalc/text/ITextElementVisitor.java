@@ -34,8 +34,8 @@ public interface ITextElementVisitor<C, R> {
     
     public R visitOther(ITextElement element, C ctx);
 
-    public <C, R> R visitBulletList(Text.BulletList bulletList, C ctx);
+    public R visitBulletList(Text.BulletList bulletList, C ctx);
 
-    public <C, R> R visitBulletPoint(Text.BulletPoint bulletPoint, C ctx);
+    public R visitBulletPoint(Text.BulletPoint bulletPoint, C ctx);
     
 }
