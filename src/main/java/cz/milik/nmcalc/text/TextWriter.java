@@ -64,6 +64,14 @@ public class TextWriter {
         return start(Text.bold());
     }
     
+    public TextWriter startMonospace() {
+        return start(Text.monospace());
+    }
+    
+    public TextWriter startSpan(String spanType) {
+        return start(Text.span(spanType));
+    }
+    
     public TextWriter end() {
         stack.pop();
         return this;
@@ -105,6 +113,10 @@ public class TextWriter {
         return append(Text.headline(value, level));
     }
     
+    public TextWriter span(String spanType, String value) {
+        return append(Text.span(spanType, value));
+    }
+    
     public TextWriter par(String text) {
         return append(Text.paragraph(text));
     }
@@ -124,5 +136,16 @@ public class TextWriter {
     
     public TextWriter append(IPrintable printable) {
         return append(printable, getDefaultReprContext());
+    }
+
+
+    public static ITextElement print(IPrintable printable, ReprContext ctx) {
+        TextWriter tw = new TextWriter();
+        if (printable == null) {
+            tw.monospace("null");
+        } else {
+            printable.print(tw, ctx);
+        }
+        return tw.getResult();
     }
 }

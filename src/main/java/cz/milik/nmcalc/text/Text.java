@@ -56,6 +56,10 @@ public abstract class Text implements IText {
         return new Monospace(plain(String.format(value, args)));
     }
     
+    public static Monospace monospace() {
+        return new Monospace();
+    }
+    
     public static Italic italic(String value) {
         return new Italic(value);
     }
@@ -102,6 +106,14 @@ public abstract class Text implements IText {
     
     public static Headline headline(String value, int level) {
         return new Headline(level, plain(value));
+    }
+    
+    public static Span span(String spanType, String value) {
+        return new Span(spanType, plain(value));
+    }
+    
+    public static Span span(String spanType) {
+        return new Span(spanType);
     }
     
     public static Link link(String text, Consumer<Link> action) {
@@ -320,6 +332,33 @@ public abstract class Text implements IText {
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
             return visitor.visitHeadline(this, ctx);
+        }
+    }
+    
+    
+    public static class Span extends ParentElement {
+        private String spanType;
+
+        public String getSpanType() {
+            return spanType;
+        }
+
+        public void setSpanType(String spanType) {
+            this.spanType = spanType;
+        }
+        
+        public Span(ITextElement... children) {
+            super(children);
+        }
+        
+        public Span(String spanType, ITextElement... children) {
+            super(children);
+            this.spanType = spanType;
+        }
+        
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitSpan(this, ctx);
         }
     }
     

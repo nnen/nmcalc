@@ -6,10 +6,12 @@
 package cz.milik.nmcalc.gui;
 
 import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.text.IPrintable;
 import cz.milik.nmcalc.text.ITextElement;
 import cz.milik.nmcalc.text.ITextElementVisitor;
 import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
+import cz.milik.nmcalc.text.TextWriter;
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -265,6 +267,14 @@ public class HyperTextPane extends JPanel {
             }
             
             @Override
+            public Object visitSpan(Text.Span element, Object ctx) {
+                for (ITextElement child : element.getChildren()) {
+                    child.visit(this, ctx);
+                }
+                return null;
+            }
+            
+            @Override
             public Object visitCalcValue(Text.CalcValue calcValue, Object ctx) {
                 throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
@@ -329,6 +339,14 @@ public class HyperTextPane extends JPanel {
         }
     }
     
+    public void append(IPrintable printable, ReprContext ctx) {
+        append(TextWriter.print(printable, ctx));
+    }
+    
+    public void prepend(IPrintable printable, ReprContext ctx) {
+        prepend(TextWriter.print(printable, ctx));
+    }
+    
     public void prependMarkup(String markup) {
         MarkupParser parser = new MarkupParser();
         prepend(parser.parse(markup));
@@ -369,7 +387,10 @@ public class HyperTextPane extends JPanel {
         document.getStyleSheet().addRule(
                 "pre { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #ffffcc; padding: 3pt; border-left: solid 12pt #ddddaa; margin: 0px 0px 10px 0px; }\n" +
                 "tt { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #dddddd; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; border-top-left-radius: 3px; border-top-right-radius: 3px; }\n" +
-                ".result { background-color: #ffffff; border: none; }"
+                ".result { background-color: #ffffff; border: none; }\n" +
+                ".keyword { color: #0000ff; font-weight: bold; }\n" +
+                ".name { font-style: italic; }\n" +
+                ".literal { color: #cc0000; }"
         );
         document.getStyleSheet().addRule(
                 "blockquote code pre { background-color: transparent; }"
@@ -380,7 +401,7 @@ public class HyperTextPane extends JPanel {
         textPane.setDocument(document);
         scrollPane.setViewportView(textPane);
     }
- 
+    
     
     public static class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
 
@@ -408,6 +429,23 @@ public class HyperTextPane extends JPanel {
             }
             sb.append("</").append(tagName).append(">");
             return null;
+        }
+        
+        protected void start(StringBuilder sb, String tagName, String clsName) {
+            sb.append("<");
+            sb.append(tagName);
+            if (clsName != null) {
+                sb.append(" class=\"");
+                sb.append(clsName);
+                sb.append("\"");
+            }
+            sb.append(">");
+        }
+        
+        protected void end(StringBuilder sb, String tagName) {
+            sb.append("</");
+            sb.append(tagName);
+            sb.append(">");
         }
         
         @Override
@@ -456,15 +494,26 @@ public class HyperTextPane extends JPanel {
         public Object visitBold(Text.Bold bold, StringBuilder ctx) {
             return block(bold, ctx, "b");
         }
-
+        
+        @Override
+        public Object visitSpan(Text.Span element, StringBuilder ctx) {
+            start(ctx, "span", element.getSpanType());
+            visitChildren(element, ctx);
+            end(ctx, "span");
+            return null;
+        }
+        
         @Override
         public Object visitCalcValue(Text.CalcValue calcValue, StringBuilder ctx) {
             ctx.append("<tt class=\"result\">");
-            ctx.append(calcValue.getValue().getRepr(ReprContext.getDefault()));
+            TextWriter.print(
+                    calcValue.getValue(),
+                    calcValue.getReprContext()
+            ).visit(this, ctx);
             ctx.append("</tt>");
             return null;
         }
-
+        
         @Override
         public Object visitOther(ITextElement element, StringBuilder ctx) {
             ctx.append(element.getText());

@@ -138,6 +138,11 @@ public class Context implements IPrintable {
 
     
     @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        printDebug(out, ctx);
+    }
+    
+    @Override
     public void printDebug(TextWriter out, ReprContext ctx) {
         Context current = this;
         Environment lastEnv = null;

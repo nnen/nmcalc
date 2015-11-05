@@ -11,6 +11,7 @@ import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.EnumSet;
+import java.util.Optional;
 
 /**
  *
@@ -18,6 +19,17 @@ import java.util.EnumSet;
  */
 public class ReprContext { 
    
+    private ReprContext parent;
+    
+    public ReprContext getParent() {
+        return parent;
+    }
+    
+    public void setParent(ReprContext parent) {
+        this.parent = parent;
+    }
+    
+    
     public static enum Flags {
         HEX,
         HEX_INTEGER_ONLY,
@@ -32,46 +44,65 @@ public class ReprContext {
     }
     
     
-    private EnumSet<Flags> flags = EnumSet.noneOf(Flags.class);
+    private Optional<EnumSet<Flags>> flags = Optional.empty();
     
     public EnumSet<Flags> getFlags() {
-        return flags;
+        if (!flags.isPresent()) {
+            if (parent != null) {
+                return parent.getFlags();
+            }
+            return EnumSet.noneOf(Flags.class);
+        }
+        return flags.get();
     }
-
+    
     public void setFlags(EnumSet<Flags> flags) {
-        this.flags = flags;
+        this.flags = Optional.ofNullable(flags);
     }
     
     public ReprContext addFlags(Flags first, Flags... rest) {
-        flags.addAll(EnumSet.of(first, rest));
+        if (!flags.isPresent()) {
+            flags = Optional.of(EnumSet.noneOf(Flags.class));
+        }
+        flags.get().addAll(EnumSet.of(first, rest));
         return this;
     }
     
     
-    private DecimalFormat decimalFormat;
+    public static final DecimalFormat DEFAULT_DECIMAL_FORMAT = new DecimalFormat();
+    
+    static {
+        DecimalFormatSymbols dfs = new DecimalFormatSymbols();
+        dfs.setGroupingSeparator('_');
+        dfs.setDecimalSeparator('.');
+        
+        //decimalFormat = new DecimalFormat();
+        DEFAULT_DECIMAL_FORMAT.setGroupingUsed(true);
+        DEFAULT_DECIMAL_FORMAT.setGroupingSize(3);
+        DEFAULT_DECIMAL_FORMAT.setDecimalFormatSymbols(dfs);
+        DEFAULT_DECIMAL_FORMAT.setMaximumFractionDigits(340);
+    }
+    
+    private Optional<DecimalFormat> decimalFormat = Optional.empty();
 
     public DecimalFormat getDecimalFormat() {
-        if (decimalFormat == null) {
-            DecimalFormatSymbols dfs = new DecimalFormatSymbols();
-            dfs.setGroupingSeparator('_');
-            dfs.setDecimalSeparator('.');
-            
-            decimalFormat = new DecimalFormat();
-            decimalFormat.setGroupingUsed(true);
-            decimalFormat.setGroupingSize(3);
-            decimalFormat.setDecimalFormatSymbols(dfs);
-            decimalFormat.setMaximumFractionDigits(340);
-            //decimalFormat.setRoundingMode(RoundingMode.);
+        if (decimalFormat.isPresent()) {
+            return decimalFormat.get();
         }
-        return decimalFormat;
+        if (parent != null) {
+            return parent.getDecimalFormat();
+        }
+        return DEFAULT_DECIMAL_FORMAT;
     }
 
     public void setDecimalFormat(DecimalFormat decimalFormat) {
-        this.decimalFormat = decimalFormat;
+        this.decimalFormat = Optional.ofNullable(decimalFormat);
     }
     
     
-    public boolean hasPrettyPrintHelp() { return getFlags().contains(Flags.PRETTY_PRINT_HELP); }
+    public boolean hasPrettyPrintHelp() {
+        return getFlags().contains(Flags.PRETTY_PRINT_HELP);
+    }
     
     
     public ReprContext() {
@@ -92,6 +123,7 @@ public class ReprContext {
     }
     
     public String formatFloat(FloatValue value) {
+        EnumSet<Flags> flags = getFlags();
         if (flags.contains(Flags.HEX)) {
             return formatHexInt(value.getDecimalValue());
         } else if (flags.contains(Flags.OCTAL)) {

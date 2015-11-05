@@ -12,6 +12,7 @@ import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.TextLoc;
+import cz.milik.nmcalc.text.IPrintable;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ import java.util.function.Function;
  *
  * @author jan
  */
-public interface ICalcValue extends java.io.Serializable {
+public interface ICalcValue extends java.io.Serializable, IPrintable {
     
     public String getRepr(ReprContext ctx);
     public String getExprRepr(ReprContext ctx);

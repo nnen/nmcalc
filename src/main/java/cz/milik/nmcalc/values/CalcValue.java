@@ -158,10 +158,17 @@ public abstract class CalcValue implements ICalcValue {
     public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
         return getExprRepr(ctx) + "(" + StringUtils.join(", ", arguments.stream().map(arg -> arg.getExprRepr(ctx))) + ")";
     }
+
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        printDebug(out, ctx);
+    }
     
     @Override
     public void printDebug(TextWriter out, ReprContext ctx) {
-        out.monospace(getRepr(ctx));
+        out.plain(getRepr(ctx));
+        //out.monospace(getRepr(ctx));
     }
     
     

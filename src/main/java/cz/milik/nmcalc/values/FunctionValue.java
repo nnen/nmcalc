@@ -12,7 +12,6 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.Process;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.TextWriter;
-import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,7 +58,22 @@ public class FunctionValue extends CalcValue {
         argumentNames.addAll(someArgumentNames);
         staticContext = aStaticContext;
     }
+
     
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        out.span("keyword", "def");
+        out.plain(" ");
+        if (functionName != null) {
+            out.span("name", functionName.getValue());
+        }
+        out.plain("(");
+        out.plain(") ");
+        if (getHelp().isPresent()) {
+            out.span("literal", "\"" + getHelp().get() + "\" ");
+        }
+        functionBody.print(out, ctx);
+    }
     
     @Override
     public String getRepr(ReprContext ctx) {

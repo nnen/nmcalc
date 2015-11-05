@@ -164,6 +164,11 @@ public class Environment implements Serializable, IPrintable {
 
     
     @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        printDebug(out, ctx);
+    }
+    
+    @Override
     public void printDebug(TextWriter out, ReprContext ctx) {
         List<String> names = new ArrayList(variables.keySet());
         names.sort(Comparator.naturalOrder());

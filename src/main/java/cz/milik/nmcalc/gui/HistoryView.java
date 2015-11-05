@@ -9,18 +9,11 @@ import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.text.ITextElement;
-import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
-import java.awt.Rectangle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 
 /**
  *
@@ -94,10 +87,9 @@ public class HistoryView extends javax.swing.JPanel {
         textPane.prepend(element);
     }
     
+    /*
     public void append(ICalcValue expr, ICalcValue value) {
-        /*
-        append(expr.getRepr(getReprContext()), value);
-                */
+        //append(expr.getRepr(getReprContext()), value);
         
         TextWriter tw = new TextWriter();
         
@@ -111,6 +103,7 @@ public class HistoryView extends javax.swing.JPanel {
         
         textPane.append(tw.getResult());
     }
+    */
     
     public void append(String expr, ICalcValue value) {
         TextWriter tw = new TextWriter();

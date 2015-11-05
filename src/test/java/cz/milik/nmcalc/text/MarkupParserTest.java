@@ -134,6 +134,11 @@ public class MarkupParserTest {
         }
 
         @Override
+        public Object visitSpan(Text.Span element, PrintStream ctx) {
+            return print(element, ctx);
+        }
+        
+        @Override
         public Object visitCalcValue(Text.CalcValue calcValue, PrintStream ctx) {
             return print(calcValue, ctx);
         }

@@ -8,7 +8,7 @@ package cz.milik.nmcalc.values;
 import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.text.TextWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.function.Function;
@@ -94,6 +94,13 @@ public class FloatValue extends CalcValue {
     public boolean isInteger() {
         return (value.scale() <= 0) || (value.stripTrailingZeros().scale() <= 0);
     }
+    
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        out.span("literal", getRepr(ctx));
+    }
+    
     
     @Override
     public String getRepr(ReprContext ctx) {

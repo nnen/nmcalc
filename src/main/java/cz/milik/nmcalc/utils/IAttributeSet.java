@@ -11,10 +11,11 @@ package cz.milik.nmcalc.utils;
  */
 public interface IAttributeSet {
     
-    //public Object getAttribute(Object key);
+    public Object getAttribute(Object key);
     
-    public <T> T getAttribute(Class<T> cls);
-    public <T> void setAttribute(Class<T> cls, T value);
-    public void setAttribute(Object value);
+    public IAttributeSet addAttribute(Object key, Object value);
+    public IAttributeSet addAttributes(IAttributeSet attributes);
+    
+    public Iterable<Pair<Object, Object>> getAttributes();
     
 }

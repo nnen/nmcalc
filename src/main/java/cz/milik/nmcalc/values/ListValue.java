@@ -11,7 +11,7 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.Process;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -76,6 +76,22 @@ public class ListValue extends CalcValue {
         return "ListValue{" + "values=" + values + '}';
     }
 
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        out.plain("[");
+        boolean first = true;
+        for (ICalcValue item : values) {
+            if (first) {
+                first = false;
+            } else {
+                out.plain(", ");
+            }
+            item.print(out, ctx);
+        }
+        out.plain("]");
+        //super.print(out, ctx); //To change body of generated methods, choose Tools | Templates.
+    }
     
     @Override
     public String getRepr(ReprContext ctx) {
