@@ -19,6 +19,16 @@ public interface ITextElementVisitor<C, R> {
     
     public R visitCodeBlock(Text.CodeBlock element, C ctx);
     
+    public R visitBulletList(Text.BulletList element, C ctx);
+
+    public R visitBulletPoint(Text.BulletPoint element, C ctx);
+    
+    public R visitTable(Text.Table element, C ctx);
+    
+    public R visitTableRow(Text.TableRow element, C ctx);
+    
+    public R visitTableCell(Text.TableCell element, C ctx);
+    
     public R visitHeadline(Text.Headline element, C ctx);
     
     public R visitPlainText(Text.PlainText element, C ctx);
@@ -35,9 +45,5 @@ public interface ITextElementVisitor<C, R> {
     
     
     public R visitOther(ITextElement element, C ctx);
-
-    public R visitBulletList(Text.BulletList element, C ctx);
-
-    public R visitBulletPoint(Text.BulletPoint element, C ctx);
     
 }

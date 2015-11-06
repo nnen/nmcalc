@@ -31,6 +31,7 @@ public interface ICalcValue extends java.io.Serializable, IPrintable {
     public String getRepr(ReprContext ctx);
     public String getExprRepr(ReprContext ctx);
     public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx);
+    public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx);
     public void printDebug(TextWriter out, ReprContext ctx);
     
     public Optional<TextLoc> getTextLoc();

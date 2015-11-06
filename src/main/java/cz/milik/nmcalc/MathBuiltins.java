@@ -91,6 +91,74 @@ public final class MathBuiltins {
                 (a, b) -> BigIntegerMath.lcm(a, b)));
     }
     
+    public static void register(BuiltinSet builtins) {
+        /*
+        builtins.register(
+                "pi",
+                CalcValue.make(BigDecimalMath.pi(MathContext.UNLIMITED)));
+        builtins.register(
+                "e",
+                CalcValue.make(BigDecimalMath.exp(MathContext.UNLIMITED)));
+        */
+        
+        builtins.register(MOD);
+        
+        builtins.register(RAND);
+        
+        builtins.register(makeFloatFunction(
+                "abs",
+                "**`abs(x)`**\n\nReturns the absolute value of `x`.",
+                x -> x.abs()));
+        builtins.register(makeFloatFunction(
+                "ceil",
+                "**`ceil(x)`**\n\nReturns `x` rounded up.",
+                x -> x.setScale(0, RoundingMode.CEILING)));
+        builtins.register(makeFloatFunction(
+                "floor",
+                "**`floor(x)`**\n\nReturns `x` rounded down.",
+                x -> x.setScale(0, RoundingMode.FLOOR)));
+        
+        builtins.register(makeFloatFunction(
+                "sin",
+                "**`sin(x)`**\n\nReturns the sine of `x`.",
+                x -> BigDecimalMath.sin(x)));
+        builtins.register(makeFloatFunction(
+                "asin",
+                "**`asin(x)`**\n\nReturns the arc sine of `x`.",
+                x -> BigDecimalMath.asin(x)));
+        builtins.register(makeFloatFunction(
+                "cos",
+                "**`cos(x)`**\n\nReturns the cosine of `x`.",
+                x -> BigDecimalMath.cos(x)));
+        builtins.register(makeFloatFunction(
+                "acos",
+                "**`acos(x)`**\n\nReturns the arc cosine of `x`.",
+                x -> BigDecimalMath.acos(x)));
+        builtins.register(makeFloatFunction(
+                "tan",
+                "**`tan(x)`**\n\nReturns the tangent of `x`.",
+                x -> BigDecimalMath.tan(x)));
+        builtins.register(makeFloatFunction(
+                "atan",
+                "**`atan(x)`**\n\nReturns the arc tangent of `x`.",
+                x -> BigDecimalMath.atan(x)));
+        
+        builtins.register(POW);
+        builtins.register(makeFloatFunction(
+                "sqrt",
+                "**`sqrt(x)`**\n\nReturns the square root of `x`.",
+                x -> BigDecimalMath.sqrt(x)));
+        builtins.register(makeFloatFunction(
+                "ln",
+                "**`ln(x)`**\n\nReturns the natural logarithm of `x`.",
+                x -> BigDecimalMath.log(x)));
+        
+        builtins.register(makeIntegerFunction(
+                "lcm",
+                "**`lcm(a, b)`**\n\nReturns least common denominator of `a` and `b`.",
+                (a, b) -> BigIntegerMath.lcm(a, b)));
+    }
+    
     
     public static final BuiltinCalcValue MOD = makeFloatFunction(
             "mod",

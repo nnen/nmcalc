@@ -196,6 +196,21 @@ public class HyperTextPane extends JPanel {
                 }
                 return null;
             }
+
+            @Override
+            public Object visitTable(Text.Table element, Object ctx) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public Object visitTableRow(Text.TableRow element, Object ctx) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public Object visitTableCell(Text.TableCell element, Object ctx) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
             
             @Override
             public Object visitHeadline(Text.Headline headline, Object ctx) {
@@ -389,8 +404,10 @@ public class HyperTextPane extends JPanel {
                 "tt { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #dddddd; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; border-top-left-radius: 3px; border-top-right-radius: 3px; }\n" +
                 ".result { background-color: #ffffff; border: none; }\n" +
                 ".keyword { color: #0000ff; font-weight: bold; }\n" +
-                ".name { font-style: italic; }\n" +
-                ".literal { color: #cc0000; }"
+                ".func_name { font-weight: bold; }\n" +
+                ".arg_name { font-style: italic; }\n" +
+                ".literal { color: #cc0000; }\n" +
+                ".builtin { color: #cc00cc; }\n"
         );
         document.getStyleSheet().addRule(
                 "blockquote code pre { background-color: transparent; }"
@@ -467,6 +484,21 @@ public class HyperTextPane extends JPanel {
         @Override
         public Object visitCodeBlock(Text.CodeBlock codeBlock, StringBuilder ctx) {
             return block(codeBlock, ctx, "code", "pre");
+        }
+
+        @Override
+        public Object visitTable(Text.Table element, StringBuilder ctx) {
+            return block(element, ctx, "table");
+        }
+
+        @Override
+        public Object visitTableRow(Text.TableRow element, StringBuilder ctx) {
+            return block(element, ctx, "tr");
+        }
+
+        @Override
+        public Object visitTableCell(Text.TableCell element, StringBuilder ctx) {
+            return block(element, ctx, "td");
         }
         
         @Override

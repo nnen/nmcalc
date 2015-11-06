@@ -137,6 +137,57 @@ public class Context implements IPrintable {
     }
 
     
+    public void printStackTrace(TextWriter out, ReprContext ctx) {
+        Context current = this;
+        Environment lastEnv = null;
+        int index = 0;
+        
+        out.startTable();
+        
+        out.startTableRow();
+        out.tableCell("Frame");
+        out.tableCell("PC");
+        out.tableCell("Description");
+        out.end();
+        
+        while (current != null) {
+            out.startTableRow();
+            
+            out.startTableCell();
+            out.plain(Integer.toString(index));
+            out.end();
+            
+            out.startTableCell();
+            out.plain(Integer.toString(current.getPC()));
+            out.end();
+            
+            out.startTableCell();
+            current.printDescription(out, ctx);
+            out.end();
+            
+            out.end();
+            
+            Environment env = current.getEnvironment();
+            if (env != lastEnv) {
+                out.startTableRow();
+                out.startTableCell();
+                out.end();
+                out.startTableCell();
+                out.end();
+                out.startTableCell();
+                env.printDebug(out, ctx);
+                out.end();
+                out.end();
+                lastEnv = env;
+            }
+            
+            current = current.getParent();
+            index++;
+        }
+        
+        out.end();
+    }
+    
     @Override
     public void print(TextWriter out, ReprContext ctx) {
         printDebug(out, ctx);
@@ -144,6 +195,8 @@ public class Context implements IPrintable {
     
     @Override
     public void printDebug(TextWriter out, ReprContext ctx) {
+        printStackTrace(out, ctx);
+        /*
         Context current = this;
         Environment lastEnv = null;
         int index = 0;
@@ -166,6 +219,7 @@ public class Context implements IPrintable {
             current = current.getParent();
             index++;
         }
+        */
     }
     
     protected void printDescription(TextWriter out, ReprContext ctx) {

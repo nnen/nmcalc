@@ -98,7 +98,7 @@ public class Environment implements Serializable, IPrintable {
         this.parent = null;
         
         BuiltinCalcValue.initialize(this);
-        MathBuiltins.initialize(this);
+        //MathBuiltins.initialize(this);
     }
     
     public Environment(Environment parent) {
@@ -173,13 +173,35 @@ public class Environment implements Serializable, IPrintable {
         List<String> names = new ArrayList(variables.keySet());
         names.sort(Comparator.naturalOrder());
         
+        out.startTable();
+        
         for (String name : names) {
             ICalcValue value = variables.get(name);
             
+            out.startTableRow();
+            
+            out.startTableCell();
+            out.monospace(name);
+            out.end();
+            
+            out.startTableCell();
+            value.print(out, ctx);
+            out.end();
+            
+            /*
             out.startPar();
-            out.monospace("%s: %s", name, value.getRepr(ctx));
+            out.monospace("%s: ", name);
+            out.startMonospace();
+            value.print(out, ctx);
+            out.end();
+            //out.monospace("%s: %s", name, value.getRepr(ctx));
+            out.end();
+            */
+            
             out.end();
         }
+        
+        out.end();
     }
     
 }

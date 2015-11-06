@@ -9,7 +9,7 @@ import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.IMonad;
 import java.util.Objects;
 
@@ -28,7 +28,26 @@ public class SymbolValue extends StringValue {
     public boolean isSymbol() {
         return true;
     }
+
     
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        if (ctx.isExpression()) {
+            if (isIdent()) {
+                out.plain(getValue());
+                return;
+            }
+            out.plain("$" + getValue());
+            return;
+        }
+        
+        if (isIdent()) {
+            out.span("literal", "'" + getValue());
+            return;
+        }
+        
+        out.span("literal", "'$" + getValue());
+    }
     
     @Override
     public String getRepr(ReprContext ctx) {

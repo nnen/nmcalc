@@ -104,6 +104,22 @@ public abstract class Text implements IText {
         return new BulletPoint(children);
     }
     
+    public static Table table() {
+        return new Table();
+    }
+    
+    public static TableRow tableRow() {
+        return new TableRow();
+    }
+    
+    public static TableCell tableCell() {
+        return new TableCell();
+    }
+    
+    public static TableCell tableCell(String fmt, Object... args) {
+        return new TableCell(plain(String.format(fmt, args)));
+    }
+    
     public static Headline headline(String value, int level) {
         return new Headline(level, plain(value));
     }
@@ -234,6 +250,34 @@ public abstract class Text implements IText {
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
             return visitor.visitBulletPoint(this, ctx);
+        }
+    }
+    
+    
+    public static class Table extends ParentElement {
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitTable(this, ctx);
+        }
+    }
+    
+    
+    public static class TableRow extends ParentElement {
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitTableRow(this, ctx);
+        }
+    }
+    
+    
+    public static class TableCell extends ParentElement {
+        public TableCell(ITextElement... children) {
+            super(children);
+        }
+        
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitTableCell(this, ctx);
         }
     }
     

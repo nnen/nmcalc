@@ -60,6 +60,22 @@ public class TextWriter {
         return start(Text.blockQuote());
     }
     
+    public TextWriter startTable() {
+        return start(Text.table());
+    }
+    
+    public TextWriter startTableRow() {
+        return start(Text.tableRow());
+    }
+    
+    public TextWriter startTableCell() {
+        return start(Text.tableCell());
+    }
+    
+    public TextWriter tableCell(String fmt, Object... args) {
+        return append(Text.tableCell(fmt, args));
+    }
+    
     public TextWriter startBold() {
         return start(Text.bold());
     }

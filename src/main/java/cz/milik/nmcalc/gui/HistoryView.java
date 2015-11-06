@@ -31,7 +31,7 @@ public class HistoryView extends javax.swing.JPanel {
     private ReprContext reprContext = new ReprContext();
     
     {
-        reprContext.getFlags().add(ReprContext.Flags.PRETTY_PRINT_HELP);
+        reprContext.addFlags(ReprContext.Flags.PRETTY_PRINT_HELP);
     }
     
     public ReprContext getReprContext() {

@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,24 @@ public class Utils {
         return list;
     }
     
+    public static boolean isPresent(Optional<?> value) {
+        if (value == null) {
+            return false;
+        }
+        return value.isPresent();
+    }
+    
+    public static <T> void forEach(Iterable<T> iterable, Consumer<T> fn, Runnable between) {
+        boolean first = true;
+        for (T item : iterable) {
+            if (first) {
+                first = false;
+            } else {
+                between.run();
+            }
+            fn.accept(item);
+        }
+    }
     
     public static <T, U> List<U> mapList(Iterable<T> input, Function<T, U> mapFn) {
         List<U> result = new ArrayList();

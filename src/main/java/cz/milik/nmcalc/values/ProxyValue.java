@@ -55,6 +55,11 @@ public abstract class ProxyValue implements ICalcValue {
     }
     
     @Override
+    public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx) {
+        getTarget().printApplyExpr(out, arguments, ctx);
+    }
+    
+    @Override
     public void printDebug(TextWriter out, ReprContext ctx) {
         getTarget().printDebug(out, ctx);
     }

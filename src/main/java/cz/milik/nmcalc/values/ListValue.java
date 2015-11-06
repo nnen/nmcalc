@@ -79,6 +79,16 @@ public class ListValue extends CalcValue {
     
     @Override
     public void print(TextWriter out, ReprContext ctx) {
+        if (ctx.isExpression()) {
+            if (values.isEmpty()) {
+                out.plain("[]");
+                return;
+            }
+            
+            getHead().printApplyExpr(out, getTail(), ctx);
+            
+            return;
+        }
         out.plain("[");
         boolean first = true;
         for (ICalcValue item : values) {

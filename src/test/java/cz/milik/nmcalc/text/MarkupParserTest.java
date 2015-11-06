@@ -109,6 +109,21 @@ public class MarkupParserTest {
         }
 
         @Override
+        public Object visitTable(Text.Table element, PrintStream ctx) {
+            return print(element, ctx);
+        }
+
+        @Override
+        public Object visitTableRow(Text.TableRow element, PrintStream ctx) {
+            return print(element, ctx);
+        }
+
+        @Override
+        public Object visitTableCell(Text.TableCell element, PrintStream ctx) {
+            return print(element, ctx);
+        }
+        
+        @Override
         public Object visitHeadline(Text.Headline headline, PrintStream ctx) {
             return print(headline, ctx);
         }

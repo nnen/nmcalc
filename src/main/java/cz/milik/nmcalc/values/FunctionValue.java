@@ -13,6 +13,7 @@ import cz.milik.nmcalc.Process;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.StringUtils;
+import cz.milik.nmcalc.utils.Utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,14 +66,20 @@ public class FunctionValue extends CalcValue {
         out.span("keyword", "def");
         out.plain(" ");
         if (functionName != null) {
-            out.span("name", functionName.getValue());
+            out.span("func_name", functionName.getValue());
         }
         out.plain("(");
+        Utils.forEach(argumentNames, arg -> {
+            out.span("arg_name", arg.getValue());
+        }, () -> {
+            out.plain(", ");
+        });
         out.plain(") ");
         if (getHelp().isPresent()) {
             out.span("literal", "\"" + getHelp().get() + "\" ");
         }
-        functionBody.print(out, ctx);
+        ReprContext bodyCtx = ctx.withIsExpression();
+        functionBody.print(out, bodyCtx);
     }
     
     @Override

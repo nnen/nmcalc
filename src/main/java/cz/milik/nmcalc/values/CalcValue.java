@@ -17,6 +17,7 @@ import cz.milik.nmcalc.TextLoc;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.StringUtils;
+import cz.milik.nmcalc.utils.Utils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -163,6 +164,18 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public void print(TextWriter out, ReprContext ctx) {
         printDebug(out, ctx);
+    }
+
+    @Override
+    public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx) {
+        print(out, ctx);
+        out.plain("(");
+        Utils.forEach(arguments, arg -> {
+            arg.print(out, ctx);
+        }, () -> {
+            out.plain(", ");
+        });
+        out.plain(")");
     }
     
     @Override

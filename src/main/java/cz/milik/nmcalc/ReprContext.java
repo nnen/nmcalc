@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc;
 
+import cz.milik.nmcalc.utils.Utils;
 import cz.milik.nmcalc.values.FloatValue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -17,8 +18,8 @@ import java.util.Optional;
  *
  * @author jan
  */
-public class ReprContext { 
-   
+public class ReprContext {    
+    
     private ReprContext parent;
     
     public ReprContext getParent() {
@@ -31,6 +32,9 @@ public class ReprContext {
     
     
     public static enum Flags {
+        EXPRESSION,
+        APPLY_EXPRESSION,
+        
         HEX,
         HEX_INTEGER_ONLY,
         
@@ -46,14 +50,22 @@ public class ReprContext {
     
     private Optional<EnumSet<Flags>> flags = Optional.empty();
     
-    public EnumSet<Flags> getFlags() {
-        if (!flags.isPresent()) {
-            if (parent != null) {
-                return parent.getFlags();
-            }
-            return EnumSet.noneOf(Flags.class);
+    private Optional<EnumSet<Flags>> disabledFlags = Optional.empty();
+    
+    public boolean hasFlag(Flags flag) {
+        if (disabledFlags.isPresent() && disabledFlags.get().contains(flag)) {
+            return false;
         }
-        return flags.get();
+        
+        if (flags.isPresent() && flags.get().contains(flag)) {
+            return true;
+        }
+        
+        if (parent != null) {
+            return parent.hasFlag(flag);
+        }
+        
+        return false;
     }
     
     public void setFlags(EnumSet<Flags> flags) {
@@ -65,6 +77,14 @@ public class ReprContext {
             flags = Optional.of(EnumSet.noneOf(Flags.class));
         }
         flags.get().addAll(EnumSet.of(first, rest));
+        return this;
+    }
+    
+    public ReprContext removeFlags(Flags first, Flags... rest) {
+        if (!disabledFlags.isPresent()) {
+            disabledFlags = Optional.of(EnumSet.noneOf(Flags.class));
+        }
+        disabledFlags.get().addAll(EnumSet.of(first, rest));
         return this;
     }
     
@@ -100,21 +120,55 @@ public class ReprContext {
     }
     
     
+    public boolean isExpression() {
+        return hasFlag(Flags.EXPRESSION);
+    }
+    
+    public ReprContext withIsExpression() {
+        ReprContext ctx = new ReprContext(this);
+        ctx.addFlags(Flags.EXPRESSION);
+        return ctx;
+    }
+    
+    public boolean isApplyExpression() {
+        return hasFlag(Flags.APPLY_EXPRESSION);
+    }
+    
+    public ReprContext withIsApplyExpression() {
+        ReprContext ctx = new ReprContext(this);
+        ctx.addFlags(Flags.APPLY_EXPRESSION);
+        return ctx;
+    }
+    
+    
     public boolean hasPrettyPrintHelp() {
-        return getFlags().contains(Flags.PRETTY_PRINT_HELP);
+        return hasFlag(Flags.PRETTY_PRINT_HELP);
     }
     
     
     public ReprContext() {
     }
     
+    public ReprContext(ReprContext parent) {
+        this.parent = parent;
+    }
+    
     public ReprContext(EnumSet<Flags> flags) {
         setFlags(flags.clone());
     }
     
+    public ReprContext(ReprContext parent, Optional<EnumSet<Flags>> flags, Optional<EnumSet<Flags>> disabledFlags) {
+        this.parent = parent;
+        if (Utils.isPresent(flags)) {
+            this.flags = Optional.of(EnumSet.copyOf(flags.get()));
+        }
+        if (Utils.isPresent(disabledFlags)) {
+            this.disabledFlags = Optional.of(EnumSet.copyOf(disabledFlags.get()));
+        }
+    }
     
     public ReprContext copy() {
-        return new ReprContext(getFlags());
+        return new ReprContext(parent, flags, disabledFlags);
     }
     
     public String formatFloat(BigDecimal value) {
@@ -123,19 +177,18 @@ public class ReprContext {
     }
     
     public String formatFloat(FloatValue value) {
-        EnumSet<Flags> flags = getFlags();
-        if (flags.contains(Flags.HEX)) {
+        if (hasFlag(Flags.HEX)) {
             return formatHexInt(value.getDecimalValue());
-        } else if (flags.contains(Flags.OCTAL)) {
+        } else if (hasFlag(Flags.OCTAL)) {
             return formatOctInt(value.getDecimalValue());
-        } else if (flags.contains(Flags.BINARY)) {
+        } else if (hasFlag(Flags.BINARY)) {
             return formatBinInt(value.getDecimalValue());
         } else if (value.isInteger()) {
-            if (flags.contains(Flags.HEX_INTEGER_ONLY)) {
+            if (hasFlag(Flags.HEX_INTEGER_ONLY)) {
                 return formatHexInt(value.getDecimalValue());
-            } else if (flags.contains(Flags.OCTAL_INTEGER_ONLY)) {
+            } else if (hasFlag(Flags.OCTAL_INTEGER_ONLY)) {
                 return formatOctInt(value.getDecimalValue());
-            } else if (flags.contains(Flags.BINARY_INTEGER_ONLY)) {
+            } else if (hasFlag(Flags.BINARY_INTEGER_ONLY)) {
                 return formatBinInt(value.getDecimalValue());
             }
             //return value.getDecimalValue().setScale(0).toString();

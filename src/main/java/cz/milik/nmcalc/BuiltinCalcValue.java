@@ -17,6 +17,7 @@ import cz.milik.nmcalc.values.CalcValue;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.loader.CalcLoader;
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.IMonad;
 import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
@@ -47,7 +48,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
             builtins = SingletonEnvironment.get(UUID.fromString("8ba3a256-5abb-4168-8416-873a1b11022c"));
             
             initialize(builtins);
-            MathBuiltins.initialize(builtins);
+            //MathBuiltins.initialize(builtins);
         }
         return builtins;
     }
@@ -70,6 +71,12 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     
     public abstract String getName();
+
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        out.span("builtin", getRepr(ctx));
+    }
     
     @Override
     public String getRepr(ReprContext ctx) {
@@ -703,10 +710,31 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     public static final BuiltinCalcValue IF_ELSE = new BuiltinCalcValue() {
-
+        
         @Override
         public String getName() {
             return "if_else";
+        }
+
+        @Override
+        public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx) {
+            if (arguments.size() != 3) {
+                super.printApplyExpr(out, arguments, ctx);
+                return;
+            }
+            
+            ICalcValue cond = arguments.get(0);
+            ICalcValue trueExpr = arguments.get(1);
+            ICalcValue falseExpr = arguments.get(2);
+            
+            out.span("keyword", "if ");
+            cond.print(out, ctx);
+            out.span("keyword", " then ");
+            trueExpr.print(out, ctx);
+            out.span("keyword", " else ");
+            falseExpr.print(out, ctx);
+            
+            //super.printApplyExpr(out, arguments, ctx); //To change body of generated methods, choose Tools | Templates.
         }
         
         @Override
@@ -1024,6 +1052,15 @@ public abstract class BuiltinCalcValue extends CalcValue {
         public CollectBuiltin(String operator) {
             this.operator = operator;
         }
+
+        @Override
+        public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx) {
+            Utils.forEach(arguments, arg -> {
+                arg.print(out, ctx);
+            }, () -> {
+                out.plain(" " + operator + " ");
+            });
+        }
         
         @Override
         public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
@@ -1191,6 +1228,21 @@ public abstract class BuiltinCalcValue extends CalcValue {
         }
         
         protected abstract ICalcValue applyInner(ICalcValue a, ICalcValue b, Context ctx)throws NMCalcException;
+
+        @Override
+        public void printApplyExpr(TextWriter out, List<? extends ICalcValue> arguments, ReprContext ctx) {
+            if (arguments.size() != 2) {
+                super.printApplyExpr(out, arguments, ctx);
+                return;
+            }
+            
+            ICalcValue a = arguments.get(0);
+            ICalcValue b = arguments.get(1);
+            
+            a.print(out, ctx);
+            out.plain(" " + operator + " ");
+            b.print(out, ctx);
+        }
         
         @Override
         public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx) {
@@ -1759,6 +1811,8 @@ public abstract class BuiltinCalcValue extends CalcValue {
         
         builtinSet.register(PARSE);
         builtinSet.register(IMPORT);
+        
+        MathBuiltins.register(builtinSet);
     }
 
 }
