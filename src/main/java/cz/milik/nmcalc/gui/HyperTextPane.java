@@ -12,13 +12,27 @@ import cz.milik.nmcalc.text.ITextElementVisitor;
 import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
+import cz.milik.nmcalc.utils.Utils;
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JFileChooser;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
@@ -417,6 +431,69 @@ public class HyperTextPane extends JPanel {
         textPane.setEditorKit(editorKit);
         textPane.setDocument(document);
         scrollPane.setViewportView(textPane);
+        
+        textPane.setComponentPopupMenu(new PopupMenu());
+        
+        /*
+        addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger())
+                {
+                    pop(e);
+                }
+            }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger())
+                {
+                    pop(e);
+                }
+            }
+            
+            protected void pop(MouseEvent e) {
+                PopupMenu m = new PopupMenu();
+                m.doPop(e);
+            }
+            
+        });
+                */
+    }
+    
+    public String getHTML() {
+        StringWriter sw = new StringWriter();
+        try {
+            editorKit.write(sw, document, 0, document.getLength());
+        } catch (IOException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (BadLocationException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return sw.toString();
+    }
+    
+    public void saveTo(File f) {
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(f.getPath(), "utf-8");
+            pw.write(getHTML());
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            Utils.closeSilently(pw);
+        }
+    }
+    
+    public void clear() {
+        try {
+            document.remove(0, document.getLength());
+        } catch (BadLocationException ex) {
+            Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     
@@ -560,6 +637,60 @@ public class HyperTextPane extends JPanel {
         @Override
         public Object visitBulletPoint(Text.BulletPoint bulletPoint, StringBuilder ctx) {
             return block(bulletPoint, ctx, "li");
+        }
+        
+    }
+
+    
+    public class PopupMenu extends JPopupMenu {
+        JMenuItem saveAsItem;
+        JMenuItem clearItem;
+        
+        public PopupMenu() {
+            saveAsItem = new JMenuItem(new SaveAsAction());
+            add(saveAsItem);
+            
+            addSeparator();
+            
+            clearItem = new JMenuItem(new ClearAction());
+            add(clearItem);
+        }
+        
+        public void doPop(MouseEvent e){
+            this.show(e.getComponent(), e.getX(), e.getY());
+        }
+    }
+    
+    
+    public class SaveAsAction extends AbstractAction {
+
+        public SaveAsAction() {
+            putValue(NAME, "Save As...");
+        }
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JFileChooser ch = new JFileChooser();
+            ch.setFileFilter(new FileNameExtensionFilter("HTML file", "html"));
+            int result = ch.showSaveDialog(HyperTextPane.this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File f = ch.getSelectedFile();
+                HyperTextPane.this.saveTo(f);
+            }
+        }
+        
+    }
+    
+    
+    public class ClearAction extends AbstractAction {
+
+        public ClearAction() {
+            putValue(Action.NAME, "Clear");
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            HyperTextPane.this.clear();
         }
         
     }
