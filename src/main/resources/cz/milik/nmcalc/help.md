@@ -49,4 +49,4 @@ Further Topics
 
 ### Functions
 
-For more info on functions, see `help("functions.md")`.
+For more info on functions, see [`help("functions.md")`](help:/functions.md).

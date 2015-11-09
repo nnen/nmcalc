@@ -17,6 +17,8 @@ import cz.milik.nmcalc.utils.ListenerCollection;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -159,6 +161,28 @@ public class Interpreter {
         listeners.handleEvent(listener -> {
             listener.onProcessStarted(this, process);
         });
+    }
+    
+    
+    public String getHelp(String name, Context ctx) {
+        ISource source;
+        
+        try {
+            source = getLoader().getSource(name, ctx);
+        } catch (NMCalcException ex) {
+            return null;
+        }
+        
+        try {
+            return source.getContent(ctx);
+        } catch (NMCalcException ex) {
+            Logger.getLogger(Interpreter.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+    }
+    
+    public String getHelp(String name) {
+        return getHelp(name, defaultContext);
     }
     
     

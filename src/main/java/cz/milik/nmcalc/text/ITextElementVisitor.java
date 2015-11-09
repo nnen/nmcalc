@@ -41,6 +41,8 @@ public interface ITextElementVisitor<C, R> {
     
     public R visitSpan(Text.Span element, C ctx);
     
+    public R visitLink(Text.Link element, C ctx);
+    
     public R visitCalcValue(Text.CalcValue element, C ctx);
     
     

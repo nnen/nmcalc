@@ -9,8 +9,8 @@ import cz.milik.nmcalc.CalcAnnotation;
 import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.text.TextWriter;
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -29,14 +29,24 @@ public class StringValue extends PrimitiveValueBase<String> {
     public boolean isHelp() {
         return getAnnotation(CalcAnnotation.IsHelp.class).isPresent();
     }
+
     
+    public static String quote(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+    
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        out.span("literal", getRepr(ctx));
+    }
     
     @Override
     public String getRepr(ReprContext ctx) {
         if (ctx.hasPrettyPrintHelp() && isHelp()) {
             return getValue();
         }
-        return "\"" + getValue() + "\"";
+        return "\"" + quote(getValue()) + "\"";
     }
     
     

@@ -12,16 +12,21 @@ import cz.milik.nmcalc.text.ITextElementVisitor;
 import cz.milik.nmcalc.text.MarkupParser;
 import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
+import cz.milik.nmcalc.utils.ListenerCollection;
 import cz.milik.nmcalc.utils.Utils;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -32,6 +37,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -302,6 +309,11 @@ public class HyperTextPane extends JPanel {
                 }
                 return null;
             }
+
+            @Override
+            public Object visitLink(Text.Link element, Object ctx) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
             
             @Override
             public Object visitCalcValue(Text.CalcValue calcValue, Object ctx) {
@@ -324,8 +336,7 @@ public class HyperTextPane extends JPanel {
     
     
     public String toHtml(ITextElement element) {
-        HTMLBuilder builder = new HTMLBuilder();
-        return builder.toHtml(element);
+        return element.toHTML();
     }
     
     public Element getBody() {
@@ -414,8 +425,12 @@ public class HyperTextPane extends JPanel {
                 "blockquote { background-color: #eeeeee; margin: 0px; padding-left: 12pt; border-left: solid 3px black; }"
         );
         document.getStyleSheet().addRule(
+                "th { background-color: #999999; color: white; }\n" +
+                "tr.odd_row td { background-color: #dddddd; }"
+        );
+        document.getStyleSheet().addRule(
                 "pre { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #ffffcc; padding: 3pt; border-left: solid 12pt #ddddaa; margin: 0px 0px 10px 0px; }\n" +
-                "tt { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #dddddd; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; border-top-left-radius: 3px; border-top-right-radius: 3px; }\n" +
+                "tt { font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace; background-color: #eeeeee; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px; border-top-left-radius: 3px; border-top-right-radius: 3px; }\n" +
                 ".result { background-color: #ffffff; border: none; }\n" +
                 ".keyword { color: #0000ff; font-weight: bold; }\n" +
                 ".func_name { font-weight: bold; }\n" +
@@ -434,32 +449,24 @@ public class HyperTextPane extends JPanel {
         
         textPane.setComponentPopupMenu(new PopupMenu());
         
-        /*
-        addMouseListener(new MouseAdapter() {
-
+        textPane.addHyperlinkListener(new HyperlinkListener() {
             @Override
-            public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger())
-                {
-                    pop(e);
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                URI uri;
+                try {
+                    uri = new URI(e.getDescription());
+                } catch (URISyntaxException ex) {
+                    Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
+                    return;
+                }
+                System.err.printf("Hyperlink activated: %s, %s, %s.\n", e.getEventType().toString(), Objects.toString(e.getURL()), e.getDescription());
+                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                    listeners.handleEvent(l -> l.onLinkActivated(uri));
                 }
             }
-            
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.isPopupTrigger())
-                {
-                    pop(e);
-                }
-            }
-            
-            protected void pop(MouseEvent e) {
-                PopupMenu m = new PopupMenu();
-                m.doPop(e);
-            }
-            
         });
-                */
+        
+        textPane.setEditable(false);
     }
     
     public String getHTML() {
@@ -474,10 +481,10 @@ public class HyperTextPane extends JPanel {
         return sw.toString();
     }
     
-    public void saveTo(File f) {
+    public void saveTo(String fileName) {
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(f.getPath(), "utf-8");
+            pw = new PrintWriter(fileName, "utf-8");
             pw.write(getHTML());
         } catch (FileNotFoundException ex) {
             Logger.getLogger(HyperTextPane.class.getName()).log(Level.SEVERE, null, ex);
@@ -496,151 +503,6 @@ public class HyperTextPane extends JPanel {
         }
     }
     
-    
-    public static class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
-
-        public String toHtml(ITextElement element) {
-            StringBuilder sb = new StringBuilder();
-            element.visit(this, sb);
-            System.err.println("HTML: " + sb.toString());
-            return sb.toString();
-        }
-        
-        protected void visitChildren(ITextElement e, StringBuilder ctx) {
-            for (ITextElement child : e.getChildren()) {
-                child.visit(this, ctx);
-            }
-        }
-        
-        protected Object block(ITextElement e, StringBuilder sb, String tagName, String... otherTagNames) {
-            sb.append("<").append(tagName).append(">");
-            for (int i = 0; i < otherTagNames.length; i++) {
-                sb.append("<").append(otherTagNames[i]).append(">");
-            }
-            visitChildren(e, sb);
-            for (int i = otherTagNames.length - 1; i >= 0; i--) {
-                sb.append("</").append(otherTagNames[i]).append(">");
-            }
-            sb.append("</").append(tagName).append(">");
-            return null;
-        }
-        
-        protected void start(StringBuilder sb, String tagName, String clsName) {
-            sb.append("<");
-            sb.append(tagName);
-            if (clsName != null) {
-                sb.append(" class=\"");
-                sb.append(clsName);
-                sb.append("\"");
-            }
-            sb.append(">");
-        }
-        
-        protected void end(StringBuilder sb, String tagName) {
-            sb.append("</");
-            sb.append(tagName);
-            sb.append(">");
-        }
-        
-        @Override
-        public Object visitFragment(Text.Fragment fragment, StringBuilder ctx) {
-            visitChildren(fragment, ctx);
-            return null;
-        }
-
-        @Override
-        public Object visitParagraph(Text.Paragraph paragraph, StringBuilder ctx) {
-            return block(paragraph, ctx, "p");
-        }
-
-        @Override
-        public Object visitBlockQuote(Text.BlockQuote blockQuote, StringBuilder ctx) {
-            return block(blockQuote, ctx, "blockquote");
-        }
-        
-        @Override
-        public Object visitCodeBlock(Text.CodeBlock codeBlock, StringBuilder ctx) {
-            return block(codeBlock, ctx, "code", "pre");
-        }
-
-        @Override
-        public Object visitTable(Text.Table element, StringBuilder ctx) {
-            return block(element, ctx, "table");
-        }
-
-        @Override
-        public Object visitTableRow(Text.TableRow element, StringBuilder ctx) {
-            return block(element, ctx, "tr");
-        }
-
-        @Override
-        public Object visitTableCell(Text.TableCell element, StringBuilder ctx) {
-            return block(element, ctx, "td");
-        }
-        
-        @Override
-        public Object visitHeadline(Text.Headline headline, StringBuilder ctx) {
-            return block(headline, ctx, "h" + Integer.toString(headline.getLevel()));
-        }
-
-        @Override
-        public Object visitPlainText(Text.PlainText plainText, StringBuilder ctx) {
-            ctx.append(plainText.getText().replace("<", "&lt;"));
-            return null;
-        }
-
-        @Override
-        public Object visitMonospace(Text.Monospace plainText, StringBuilder ctx) {
-            return block(plainText, ctx, "tt");
-        }
-
-        @Override
-        public Object visitItalic(Text.Italic italic, StringBuilder ctx) {
-            return block(italic, ctx, "i");
-        }
-
-        @Override
-        public Object visitBold(Text.Bold bold, StringBuilder ctx) {
-            return block(bold, ctx, "b");
-        }
-        
-        @Override
-        public Object visitSpan(Text.Span element, StringBuilder ctx) {
-            start(ctx, "span", element.getSpanType());
-            visitChildren(element, ctx);
-            end(ctx, "span");
-            return null;
-        }
-        
-        @Override
-        public Object visitCalcValue(Text.CalcValue calcValue, StringBuilder ctx) {
-            ctx.append("<tt class=\"result\">");
-            TextWriter.print(
-                    calcValue.getValue(),
-                    calcValue.getReprContext()
-            ).visit(this, ctx);
-            ctx.append("</tt>");
-            return null;
-        }
-        
-        @Override
-        public Object visitOther(ITextElement element, StringBuilder ctx) {
-            ctx.append(element.getText());
-            return null;
-        }
-
-        @Override
-        public Object visitBulletList(Text.BulletList bulletList, StringBuilder ctx) {
-            return block(bulletList, ctx, "ul");
-        }
-        
-        @Override
-        public Object visitBulletPoint(Text.BulletPoint bulletPoint, StringBuilder ctx) {
-            return block(bulletPoint, ctx, "li");
-        }
-        
-    }
-
     
     public class PopupMenu extends JPopupMenu {
         JMenuItem saveAsItem;
@@ -674,8 +536,11 @@ public class HyperTextPane extends JPanel {
             ch.setFileFilter(new FileNameExtensionFilter("HTML file", "html"));
             int result = ch.showSaveDialog(HyperTextPane.this);
             if (result == JFileChooser.APPROVE_OPTION) {
-                File f = ch.getSelectedFile();
-                HyperTextPane.this.saveTo(f);
+                String fileName = ch.getSelectedFile().getPath();
+                if (!fileName.toLowerCase().endsWith(".html")) {
+                    fileName += ".html";
+                }
+                HyperTextPane.this.saveTo(fileName);
             }
         }
         
@@ -693,6 +558,31 @@ public class HyperTextPane extends JPanel {
             HyperTextPane.this.clear();
         }
         
+    }
+
+    
+    private final ListenerCollection<IListener> listeners =
+            new ListenerCollection(new IListener[] {});
+
+    public boolean addHyperTextListener(IListener e) {
+        return listeners.add(e);
+    }
+    
+    public boolean removeHyperTextListener(IListener o) {
+        return listeners.remove(o);
+    }
+    
+    
+    public interface IListener {
+        void onLinkActivated(URI uri);
+    }
+    
+    
+    public static class Adapter implements IListener {
+        @Override
+        public void onLinkActivated(URI uri) {
+            // Do nothing.
+        }
     }
 }
 

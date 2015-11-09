@@ -14,10 +14,12 @@ import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.StringUtils;
 import cz.milik.nmcalc.utils.Utils;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  *
@@ -27,8 +29,10 @@ public class FunctionValue extends CalcValue {
     
     private final Environment staticContext;
     private final SymbolValue functionName;
-    private final List<SymbolValue> argumentNames = new ArrayList();
+    //private final List<SymbolValue> argumentNames = new ArrayList();
     private final ICalcValue functionBody;
+    
+    private final List<ArgumentInfo> arguments = new ArrayList();
 
     public Environment getStaticContext() {
         return staticContext;
@@ -42,8 +46,14 @@ public class FunctionValue extends CalcValue {
         return functionBody;
     }
     
+    /*
     public List<SymbolValue> getArgumentNames() {
         return Collections.unmodifiableList(argumentNames);
+    }
+    */
+    
+    public List<ArgumentInfo> getArguments() {
+        return Collections.unmodifiableList(arguments);
     }
     
     
@@ -53,13 +63,59 @@ public class FunctionValue extends CalcValue {
         staticContext = aStaticContext;
     }
     
+    /*
     public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext, Collection<? extends SymbolValue> someArgumentNames) {
         functionName = aName;
         functionBody = aFunctionBody;
         argumentNames.addAll(someArgumentNames);
         staticContext = aStaticContext;
     }
-
+    */
+    
+    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext, Collection<ArgumentInfo> someArguments) {
+        functionName = aName;
+        functionBody = aFunctionBody;
+        arguments.addAll(someArguments);
+        staticContext = aStaticContext;
+    }
+    
+    
+    public String getSignatureMarkup() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("`").append(functionName.getValue()).append("(");
+        Utils.forEach(arguments, arg -> {
+            if (arg.isVarArg()) {
+                sb.append("*").append(arg.getName());
+            } else if (arg.isOptional()) {
+                sb.append("[").append(arg.getName()).append("]");
+            } else {
+                sb.append("*").append(arg.getName()).append("*");
+            }
+        }, () -> {
+            sb.append(", ");
+        });
+        sb.append(")").append("`");
+        return sb.toString();
+    }
+    
+    public void printSignature(TextWriter out, ReprContext ctx) {
+        out.plain(functionName.getValue() + "(");
+        Utils.forEach(arguments, arg -> {
+            if (arg.isVarArg()) {
+                out.plain("*");
+                out.italic(arg.getName());
+            } else if (arg.isOptional()) {
+                out.plain("[");
+                out.italic(arg.getName());
+                out.plain("]");
+            } else {
+                out.italic(arg.getName());
+            }
+        }, () -> {
+            out.plain(", ");
+        });
+        out.plain(")");
+    }
     
     @Override
     public void print(TextWriter out, ReprContext ctx) {
@@ -69,8 +125,8 @@ public class FunctionValue extends CalcValue {
             out.span("func_name", functionName.getValue());
         }
         out.plain("(");
-        Utils.forEach(argumentNames, arg -> {
-            out.span("arg_name", arg.getValue());
+        Utils.forEach(arguments, arg -> {
+            out.span("arg_name", arg.getName());
         }, () -> {
             out.plain(", ");
         });
@@ -101,7 +157,7 @@ public class FunctionValue extends CalcValue {
             sb.append(functionName.getValue());
         }
         sb.append("(");
-        sb.append(StringUtils.join(", ", argumentNames.stream().map(arg -> arg.getValue())));
+        sb.append(StringUtils.join(", ", arguments.stream().map(arg -> arg.getName())));
         sb.append(") ");
         if (getHelp().isPresent()) {
             sb.append("\n  \"");
@@ -111,13 +167,24 @@ public class FunctionValue extends CalcValue {
         sb.append(functionBody.getExprRepr(ctx));
         return sb.toString();
     }
+
+    
+    @Override
+    protected Optional<String> getHelpInner() {
+        Optional<String> help = super.getHelpInner();
+        if (help.isPresent()) {
+            return help;
+        }
+        return Optional.of(getSignatureMarkup());
+    }
     
     
     @Override
     public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
-        final List<SymbolValue> argNames = getArgumentNames();
+        //final List<SymbolValue> argNames = getArgumentNames();
+        final List<ArgumentInfo> args = getArguments();
         
-        if (!checkArguments(ctx, arguments, argNames.size())) {
+        if (!checkArguments(ctx, arguments, args.size())) {
             return ctx;
         }
         
@@ -128,8 +195,8 @@ public class FunctionValue extends CalcValue {
                 switch (pc) {
                     case 0:
                         Environment env = this.getEnvironment();
-                        for (int i = 0; i < argNames.size(); i++) {
-                            env.setVariable(argNames.get(i).getValue(), arguments.get(i));
+                        for (int i = 0; i < args.size(); i++) {
+                            env.setVariable(args.get(i).getName(), arguments.get(i));
                         }
                         setPC(pc + 1);
                         return ctxContinue(getFunctionBody().eval(this));
@@ -144,7 +211,7 @@ public class FunctionValue extends CalcValue {
             @Override
             protected void printDescription(TextWriter out, ReprContext ctx) {
                 SymbolValue name = FunctionValue.this.getFunctionName();
-                List<SymbolValue> argNames = FunctionValue.this.getArgumentNames();
+                List<ArgumentInfo> args = FunctionValue.this.getArguments();
                 if (name == null) {
                     out.plain("executing anonymous function");
                 } else {
@@ -152,7 +219,7 @@ public class FunctionValue extends CalcValue {
                     out.monospace(
                             "%s(%s)",
                             name.getValue(),
-                            StringUtils.join(", ", argNames.stream().map(s -> s.getValue()))
+                            StringUtils.join(", ", args.stream().map(s -> s.getName()))
                     );
                 }
             }   
@@ -163,5 +230,42 @@ public class FunctionValue extends CalcValue {
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {
         return visitor.visitFunction(this, context);
     }
+ 
     
+    public static class ArgumentInfo implements Serializable {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+        
+        
+        private int position;
+
+        public int getPosition() {
+            return position;
+        }
+        
+        
+        private boolean optional = false;
+
+        public boolean isOptional() {
+            return optional;
+        }
+        
+        
+        private boolean varArg = false;
+
+        public boolean isVarArg() {
+            return varArg;
+        }
+        
+        
+        public ArgumentInfo(String name, int position, boolean isOptional, boolean isVarArg) {
+            this.name = name;
+            this.position = position;
+            this.optional = isOptional;
+            this.varArg = isVarArg;
+        }
+    }
 }

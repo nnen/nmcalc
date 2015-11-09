@@ -47,6 +47,7 @@ public class CalcScanner extends RegExScanner<Token.Types, Token> implements ISc
         addPattern(Token.Types.LBRACE, "\\{");
         addPattern(Token.Types.RBRACE, "\\}");
         addPattern(Token.Types.QUOTE, "\\'");
+        addPattern(Token.Types.DOT, "\\.");
         addPattern(Token.Types.COMMA, ",");
         addPattern(Token.Types.CONS, "::");
         addPattern(Token.Types.COLON, ":");

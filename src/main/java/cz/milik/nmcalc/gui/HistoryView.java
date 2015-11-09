@@ -9,7 +9,6 @@ import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.text.ITextElement;
-import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
@@ -174,6 +173,20 @@ public class HistoryView extends javax.swing.JPanel {
                 */
     }
 
+    public void clear() {
+        textPane.clear();
+    }
+
+    
+    public boolean addHyperTextListener(HyperTextPane.IListener e) {
+        return textPane.addHyperTextListener(e);
+    }
+
+    public boolean removeHyperTextListener(HyperTextPane.IListener o) {
+        return textPane.removeHyperTextListener(o);
+    }
+    
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private cz.milik.nmcalc.gui.HyperTextPane textPane;
     // End of variables declaration//GEN-END:variables

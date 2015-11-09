@@ -47,6 +47,7 @@ public class Token {
         LBRACE('{'),
         RBRACE('}'),
         QUOTE('\''),
+        DOT('.'),
         COMMA(','),
         COLON(':'),
         SEMICOLON(';'),
@@ -117,7 +118,7 @@ public class Token {
     public String toString() {
         return "Token{" + "type=" + type + ", offset=" + offset + ", value=" + value + '}';
     }
-
+    
     public String parseStringLiteral() {
         StringBuilder sb = new StringBuilder();
         boolean escaped = false;

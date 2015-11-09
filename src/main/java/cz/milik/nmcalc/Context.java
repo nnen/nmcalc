@@ -145,9 +145,9 @@ public class Context implements IPrintable {
         out.startTable();
         
         out.startTableRow();
-        out.tableCell("Frame");
-        out.tableCell("PC");
-        out.tableCell("Description");
+        out.tableCell(true, "Frame");
+        out.tableCell(true, "PC");
+        out.tableCell(true, "Description");
         out.end();
         
         while (current != null) {

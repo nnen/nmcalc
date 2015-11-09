@@ -52,6 +52,28 @@ public class CalcScannerTest {
         assertTokens(tokens, types);
     }
     
+    protected Token assertToken(String input, Token.Types type) {
+        scanner.reset(input, "<string>");
+        List<Token> tokens = scanner.readTokens();
+        assertEquals(1, tokens.size());
+        assertEquals(type, tokens.get(0).getType());
+        
+        return tokens.get(0);
+    }
+    
+    protected Token assertToken(String input, Token.Types type, String value) {
+        Token token = assertToken(input, type);
+        assertEquals(value, token.getValue());
+        return token;
+    }
+    
+    protected Token assertStringToken(String input, String strValue) {
+        Token t = assertToken(input, Token.Types.STRING);
+        assertEquals(strValue, t.parseStringLiteral());
+        return t;
+    }
+    
+    
     @Test
     public void testIdentifier00() {
         assertTokens("abc", Token.Types.IDENTIFIER);
@@ -91,8 +113,15 @@ public class CalcScannerTest {
         //assertTokens("0x", Token.Types.UNKNOWN);
         //assertTokens("0x123456789abcdefg", Token.Types.UNKNOWN);
     }
+    
+    
+    @Test
+    public void testString() {
+        assertStringToken("\"\"", "");
+        assertStringToken("\"\\\"\"", "\"");
+    }
 
-
+    
     @Test
     public void testColonVsCons() {
         assertTokens("::", Token.Types.CONS);

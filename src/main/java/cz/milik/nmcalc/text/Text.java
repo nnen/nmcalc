@@ -7,10 +7,14 @@ package cz.milik.nmcalc.text;
 
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -37,6 +41,13 @@ public abstract class Text implements IText {
     public void addChild(ITextElement child) {
         throw new UnsupportedOperationException();
     }
+
+    
+    @Override
+    public String toHTML() {
+        HTMLBuilder builder = new HTMLBuilder();
+        return builder.toHtml(this);
+    }
     
     
     @Override
@@ -60,8 +71,12 @@ public abstract class Text implements IText {
         return new Monospace();
     }
     
+    public static Italic italic(ITextElement... children) {
+        return new Italic(children);
+    }
+    
     public static Italic italic(String value) {
-        return new Italic(value);
+        return italic(plain(value));
     }
     
     public static Bold bold(String value) {
@@ -87,13 +102,17 @@ public abstract class Text implements IText {
     public static BlockQuote blockQuote(ITextElement... elements) {
         return new BlockQuote(elements);
     }
-    
+
     public static CodeBlock codeBlock(String value) {
         return new CodeBlock(null, plain(value));
     }
     
     public static CodeBlock codeBlock(String value, String language) {
-        return new CodeBlock(language, plain(value));
+        if (value == null) {
+            return new CodeBlock(language);
+        } else {
+            return new CodeBlock(language, plain(value));
+        }
     }
     
     public static BulletList bulletList(ITextElement... children) {
@@ -113,11 +132,19 @@ public abstract class Text implements IText {
     }
     
     public static TableCell tableCell() {
-        return new TableCell();
+        return tableCell(false);
+    }
+    
+    public static TableCell tableCell(boolean header) {
+        return new TableCell(header);
     }
     
     public static TableCell tableCell(String fmt, Object... args) {
-        return new TableCell(plain(String.format(fmt, args)));
+        return tableCell(false, fmt, args);
+    }
+    
+    public static TableCell tableCell(boolean header, String fmt, Object... args) {
+        return new TableCell(header, plain(String.format(fmt, args)));
     }
     
     public static Headline headline(String value, int level) {
@@ -132,9 +159,14 @@ public abstract class Text implements IText {
         return new Span(spanType);
     }
     
-    public static Link link(String text, Consumer<Link> action) {
-        return new Link(text, action);
+    public static Link link(String link, Consumer<Link> action, ITextElement... children) {
+        return new Link(link, action, children);
     }
+    
+    public static Link link(String link, Consumer<Link> action, String text) {
+        return new Link(link, action, plain(text));
+    }
+    
     
     public static CalcValue value(ICalcValue value) {
         return new CalcValue(value, null);
@@ -271,9 +303,26 @@ public abstract class Text implements IText {
     
     
     public static class TableCell extends ParentElement {
+        private boolean header = false;
+
+        public boolean isHeader() {
+            return header;
+        }
+
+        public void setHeader(boolean header) {
+            this.header = header;
+        }
+        
+        
         public TableCell(ITextElement... children) {
             super(children);
         }
+        
+        public TableCell(boolean header, ITextElement... children) {
+            super(children);
+            this.header = header;
+        }
+        
         
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
@@ -333,12 +382,14 @@ public abstract class Text implements IText {
     }
     
     
-    public static class Italic extends PlainText {
-        public Italic() {
+    public static class Italic extends ParentElement {
+        public Italic(ITextElement... children) {
+            super(children);
         }
 
-        public Italic(String text) {
-            super(text);
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitItalic(this, ctx);
         }
     }
     
@@ -407,12 +458,9 @@ public abstract class Text implements IText {
     }
     
     
-    public abstract static class AbstractLink extends PlainText {
-        public AbstractLink() {
-        }
-
-        public AbstractLink(String text) {
-            super(text);
+    public abstract static class AbstractLink extends ParentElement {
+        public AbstractLink(ITextElement... children) {
+            super(children);
         }
         
         public abstract void activateLink();
@@ -420,9 +468,30 @@ public abstract class Text implements IText {
     
     
     public static class Link extends AbstractLink {
-        public Link(String text, Consumer<Link> callback) {
-            super(text);
+        public Link(String link, Consumer<Link> callback, ITextElement... children) {
+            super(children);
+            this.link = link;
             this.callback = callback;
+        }
+        
+        
+        private String link;
+
+        public String getLink() {
+            return link;
+        }
+        
+        public void setLink(String link) {
+            this.link = link;
+        }
+        
+        
+        public URL getUrl() {
+            try {
+                return new URL(getLink());
+            } catch (MalformedURLException ex) {
+                return null;
+            }
         }
         
         
@@ -440,6 +509,12 @@ public abstract class Text implements IText {
         @Override
         public void activateLink() {
             getCallback().accept(this);
+        }
+
+        
+        @Override
+        public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
+            return visitor.visitLink(this, ctx);
         }
     }
 

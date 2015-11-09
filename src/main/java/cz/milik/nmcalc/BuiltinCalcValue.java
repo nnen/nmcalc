@@ -23,6 +23,7 @@ import cz.milik.nmcalc.utils.Monad;
 import cz.milik.nmcalc.utils.StringUtils;
 import cz.milik.nmcalc.utils.Utils;
 import cz.milik.nmcalc.values.BuiltinProxy;
+import cz.milik.nmcalc.values.FunctionValue.ArgumentInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -31,7 +32,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +45,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
     
     public static Environment getBuiltins() {
         if (builtins == null) {
-            builtins = SingletonEnvironment.get(UUID.fromString("8ba3a256-5abb-4168-8416-873a1b11022c"));
+            builtins = SingletonEnvironment.get(java.util.UUID.fromString("8ba3a256-5abb-4168-8416-873a1b11022c"));
             
             initialize(builtins);
             //MathBuiltins.initialize(builtins);
@@ -222,6 +222,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
             
             SymbolValue symbol = asSymbol(arguments.get(0), ctx);
             Collection<? extends SymbolValue> argumentNames = asSymbolList(arguments.get(1), ctx);
+            List<FunctionValue.ArgumentInfo> argInfo = new ArrayList();
             
             ICalcValue help = null;
             ICalcValue body;
@@ -232,8 +233,13 @@ public abstract class BuiltinCalcValue extends CalcValue {
                 body = arguments.get(3);
             }
             
-            
-            FunctionValue fn = new FunctionValue(symbol, body, ctx.getEnvironment(), argumentNames);
+            int i = 0;
+            for (SymbolValue arg : argumentNames) {
+                argInfo.add(new FunctionValue.ArgumentInfo(arg.getValue(), i, false, false));
+                i++;
+            }
+                
+            FunctionValue fn = new FunctionValue(symbol, body, ctx.getEnvironment(), argInfo);
             if (help != null) {
                 fn.setHelp(help.getStringValue(ctx));
             }
@@ -928,9 +934,9 @@ public abstract class BuiltinCalcValue extends CalcValue {
     };
     
     
-    public static final BuiltinCalcValue GETATTR = new BuiltinCalcValue() {
+    public static final BuiltinCalcValue GET_ATTR = new BuiltinCalcValue() {
         @Override
-        public String getName() { return "getattr"; }
+        public String getName() { return "get_attr"; }
 
         @Override
         protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
@@ -949,6 +955,28 @@ public abstract class BuiltinCalcValue extends CalcValue {
             }
             
             return new Context(ctx, ctx.getEnvironment(), this) {
+                @Override
+                protected void printDescription(TextWriter out, ReprContext ctx) {
+                    int pc = getPC();
+                    switch (pc) {
+                        case 0:
+                            out.plain("getting attribute ");
+                            out.append(name);
+                            out.plain(" of ");
+                            out.append(getMethod());
+                            break;
+                        case 1:
+                            out.plain("returning the attribute ");
+                            out.append(name);
+                            out.plain(" of ");
+                            out.append(getMethod());
+                            break;
+                        default:
+                            out.plain("invalid PC");
+                            break;
+                    }
+                }
+                
                 @Override
                 public ExecResult execute(Process process) {
                     int pc = getPC();
@@ -1413,24 +1441,58 @@ public abstract class BuiltinCalcValue extends CalcValue {
     public static final BuiltinCalcValue BIN = new ReprFlagUnaryOperator(ReprContext.Flags.BINARY, "bin");
     
     
-    public static final BuiltinCalcValue UUID_PAIR = new BuiltinCalcValue() {
+    public static final BuiltinCalcValue UUID = new BuiltinCalcValue() {
         @Override
         public String getName() {
-            return "uuid_pair";
+            return "uuid";
+        }
+
+        @Override
+        protected Optional<String> getHelpInner() {
+            return makeHelp(
+                    "uuid([result_type])",
+                    "Generates a type 4 random UUID and returns it. The format "
+                            + "and data type of the result depends on the "
+                            + "optional `result_type` parameter.",
+                    "Possible values for `result_type` are:",
+                    "  - `0` (default) - string containing hexadecimal "
+                            + "representation of the UUID is returned,\n"
+                            + "  - `1` - a list of two integers representing "
+                            + "the upper and lower 64 bits of the UUID "
+                            + "respectively."
+            );
         }
 
         @Override
         protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
-            if (!checkArguments(ctx, arguments, 0)) {
+            if (!checkArguments(ctx, arguments, 0, 1)) {
                 return ctx;
             }
             
-            UUID id = UUID.randomUUID();
+            int resultType = 0;
+            if (arguments.size() == 1) {
+                resultType = arguments.get(0).getDecimalValue().intValue();
+            }
             
-            ctx.setReturnedValue(CalcValue.list(
-                    CalcValue.make(BigInteger.valueOf(id.getMostSignificantBits())),
-                    CalcValue.make(BigInteger.valueOf(id.getLeastSignificantBits()))
-            ));
+            java.util.UUID id = java.util.UUID.randomUUID();
+            
+            switch (resultType)
+            {
+                case 0:
+                default:
+                    ctx.setReturnedValue(CalcValue.list(
+                            CalcValue.make(BigInteger.valueOf(id.getMostSignificantBits())),
+                            CalcValue.make(BigInteger.valueOf(id.getLeastSignificantBits()))
+                    ));
+                    
+                    break;
+                    
+                case 1:        
+                    ctx.setReturnedValue(CalcValue.make(id.toString()));
+                    
+                    break;
+            }
+            
             
             return ctx;
         }
@@ -1756,7 +1818,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         builtinSet.register(MATCH);
         builtinSet.register(SEQUENCE);
         
-        builtinSet.register(GETATTR);
+        builtinSet.register(GET_ATTR);
         builtinSet.register(SETATTR);
         
         builtinSet.register(LEN);
@@ -1798,7 +1860,7 @@ public abstract class BuiltinCalcValue extends CalcValue {
         builtinSet.register(OCT);
         builtinSet.register(BIN);
         
-        builtinSet.register(UUID_PAIR);
+        builtinSet.register(UUID);
         
         builtinSet.register(ENV);
         

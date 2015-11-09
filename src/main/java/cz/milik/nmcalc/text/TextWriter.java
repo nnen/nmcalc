@@ -46,6 +46,11 @@ public class TextWriter {
     }
     
     
+    public ITextElement peek() {
+        return stack.peek();
+    }
+    
+    
     public TextWriter start(ITextElement element) {
         stack.peek().addChild(element);
         stack.push(element);
@@ -58,6 +63,10 @@ public class TextWriter {
     
     public TextWriter startBlockQuote() {
         return start(Text.blockQuote());
+    }
+    
+    public TextWriter startCodeBlock(String codeLang) {
+        return start(Text.codeBlock(null, codeLang));
     }
     
     public TextWriter startTable() {
@@ -74,6 +83,10 @@ public class TextWriter {
     
     public TextWriter tableCell(String fmt, Object... args) {
         return append(Text.tableCell(fmt, args));
+    }
+    
+    public TextWriter tableCell(boolean header, String fmt, Object... args) {
+        return append(Text.tableCell(header, fmt, args));
     }
     
     public TextWriter startBold() {

@@ -29,6 +29,14 @@ import java.util.logging.Logger;
  */
 public class Utils {
  
+    public static boolean isNullOrEmpty(CharSequence value) {
+        if (value == null) {
+            return true;
+        }
+        return (value.length() == 0);
+    }
+    
+    
     public static <T> List<T> getNonNull(List<T> list)
     {
         if (list == null)

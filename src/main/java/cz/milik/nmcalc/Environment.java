@@ -175,6 +175,11 @@ public class Environment implements Serializable, IPrintable {
         
         out.startTable();
         
+        out.startTableRow();
+        out.tableCell(true, "Variable");
+        out.tableCell(true, "Value");
+        out.end();
+        
         for (String name : names) {
             ICalcValue value = variables.get(name);
             
@@ -185,7 +190,9 @@ public class Environment implements Serializable, IPrintable {
             out.end();
             
             out.startTableCell();
+            out.startMonospace();
             value.print(out, ctx);
+            out.end();
             out.end();
             
             /*

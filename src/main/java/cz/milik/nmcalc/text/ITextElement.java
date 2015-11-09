@@ -17,5 +17,7 @@ public interface ITextElement {
     public List<ITextElement> getChildren();
     public void addChild(ITextElement child);
     
+    public String toHTML();
+    
     public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx);
 }

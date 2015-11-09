@@ -469,7 +469,11 @@ public class CalcParser extends PegParser<ASTNode> {
                                     s(Token.Types.LBRA).ignore(),
                                     s("expr"),
                                     s(Token.Types.RBRA).ignore()
-                            ).pair(value(1))
+                            ).pair(value(1)),
+                            concat(
+                                    s(Token.Types.DOT).ignore(),
+                                    s("var")
+                            ).pair(value(2))
                     ).repeat().named("postfix"),
                     concatAny(
                             s(Token.Types.DOUBLE_ASTERISK).ignore(),
@@ -485,11 +489,19 @@ public class CalcParser extends PegParser<ASTNode> {
                             result,
                             pair.getFirst()
                         );
-                    } else {
+                    } else if (pair.getSecond() == 1) {
                         result = CalcValue.list(
                                 BuiltinCalcValue.GET_ITEM,
                                 result,
                                 pair.getFirst().get(0)
+                        );
+                    } else {
+                        result = CalcValue.list(BuiltinCalcValue.GET_ATTR,
+                                result,
+                                CalcValue.list(
+                                        BuiltinCalcValue.QUOTE,
+                                        pair.getFirst().get(0)
+                                )
                         );
                     }
                 }

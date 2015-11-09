@@ -16,6 +16,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,6 +34,7 @@ public class SimpleForm extends javax.swing.JFrame {
     private ParseResult<ICalcValue> parsed;
     
     private String lastEvaluatedExpression;
+    private boolean clearHistoryOnNextCommit = true;
     
     public String getEnvironmentFile() {
         String home = System.getProperty("user.home");
@@ -44,19 +46,6 @@ public class SimpleForm extends javax.swing.JFrame {
      */
     public SimpleForm() {
         initComponents();
-         
-        /*
-        File envFile = new File(getEnvironmentFile());
-        if (envFile.exists()) {
-            try {
-                interpreter.deserializeEnvironment(getEnvironmentFile());
-            } catch (IOException ex) {
-                Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ClassNotFoundException ex) {
-                Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        */
         
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -120,10 +109,23 @@ public class SimpleForm extends javax.swing.JFrame {
 				                + "`Ctrl+Enter` to clear the input and commit the current "
 				                + "expression into the history view (this one).\n" +
 				            "\n" +
-				            "Type `help()` and press `Ctrl+Enter` to see the help.");
+				            "Type [`help()`](help:/help.md) and press `Ctrl+Enter` to see the help.");
         			}
         		});
         	}
+        });
+        
+        historyView.addHyperTextListener(new HyperTextPane.Adapter() {
+            @Override
+            public void onLinkActivated(URI uri) {
+                System.err.printf("Link activated: %s\n", uri.toString());
+                if (Objects.equals(uri.getScheme(), "help")) {
+                    String help = SimpleForm.this.interpreter.getHelp(uri.getPath());
+                    if (help != null) {
+                        SimpleForm.this.historyView.appendMarkup(help);
+                    }
+                }
+            } 
         });
         
         //int minHeight = outputPane.getMinimumSize().height;
@@ -170,6 +172,11 @@ public class SimpleForm extends javax.swing.JFrame {
     }
     
     public void commitInput() {
+        if (clearHistoryOnNextCommit) {
+            clearHistoryOnNextCommit = false;
+            historyView.clear();
+        }
+        
         if (evaluate()) {
             historyView.append(inputPane.getInput(), result);
         } else {
