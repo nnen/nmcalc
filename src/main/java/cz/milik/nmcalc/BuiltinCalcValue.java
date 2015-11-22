@@ -26,7 +26,9 @@ import cz.milik.nmcalc.values.BuiltinProxy;
 import cz.milik.nmcalc.values.FunctionValue.ArgumentInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -154,6 +156,21 @@ public abstract class BuiltinCalcValue extends CalcValue {
     }
     
     
+    public static class ThisContext extends BuiltinCalcValue {
+        @Override
+        public String getName() { return "thisContext"; }
+        
+        @Override
+        protected Context applyInner(Context ctx, List<? extends ICalcValue> arguments) throws NMCalcException {
+            if (!checkArguments(ctx, arguments, 0)) {
+                return ctx;
+            }
+            ctx.setReturnedValue(CalcValue.wrap(ctx));
+            return ctx;
+        }
+    }
+            
+            
     public static final BuiltinCalcValue LET = new BuiltinCalcValue() {
         @Override
         public String getName() { return "let"; }
@@ -235,12 +252,18 @@ public abstract class BuiltinCalcValue extends CalcValue {
             
             int i = 0;
             for (SymbolValue arg : argumentNames) {
-                argInfo.add(new FunctionValue.ArgumentInfo(arg.getValue(), i, false, false));
+                if (arg.getValue().startsWith("*")) {
+                    argInfo.add(new FunctionValue.ArgumentInfo(
+                            arg.getValue().substring(1), i, false, true));
+                } else {
+                    argInfo.add(new FunctionValue.ArgumentInfo(
+                            arg.getValue(), i, false, false));
+                }
                 i++;
             }
-                
+            
             FunctionValue fn = new FunctionValue(symbol, body, ctx.getEnvironment(), argInfo);
-            if (help != null) {
+            if ((help != null) && !help.isNothing()) {
                 fn.setHelp(help.getStringValue(ctx));
             }
             ctx.setVariable(symbol.getValue(), fn);
@@ -1489,8 +1512,15 @@ public abstract class BuiltinCalcValue extends CalcValue {
                     
                 case 1:        
                     ctx.setReturnedValue(CalcValue.make(id.toString()));
-                    
                     break;
+                
+                case 2: {
+                    ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+                    bb.putLong(id.getMostSignificantBits());
+                    bb.putLong(id.getLeastSignificantBits());
+                    ctx.setReturnedValue(CalcValue.make(bb.array()));
+                }
+                break;
             }
             
             
@@ -1808,7 +1838,9 @@ public abstract class BuiltinCalcValue extends CalcValue {
         return builtinSet;
     }
     
-    static {    
+    static {
+        builtinSet.register(new ThisContext());
+        
         builtinSet.register(LET);
         builtinSet.register(DEF);
         builtinSet.register(DEFMACRO);

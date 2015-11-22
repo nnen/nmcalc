@@ -28,6 +28,8 @@ import java.util.function.Function;
  */
 public interface ICalcValue extends java.io.Serializable, IPrintable {
     
+    public static final int FLAGS_NONE = 0;
+    
     public String getRepr(ReprContext ctx);
     public String getExprRepr(ReprContext ctx);
     public String getApplyRepr(List<? extends ICalcValue> arguments, ReprContext ctx);
@@ -36,6 +38,8 @@ public interface ICalcValue extends java.io.Serializable, IPrintable {
     
     public Optional<TextLoc> getTextLoc();
     public void setTextLoc(TextLoc loc);
+    
+    public int getFlags();
     
     public boolean isError();
     public boolean isSpecialForm();

@@ -70,6 +70,10 @@ public abstract class CalcValue implements ICalcValue {
         return BoolValue.FALSE;
     }
     
+    public static ICalcValue make(byte[] value) {
+        return new BytesValue(value);
+    }
+    
     public static ICalcValue makeSymbol(String name) {
         return new SymbolValue(name);
     }
@@ -82,8 +86,23 @@ public abstract class CalcValue implements ICalcValue {
         return new ListValue(items);
     }
     
+    public static ICalcValue list(Iterable<? extends ICalcValue> iterable) {
+        ListBuilder lb = new ListBuilder();
+        for (ICalcValue item : iterable) {
+            lb.add(item);
+        }
+        return lb.makeList();
+    }
+    
     public static ICalcValue list(ICalcValue head, Collection<? extends ICalcValue> tail) {
         return new ListValue(head, tail);
+    }
+    
+    public static ICalcValue list(ICalcValue head, Iterable<? extends ICalcValue> tail) {
+        ListBuilder lb = new ListBuilder();
+        lb.add(head);
+        lb.addAll(tail);
+        return lb.makeList();
     }
     
     public static ICalcValue list(ICalcValue head, ICalcValue tailFirst, Collection<? extends ICalcValue> tailRest) {
@@ -122,6 +141,10 @@ public abstract class CalcValue implements ICalcValue {
     }
     
     public static ICalcValue nothing() { return NothingValue.INSTANCE; }
+    
+    public static ICalcValue wrap(Object obj) {
+        return new JavaObjectValue(obj);
+    }
     
     
     public static boolean areValuesEqual(ICalcValue a, ICalcValue b, Context ctx) {
@@ -193,6 +216,12 @@ public abstract class CalcValue implements ICalcValue {
     @Override
     public void setTextLoc(TextLoc loc) {
         addAnnotation(loc);
+    }
+    
+    
+    @Override
+    public int getFlags() {
+        return ICalcValue.FLAGS_NONE;
     }
     
     
@@ -767,6 +796,36 @@ public abstract class CalcValue implements ICalcValue {
                 getRepr(ctx.getReprContext()),
                 arguments.size(),
                 countStr
+        ));
+        
+        return false;
+    }
+    
+    protected boolean checkArguments(Context ctx, List<? extends ICalcValue> arguments, List<FunctionValue.ArgumentInfo> argInfo) {
+        if (arguments.size() == argInfo.size()) {
+            return true;
+        }
+        
+        if (argInfo.size() > 0) {
+            FunctionValue.ArgumentInfo lastArg = argInfo.get(argInfo.size() - 1);
+            if (lastArg.isVarArg() && (arguments.size() >= (argInfo.size() - 1))) {
+                return true;
+            } else {
+                ctx.setReturnedValue(ErrorValue.formatted(
+                    "%s cannot be applied to %d argument(s). At least %d argument(s) are expected.",
+                    getRepr(ctx.getReprContext()),
+                    arguments.size(),
+                    argInfo.size() - 1
+                ));
+                return false;
+            }
+        }
+        
+        ctx.setReturnedValue(ErrorValue.formatted(
+                "%s cannot be applied to %d argument(s). %d argument(s) are expected.",
+                getRepr(ctx.getReprContext()),
+                arguments.size(),
+                argInfo.size()
         ));
         
         return false;

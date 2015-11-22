@@ -63,6 +63,20 @@ public class InterpreterTest {
         testEvaluate("3 - 2 - 1", CalcValue.make(0));
         testEvaluate("40 / 4 / 2", CalcValue.make(5));
     }
+    
+    @Test
+    public void testEvaluateGetItem() {
+        testEvaluate("[1, 2, 3]", CalcValue.list(CalcValue.make(1), CalcValue.make(2), CalcValue.make(3)));
+        testEvaluate("[1, 2, 3][0]", CalcValue.make(1));
+        testEvaluate("[1, 2, 3][1]", CalcValue.make(2));
+        testEvaluate("[1, 2, 3][2]", CalcValue.make(3));
+    }
+    
+    @Test
+    public void testEvaluatePower() {
+        testEvaluate("2 ** 3", CalcValue.make(8));
+        //testEvaluate("2 ** 8", CalcValue.make(256));
+    }
  
     @Test
     public void testEvaluateComp() {
@@ -119,6 +133,11 @@ public class InterpreterTest {
         testEvaluate("(def mkadd(x) def addr(y) x + y)(1)(2)", CalcValue.make(3));
     }
 
+    @Test
+    public void testEvaluateDo() {
+        testEvaluate("1; 2; 3", CalcValue.make(3));
+    }
+    
     @Test
     public void textSetFreeVariable() {
         testEvaluate("x = 100; def xadd() x = x + 1; xadd(); x", CalcValue.make(101));

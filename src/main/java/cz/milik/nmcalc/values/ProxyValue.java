@@ -349,9 +349,10 @@ public abstract class ProxyValue implements ICalcValue {
     public <T, U> T visit(ICalcValueVisitor<T, U> visitor, U context) {
         return getTarget().visit(visitor, context);
     }
-
     
-    
-    
+    @Override
+    public int getFlags() {
+        return getTarget().getFlags();
+    }
     
 }

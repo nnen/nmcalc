@@ -126,6 +126,9 @@ public class FunctionValue extends CalcValue {
         }
         out.plain("(");
         Utils.forEach(arguments, arg -> {
+            if (arg.isVarArg()) {
+                out.plain("*");
+            }
             out.span("arg_name", arg.getName());
         }, () -> {
             out.plain(", ");
@@ -180,11 +183,11 @@ public class FunctionValue extends CalcValue {
     
     
     @Override
-    public Context apply(Context ctx, List<? extends ICalcValue> arguments) {
+    public Context applyInner(Context ctx, List<? extends ICalcValue> arguments) {
         //final List<SymbolValue> argNames = getArgumentNames();
         final List<ArgumentInfo> args = getArguments();
         
-        if (!checkArguments(ctx, arguments, args.size())) {
+        if (!checkArguments(ctx, arguments, args)) {
             return ctx;
         }
         
@@ -195,8 +198,16 @@ public class FunctionValue extends CalcValue {
                 switch (pc) {
                     case 0:
                         Environment env = this.getEnvironment();
-                        for (int i = 0; i < args.size(); i++) {
-                            env.setVariable(args.get(i).getName(), arguments.get(i));
+                        if (args.size() > 0 && args.get(args.size() - 1).isVarArg()) {
+                            for (int i = 0; i < args.size() - 1; i++) {
+                                env.setVariable(args.get(i).getName(), arguments.get(i));
+                            }
+                            ICalcValue varArgs = CalcValue.list(arguments.subList(args.size() - 1, arguments.size()));
+                            env.setVariable(args.get(args.size() - 1).getName(), varArgs);
+                        } else {
+                            for (int i = 0; i < args.size(); i++) {
+                                env.setVariable(args.get(i).getName(), arguments.get(i));
+                            }
                         }
                         setPC(pc + 1);
                         return ctxContinue(getFunctionBody().eval(this));
@@ -244,6 +255,10 @@ public class FunctionValue extends CalcValue {
 
         public int getPosition() {
             return position;
+        }
+
+        public void setPosition(int position) {
+            this.position = position;
         }
         
         

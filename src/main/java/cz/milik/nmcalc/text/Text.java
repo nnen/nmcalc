@@ -103,6 +103,10 @@ public abstract class Text implements IText {
         return new BlockQuote(elements);
     }
 
+    public static CodeBlock codeBlock() {
+        return new CodeBlock(null);
+    }
+    
     public static CodeBlock codeBlock(String value) {
         return new CodeBlock(null, plain(value));
     }
@@ -113,6 +117,10 @@ public abstract class Text implements IText {
         } else {
             return new CodeBlock(language, plain(value));
         }
+    }
+    
+    public static CodeBlock codeBlock(String language, ITextElement... children) {
+        return new CodeBlock(language, children);
     }
     
     public static BulletList bulletList(ITextElement... children) {

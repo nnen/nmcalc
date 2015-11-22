@@ -6,9 +6,12 @@
 package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.utils.LinkedList;
+import cz.milik.nmcalc.utils.Pair;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  *
@@ -20,7 +23,7 @@ public class ParseResult<T> {
     private final boolean success;
     
     public boolean isSuccess() { return success; }
-    
+        
     
     private final boolean error;
     
@@ -205,7 +208,11 @@ public class ParseResult<T> {
         if (!isSuccess()) {
             return castFailure();
         }
-        return new ParseResult<>(
+        return mapSuccess(fn);
+    }
+    
+    public <U> ParseResult<U> mapSuccess(Function<T, U> fn) {
+        return new ParseResult(
                 getContext(),
                 fn.apply(getValue()),
                 getRest()
@@ -223,10 +230,14 @@ public class ParseResult<T> {
     }
     
     public <U> ParseResult<U> castFailure() {
+        return castFailure(getRest());
+    }
+    
+    public <U> ParseResult<U> castFailure(ITokenSequence rest) {
         return new ParseResult<>(
                 getContext(),
                 isError(),
-                getRest(),
+                rest,
                 getCause(),
                 getErrorMessage(),
                 getErrorToken()
@@ -245,12 +256,45 @@ public class ParseResult<T> {
     }
     
     
-    public <U> ParseResult<U> parse(PegParser<U> parser, IPegContext ctx) throws PegException
+    public <U> ParseResult<U> bind(PegParser<U> parser) throws PegException {
+        if (!isSuccess()) {
+            return castFailure();
+        }
+        return parser.parse(this);
+    }
+    
+    public <U> ParseResult<U> bind(PegParser<U> parser, IPegContext ctx) throws PegException
     {
         if (!isSuccess()) {
             return castFailure();
         }
         return parser.parse(getRest(), ctx);
+    }
+    
+    public ParseResult<T> or(PegParser<T> other) throws PegException {
+        if (isError()) {
+            return this;
+        }
+        if (!isSuccess()) {
+            return bind(other);
+        }
+        return this;
+    }
+    
+    public <U> ParseResult<Pair<T, U>> and(PegParser<U> other) throws PegException {
+        if (!isSuccess()) {
+            return castFailure();
+        }
+        return bind(other).map(otherVal -> Pair.of(value, otherVal));
+    }
+    
+    public ParseResult<LinkedList<T>> prepend(PegParser<LinkedList<T>> other) throws PegException {
+        if (!isSuccess()) {
+            return castFailure();
+        }
+        return bind(other).map(list -> {
+            return list.prepend(value);
+        });
     }
     
     public ParseResult<T> or(ParseResult<T> other)
@@ -264,6 +308,16 @@ public class ParseResult<T> {
         return this;
     }
     
+    public ParseResult<T> or(Supplier<T> supplier) {
+        if (isError()) {
+            return this;
+        }
+        if (!isSuccess()) {
+            return new ParseResult(getContext(), supplier.get(), getRest());
+        }
+        return this;
+    }
+    
     public <U, V> ParseResult<V> and(ParseResult<U> other, BiFunction<T, U, V> fn)
     {
         if (isError()) {
@@ -273,5 +327,16 @@ public class ParseResult<T> {
             return other.castFailure();
         }
         return new ParseResult(other.getContext(), fn.apply(getValue(), other.getValue()), other.getRest());
+    }
+
+    
+    public static <U> ParseResult<LinkedList<U>> flatten(ParseResult<LinkedList<LinkedList<U>>> nested) {
+        return nested.map(v -> {
+            return nested.getValue().reduceRight((inner, rest) -> {
+                return inner.reduceRight((item, rest2) -> {
+                    return rest2.prepend(item);
+                }, rest);
+            }, LinkedList.empty());
+        });
     }
 }

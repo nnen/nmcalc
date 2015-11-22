@@ -55,7 +55,6 @@ public class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
     public String toHtml(ITextElement element) {
         StringBuilder sb = new StringBuilder();
         element.visit(this, sb);
-        System.err.println("HTML: " + sb.toString());
         return sb.toString();
     }
 

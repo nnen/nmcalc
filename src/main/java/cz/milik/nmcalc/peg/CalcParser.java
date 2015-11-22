@@ -19,9 +19,12 @@ import cz.milik.nmcalc.parser.Scanner;
 import cz.milik.nmcalc.parser.Token;
 import static cz.milik.nmcalc.peg.PegParser.concatAny;
 import cz.milik.nmcalc.TextLoc;
+import cz.milik.nmcalc.utils.LinkedList;
 import cz.milik.nmcalc.utils.Pair;
 import cz.milik.nmcalc.utils.Utils;
+import cz.milik.nmcalc.values.BytesValue;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -159,6 +162,14 @@ public class CalcParser extends PegParser<ASTNode> {
                     s(Token.Types.SEMICOLON),
                     ICalcValue.class
             ).map(exprs -> {
+                if (!exprs.isEmpty() && exprs.getTail().isEmpty()) {
+                    return exprs.getHead();
+                }
+                return CalcValue.list(
+                        BuiltinCalcValue.DO,
+                        exprs
+                );
+                /*
                 if (exprs.size() == 1) {
                     return exprs.get(0);
                 }
@@ -166,6 +177,7 @@ public class CalcParser extends PegParser<ASTNode> {
                         BuiltinCalcValue.DO,
                         exprs
                 );
+                */
             }));
             
             nt("singleExpr", or(
@@ -176,60 +188,7 @@ public class CalcParser extends PegParser<ASTNode> {
                     s("comparison")
             ));
             
-            nt("def", concatAny(
-                    //s(Token.Types.KW_DEF),
-                    keyword("def"),
-                    s(Token.Types.IDENTIFIER, "name").maybe(),
-                    
-                    s(Token.Types.IDENTIFIER).repeat(
-                            s(Token.Types.LPAR),
-                            s(Token.Types.COMMA),
-                            s(Token.Types.RPAR),
-                            Token.class
-                    ).named("args"),
-                    
-                    or (
-                            concatAny(
-                                    s("str", "help"),
-                                    s("expr", "body").maybe()
-                            ),
-                            concatAny(
-                                s("singleExpr", "body")
-                            )
-                    )
-            ).map(ctx -> {
-                Token name = ctx.getNamedValue("name", Token.class);
-                List<Token> args = ctx.getNamedValue("args", List.class);
-                ICalcValue help = ctx.getNamedValue("help", ICalcValue.class);
-                ICalcValue body = ctx.getNamedValue("body", ICalcValue.class);
-                
-                String nameStr = (name == null) ? "" : name.getValue();
-                
-                if (body == null) {
-                    body = help;
-                    help = null;
-                }
-                
-                SymbolValue symbol = new SymbolValue(nameStr);
-                ICalcValue argList = CalcValue.list(Utils.mapList(args, t -> new SymbolValue(t.getValue())));
-                
-                if (help != null) {
-                    return CalcValue.list(
-                        BuiltinCalcValue.DEF,
-                        symbol,
-                        argList,
-                        help,
-                        body
-                    );
-                }
-                
-                return CalcValue.list(
-                        BuiltinCalcValue.DEF,
-                        symbol,
-                        argList,
-                        body
-                );
-            }));
+            initializeDef();
             
             nt("ifElse",
                     concatAny(
@@ -456,14 +415,13 @@ public class CalcParser extends PegParser<ASTNode> {
                     return result;
             }));
             
-            nt("factor", concatAny(
+            nt("factor", tuple(
                     s("primary", "primary"),
                     or(
                             s("expr").repeat(
                                     s(Token.Types.LPAR),
                                     s(Token.Types.COMMA),
-                                    s(Token.Types.RPAR),
-                                    ICalcValue.class
+                                    s(Token.Types.RPAR)
                             ).pair(value(0)),
                             concat(
                                     s(Token.Types.LBRA).ignore(),
@@ -475,59 +433,104 @@ public class CalcParser extends PegParser<ASTNode> {
                                     s("var")
                             ).pair(value(2))
                     ).repeat().named("postfix"),
-                    concatAny(
+                    concat(
                             s(Token.Types.DOUBLE_ASTERISK).ignore(),
                             s("factor", "exponent")
                     ).named("power").maybe()
-            ).map(ctx -> {
-                ICalcValue result = ctx.getNamedValue("primary", ICalcValue.class);
+            ).map(p -> {
+                ICalcValue result = p.getFirst();
                 
-                List<Pair<List<ICalcValue>, Integer>> postfix = ctx.getNamedValue("postfix", List.class);
-                for (Pair<List<ICalcValue>, Integer> pair : postfix) {
-                    if (pair.getSecond() == 0) {
-                        result = CalcValue.list(
-                            result,
-                            pair.getFirst()
-                        );
-                    } else if (pair.getSecond() == 1) {
-                        result = CalcValue.list(
-                                BuiltinCalcValue.GET_ITEM,
-                                result,
-                                pair.getFirst().get(0)
-                        );
-                    } else {
-                        result = CalcValue.list(BuiltinCalcValue.GET_ATTR,
-                                result,
-                                CalcValue.list(
-                                        BuiltinCalcValue.QUOTE,
-                                        pair.getFirst().get(0)
-                                )
-                        );
+                for (Pair<LinkedList<ICalcValue>, Integer> pair : p.getSecond()) {
+                    switch (pair.getSecond()) {
+                        case 0:
+                        {
+                            List<ICalcValue> list = new ArrayList<ICalcValue>();
+                            list.add(result);
+                            pair.getFirst().forEach(arg -> list.add(arg));
+                            result = CalcValue.list(list);
+                        }
+                            break;
+                        case 1:
+                            result = CalcValue.list(
+                                    BuiltinCalcValue.GET_ITEM,
+                                    result,
+                                    pair.getFirst().getHead()
+                            );
+                            break;
+                        case 2:
+                            result = CalcValue.list(
+                                    BuiltinCalcValue.GET_ATTR,
+                                    result,
+                                    CalcValue.list(
+                                            BuiltinCalcValue.QUOTE,
+                                            pair.getFirst().getHead()
+                                    )
+                            );
+                            break;
+                        default:
+                            throw new RuntimeException();
                     }
                 }
-                    
-//                List<ICalcValue> callArgs = ctx.getNamedValue("call", List.class);
-//                //IPegContext callCtx = ctx.getNamedValue("call", IPegContext.class);
-//                //if (callCtx != null) {
-//                if (callArgs != null) {
-//                    result = CalcValue.list(
-//                            result,
-//                            callArgs
-//                            //ctx.getNamedValues("args", ICalcValue.class)
-//                    );
-//                }
                 
-                IPegContext powCtx = ctx.getNamedValue("power", IPegContext.class);
-                if (powCtx != null) {
+                if (p.getThird() != null) {
                     result = CalcValue.list(
                             MathBuiltins.POW,
                             result,
-                            ctx.getNamedValue("exponent", ICalcValue.class)
+                            p.getThird().getHead()
                     );
                 }
                 
                 return result;
             }));
+//            .map(ctx -> {
+//                ICalcValue result = ctx.getNamedValue("primary", ICalcValue.class);
+//                
+//                List<Pair<List<ICalcValue>, Integer>> postfix = ctx.getNamedValue("postfix", List.class);
+//                for (Pair<List<ICalcValue>, Integer> pair : postfix) {
+//                    if (pair.getSecond() == 0) {
+//                        result = CalcValue.list(
+//                            result,
+//                            pair.getFirst()
+//                        );
+//                    } else if (pair.getSecond() == 1) {
+//                        result = CalcValue.list(
+//                                BuiltinCalcValue.GET_ITEM,
+//                                result,
+//                                pair.getFirst().get(0)
+//                        );
+//                    } else {
+//                        result = CalcValue.list(BuiltinCalcValue.GET_ATTR,
+//                                result,
+//                                CalcValue.list(
+//                                        BuiltinCalcValue.QUOTE,
+//                                        pair.getFirst().get(0)
+//                                )
+//                        );
+//                    }
+//                }
+//                    
+////                List<ICalcValue> callArgs = ctx.getNamedValue("call", List.class);
+////                //IPegContext callCtx = ctx.getNamedValue("call", IPegContext.class);
+////                //if (callCtx != null) {
+////                if (callArgs != null) {
+////                    result = CalcValue.list(
+////                            result,
+////                            callArgs
+////                            //ctx.getNamedValues("args", ICalcValue.class)
+////                    );
+////                }
+//                
+//                IPegContext powCtx = ctx.getNamedValue("power", IPegContext.class);
+//                if (powCtx != null) {
+//                    result = CalcValue.list(
+//                            MathBuiltins.POW,
+//                            result,
+//                            ctx.getNamedValue("exponent", ICalcValue.class)
+//                    );
+//                }
+//                
+//                return result;
+//            }));
             
             nt("primary", or(
                     concatAny(
@@ -579,6 +582,7 @@ public class CalcParser extends PegParser<ASTNode> {
                     nt("var"),
                     nt("symbol"),
                     nt("str"),
+                    nt("bytes"),
                     nt("bool_literal"),
                     nt("nothing"),
                     nt("dict_literal")
@@ -611,6 +615,10 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("str", s(Token.Types.STRING).map(
                     t -> loc(CalcValue.make(t.parseStringLiteral()), t)
+            ));
+            
+            nt("bytes", s(Token.Types.BYTES).map(
+                    t -> loc(BytesValue.parseLiteral(t.getValue()), t)
             ));
             
             nt("bool_literal", or(
@@ -681,7 +689,75 @@ public class CalcParser extends PegParser<ASTNode> {
                 );
             }));
         }
+        
+        protected void initializeDef() {
+            PegParser<Pair<Token, Token>> defArg = pair(
+                    s(Token.Types.ASTERISK, "asterisk").maybe(),
+                    s(Token.Types.IDENTIFIER, "argName")
+            );
+            
+            nt("def", concatAny(
+                    keyword("def"),
+                    s(Token.Types.IDENTIFIER, "name").maybe(),
+                    
+                    defArg.repeat(
+                            s(Token.Types.LPAR),
+                            s(Token.Types.COMMA),
+                            s(Token.Types.RPAR)
+                    ).named("args"),
+                    
+                    or (
+                            concatAny(
+                                    s("str", "help"),
+                                    s("expr", "body").maybe()
+                            ),
+                            concatAny(
+                                s("singleExpr", "body")
+                            )
+                    )
+            ).map(ctx -> {
+                Token name = ctx.getNamedValue("name", Token.class);
+                LinkedList<Pair<Token, Token>> args = ctx.getNamedValue("args", LinkedList.class);
+                ICalcValue help = ctx.getNamedValue("help", ICalcValue.class);
+                ICalcValue body = ctx.getNamedValue("body", ICalcValue.class);
+                boolean isVarArg = false;
+                
+                String nameStr = (name == null) ? "" : name.getValue();
+                
+                if (body == null) {
+                    body = help;
+                    help = null;
+                }
+                
+                SymbolValue symbol = new SymbolValue(nameStr);
+                ICalcValue argList = CalcValue.list(args.map(pair -> {
+                    if (pair.getFirst() != null) {
+                        return new SymbolValue("*" + pair.getSecond().getValue());
+                    }
+                    return new SymbolValue(pair.getSecond().getValue());
+                }));
+                
+                if (help != null) {
+                    return CalcValue.list(
+                        BuiltinCalcValue.DEF,
+                        symbol,
+                        argList,
+                        help,
+                        body
+                    );
+                }
+                
+                return CalcValue.list(
+                        BuiltinCalcValue.DEF,
+                        symbol,
+                        argList,
+                        CalcValue.nothing(),
+                        body
+                );
+            }));
+        }
     };
+    
     
     public ParseResult<ASTNode> parse(ITokenSequence input) {
         return parse(input, new IPegContext.PegContext(null, null, 0));

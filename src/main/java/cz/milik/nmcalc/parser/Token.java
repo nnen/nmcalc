@@ -22,6 +22,7 @@ public class Token {
         IDENTIFIER,
         SYMBOL,
         STRING,
+        BYTES,
         BUILTIN,
         
         EQUALS,
@@ -116,7 +117,8 @@ public class Token {
     
     @Override
     public String toString() {
-        return "Token{" + "type=" + type + ", offset=" + offset + ", value=" + value + '}';
+        return "\"" + value + "\" at offset " + Integer.toString(offset);
+        //return "Token{" + "type=" + type + ", offset=" + offset + ", value=\"" + value + "\"}";
     }
     
     public String parseStringLiteral() {

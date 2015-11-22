@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static cz.milik.nmcalc.ast.ASTNodePredicate.*;
+import cz.milik.nmcalc.values.ICalcValue;
 
 /**
  *
@@ -89,7 +90,7 @@ public class CalcParserTest {
         }
     }
     
-    protected void testParse_BinaryOperator(String input, ASTNodePredicate predicate) {
+    protected void testParse(String input, ASTNodePredicate predicate) {
         ParseResult<ASTNode> result = parser.parse(input);
         assertNotNull(result);
         System.err.println("Input: " + input);
@@ -103,13 +104,19 @@ public class CalcParserTest {
     }
     
     protected void testParse_BinaryOperator(String input, ASTNodeTypes nodeType) {
-        testParse_BinaryOperator(input, ASTNodePredicate.type(nodeType));
+        testParse(input, ASTNodePredicate.type(nodeType));
+    }
+    
+    protected ICalcValue parse(String input) {
+        ParseResult<ICalcValue> r = parser.parseList(input);
+        assertTrue("Dodn't expect parse error.", r.isSuccess());
+        return r.getValue();
     }
     
     
     @Test
     public void testParse_Assignment00() {
-        testParse_BinaryOperator(
+        testParse(
                 "a = 0",
                 ASTNodePredicate.type(ASTNodeTypes.ASSIGNMENT).children(
                         ASTNodePredicate.type(ASTNodeTypes.VARIABLE),
@@ -120,7 +127,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Assignment01() {
-        testParse_BinaryOperator(
+        testParse(
                 "a = 2 * (3 + b)",
                 type(ASTNodeTypes.ASSIGNMENT).children(
                         type(ASTNodeTypes.VARIABLE),
@@ -145,7 +152,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Addition01() {
-        testParse_BinaryOperator(
+        testParse(
                 "123 + 456 + 1 + 2 + 3",
                 ASTNodePredicate.type(ASTNodeTypes.ADDITION).children(
                         ASTNodePredicate.type(ASTNodeTypes.ADDITION).children(
@@ -176,7 +183,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Subtraction01() {
-        testParse_BinaryOperator(
+        testParse(
                 "123 - 456 - 1 - 2 - 3",
                 ASTNodePredicate.type(ASTNodeTypes.SUBTRACTION).children(
                         ASTNodePredicate.type(ASTNodeTypes.SUBTRACTION).children(
@@ -202,7 +209,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Multiplication01() {
-        testParse_BinaryOperator(
+        testParse(
                 "123 * 456 * 1 * 2 * 3",
                 ASTNodePredicate.type(ASTNodeTypes.MULTIPLICATION).children(
                         ASTNodePredicate.type(ASTNodeTypes.MULTIPLICATION).children(
@@ -230,7 +237,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Division01() {
-        testParse_BinaryOperator(
+        testParse(
                 "123 / 456 / 1 / 2 / 3",
                 ASTNodePredicate.type(ASTNodeTypes.DIVISION).children(
                         ASTNodePredicate.type(ASTNodeTypes.DIVISION).children(
@@ -250,7 +257,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Division02() {
-        testParse_BinaryOperator(
+        testParse(
                 "1 / (2 / 3)",
                 ASTNodePredicate.type(ASTNodeTypes.DIVISION).children(
                         ASTNodePredicate.make("1", ASTNodeTypes.REAL_LITERAL),
@@ -264,7 +271,7 @@ public class CalcParserTest {
     
     @Test
     public void testParse_Division03() {
-        testParse_BinaryOperator(
+        testParse(
                 "(1 / 2) / 3",
                 ASTNodePredicate.type(ASTNodeTypes.DIVISION).children(
                         ASTNodePredicate.type(ASTNodeTypes.DIVISION).children(
@@ -276,6 +283,10 @@ public class CalcParserTest {
         );
     }
     
+    @Test
+    public void testParseList_Match() {
+        parse("match [] { case first :: rest -> first }");
+    }
 }
 
 

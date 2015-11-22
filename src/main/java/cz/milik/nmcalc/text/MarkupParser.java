@@ -37,6 +37,7 @@ public class MarkupParser {
     
     
     private List<SpanParser> spanParsers = new ArrayList();
+    private List<ParagraphParser> parParsers = new ArrayList();
     private Pattern spanPattern;
     
     public MarkupParser()
@@ -45,6 +46,11 @@ public class MarkupParser {
         spanParsers.add(STRONG_EMPHASIS_PARSER);
         spanParsers.add(EMPHASIS_PARSER);
         spanParsers.add(LINK_PARSER);
+        
+        parParsers.add(HEADLINE_PARSER);
+        parParsers.add(BULLET_LIST_PARSER);
+        parParsers.add(CODE_BLOCK_PARSER);
+        parParsers.add(NORMAL_PAR_PARSER);
         
         int groupOffset = 1;
         StringBuilder sb = new StringBuilder();
@@ -74,18 +80,98 @@ public class MarkupParser {
         }
     }
     
+    public void highlight(String language, String code, TextWriter tw) {
+        IHighlighter hl = getHighlighter(language);
+        hl.highlight(tw, code);
+        tw.end();
+    }
+    
+    public ITextElement highlight(String language, String code) {
+        TextWriter tw = new TextWriter();
+        highlight(language, code, tw);
+        return tw.getResult();
+    }
+    
     
     public ITextElement parse(String input) {
         final Text.Fragment result = new Text.Fragment();
+        ITextElement previous = null;
+        int offset = 0;
+        String separator = "";
         
+        ParagraphParser prevParParser = null;
+        
+        while (offset < input.length()) {
+            Matcher m = PAR_SEPARATOR.matcher(input);
+            if (!m.find(offset)) {
+                break;
+            }
+            
+            //String separator = input.substring(offset, m.start());
+            String part = input.substring(offset, m.start());
+            offset = m.end();
+            
+            if (prevParParser != null) {
+                if (prevParParser.add(separator, part)) {
+                    separator = m.group();
+                    continue;
+                } else {
+                    prevParParser.getResult().forEach(el -> result.addChild(el));
+                    prevParParser = null;
+                }
+            }
+            
+            for (ParagraphParser parParser : parParsers) {
+                if (parParser.start(part)) {
+                    if (parParser.isMerged()) {
+                        prevParParser = parParser;
+                    } else {
+                        parParser.getResult().forEach(el -> result.addChild(el));
+                    }
+                    break;
+                }
+            }
+            
+            separator = m.group();
+        }
+        
+        if (offset < input.length()) {
+            String part = input.substring(offset);
+            boolean continued = false;
+            if (prevParParser != null) {
+                continued = prevParParser.add(separator, part);
+                prevParParser.getResult().forEach(el -> result.addChild(el));
+            }
+            if (!continued) {
+                for (ParagraphParser parParser : parParsers) {
+                    if (parParser.start(input.substring(offset))) {
+                        parParser.getResult().forEach(el -> result.addChild(el));
+                        break;
+                    }
+                }
+            }
+        }
+        
+        /*
+        for (String part : PAR_SEPARATOR.split(input)) {
+            ITextElement par = parseParagraph(part, part, previous);
+            if (par != previous) {
+                result.addChild(par);
+            }
+            previous = par;
+        }
+        */
+        
+        /*
         PAR_SEPARATOR.splitAsStream(input).forEach(para -> {
             result.addChild(parseParagraph(para, para));
         });
+        */
         
         return result;
     }
     
-    public ITextElement parseParagraph(String input, String trimmed) {
+    public ITextElement parseParagraph(String input, String trimmed, ITextElement previous) {
         if (BULLET_LIST_START.matcher(input).lookingAt()) {
             return parseList(input);
         }
@@ -117,19 +203,25 @@ public class MarkupParser {
             String[] unindented = unindent(lines, indent);
             String codeLang = null;
             int from = 0;
+            ITextElement result = null;
+            TextWriter tw = new TextWriter();
             
-            Matcher codeTag = CODE_TAG.matcher(lines[0]);
-            if (codeTag.lookingAt()) {
-                codeLang = codeTag.group(1);
-                from = 1;
+            if (previous instanceof Text.CodeBlock) {
+                Text.CodeBlock cb = (Text.CodeBlock)previous;
+                codeLang = cb.getLanguage();
+                result = cb;
+                tw.start(cb);
+            } else {
+                Matcher codeTag = CODE_TAG.matcher(lines[0]);
+                if (codeTag.lookingAt()) {
+                    codeLang = codeTag.group(1);
+                    from = 1;
+                }
+                tw.startCodeBlock(codeLang);
+                result = tw.peek();
             }
             
-            
             IHighlighter hl = getHighlighter(codeLang);
-            
-            TextWriter tw = new TextWriter();
-            tw.startCodeBlock(codeLang);
-            ITextElement result = tw.peek();
             hl.highlight(tw, StringUtils.joinStr("\n", unindented, from));
             tw.end();
             
@@ -218,6 +310,12 @@ public class MarkupParser {
             return null;
         }
         return m;
+    }
+    
+    protected boolean matches(CharSequence input, Pattern p, int offset) {
+        Matcher m = p.matcher(input);
+        m.region(offset, input.length());
+        return m.lookingAt();
     }
     
     
@@ -312,36 +410,171 @@ public class MarkupParser {
     }
 
     
-    public static class ParagraphParser {
-        public List<ITextElement> parse(String input) {
-            String[] lines = trimLines(input.split("\\r?\\n"));
-            return parse(lines);
+    public class ParagraphParser {
+        protected List<ITextElement> result = new ArrayList();
+        
+        public boolean isMerged() { return false; }
+        
+        public boolean start(String part) {
+            result.clear();
+            return start(part, trimLines(part.split("\\r?\\n")));
         }
         
-        public List<ITextElement> parse(String[] lines) {
-            return Collections.emptyList();
+        public boolean add(String separator, String part) {
+            return add(separator, part, trimLines(part.split("\\r?\\n")));
+        }
+        
+        public List<ITextElement> getResult() {
+            return result;
+        }
+        
+        
+        protected boolean start(String complete, String[] lines) {
+            ITextElement par = Text.paragraph();
+            parseText(StringUtils.joinStr("\n", lines), par);
+            result.add(par);
+            //result.add(Text.paragraph(StringUtils.joinStr("\n", lines)));
+            return true;
+        }
+        
+        protected boolean add(String separator, String complete, String[] lines) {
+            return false;
         }
     }
     
-    public ParagraphParser BULLET_LIST_PARSER = new ParagraphParser() {
+    public final ParagraphParser HEADLINE_PARSER = new ParagraphParser() {
+        private final Pattern H1_UNDERLINE = Pattern.compile("===+");
+        private final Pattern H2_UNDERLINE = Pattern.compile("\\-\\-\\-+");
+        
         @Override
-        public List<ITextElement> parse(String input) {
-            if (!BULLET_LIST_START.matcher(input).lookingAt()) {
-                return null;
+        protected boolean start(String complete, String[] lines) {
+            if (lines.length == 1) {
+                String line = lines[0].trim();
+                if (line.startsWith("# ")) {
+                    result.add(Text.headline(line.substring(2), 1));
+                    return true;
+                } else if (line.startsWith("## ")) {
+                    result.add(Text.headline(line.substring(3), 2));
+                    return true;
+                } else if (line.startsWith("### ")) {
+                    result.add(Text.headline(line.substring(4), 3));
+                    return true;
+                }
+            } else if (lines.length == 2) {
+                String underline = lines[1].trim();
+                if (matches(underline, H1_UNDERLINE, 0)) {
+                    result.add(Text.headline(lines[0].trim(), 1));
+                    return true;
+                } else if (matches(underline, H2_UNDERLINE, 0)) {
+                    result.add(Text.headline(lines[0].trim(), 2));
+                    return true;
+                }
             }
-            
-            return super.parse(input); //To change body of generated methods, choose Tools | Templates.
+            return false;
+            //return super.start(complete, lines);
         }
     };
     
-    public ParagraphParser NORMAL_PAR_PARSER = new ParagraphParser() {
+    public final ParagraphParser BULLET_LIST_PARSER = new ParagraphParser() {
+        
+        ITextElement listElement;
+
         @Override
-        public List<ITextElement> parse(String input) {
-            ITextElement paragraph = Text.paragraph();
-            parseText(input, paragraph);
-            return Collections.singletonList(paragraph);
+        protected boolean start(String complete, String[] lines) {
+            //super.start(complete, lines);
+            if (!matches(complete, BULLET_LIST_START, 0)) {
+                return false;
+            }
+            listElement = Text.bulletList();
+            process(complete, listElement);
+            result.add(listElement);
+            return true;
         }
+        
+        @Override
+        protected boolean add(String separator, String complete, String[] lines) {
+            if (!matches(complete, BULLET_LIST_START, 0)) {
+                return false;
+            }
+            process(complete, listElement);
+            return true;
+        }
+        
+        @Override
+        public boolean isMerged() { return true; }
+        
+        protected void process(String input, ITextElement listElement)
+        {
+            Matcher m = BULLET_POINT.matcher(input);
+            int lastOffset = -1;
+            
+            while (m.find()) {
+                if ((lastOffset < m.start()) && (lastOffset >= 0)) {
+                    Text.BulletPoint point = Text.bulletPoint();
+                    parseText(input.substring(lastOffset, m.start()), point);
+                    listElement.addChild(point);
+                }
+                lastOffset = m.end();
+            }
+            
+            if (lastOffset >= 0) {
+                Text.BulletPoint point = Text.bulletPoint();
+                parseText(input.substring(lastOffset), point);
+                listElement.addChild(point);
+            }
+        }
+        
     };
+    
+    public final ParagraphParser CODE_BLOCK_PARSER = new ParagraphParser() {
+
+        private final Pattern CODE_TAG = Pattern.compile("\\s*\\[([a-zA-Z_][a-zA-Z0-9_]*)\\]");
+        
+        private Text.CodeBlock codeBlock;
+        private String indent;
+        private String language = null;
+        
+        @Override
+        protected boolean start(String complete, String[] lines) {
+            //super.start(complete, lines);
+            indent = getParIndent(lines);
+            if (!indent.startsWith("    ")) {
+                return false;
+            }
+            String[] unindented = unindent(lines, indent);
+            Matcher m = CODE_TAG.matcher(unindented[0]);
+            if (m.lookingAt()) {
+                language = m.group(1);
+            }
+            codeBlock = Text.codeBlock(language, highlight(
+                    language,
+                    StringUtils.joinStr("\n", unindented)
+            ));
+            result.add(codeBlock);
+            return true;
+        }
+        
+        @Override
+        protected boolean add(String separator, String complete, String[] lines) {
+            //super.add(separator, complete, lines);
+            String newIndent = getParIndent(lines);
+            if (!newIndent.startsWith(indent)) {
+                return false;
+            }
+            codeBlock.addChild(Text.plain(separator));
+            codeBlock.addChild(highlight(
+                    language,
+                    StringUtils.joinStr("\n", unindent(lines, indent))
+            ));
+            return true;
+        }
+        
+        @Override
+        public boolean isMerged() { return true; }
+        
+    };
+    
+    public final ParagraphParser NORMAL_PAR_PARSER = new ParagraphParser();
     
     
     public static class SpanParser {
@@ -418,5 +651,6 @@ public class MarkupParser {
             return result;
         }
     };
+
 }
 

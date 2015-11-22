@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc.text;
 
+import cz.milik.nmcalc.AssertCombinator;
 import java.io.PrintStream;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -50,9 +51,23 @@ public class MarkupParserTest {
     
     @Test
     public void testParseCodeBlock() {
-        ITextElement e = parse("    code block");
+        ITextElement e;
         
-        parse("First paragraph.\n\n    code block\n\nSecond paragraph.\n");
+        //ITextElement e = parse("    code block");
+        
+        //parse("First paragraph.\n\n    code block\n\nSecond paragraph.\n");
+        
+        e = parse("First paragraph.\n\n    first code block line\n\n    second code block line\n\nSecond paragraph.");
+        new TextAssert.Lambda() {
+            @Override
+            protected AssertCombinator<ITextElement> create() {
+                return and(
+                        child(0, instanceOf(Text.Paragraph.class)),
+                        child(1, instanceOf(Text.CodeBlock.class)),
+                        child(2, instanceOf(Text.Paragraph.class))
+                );
+            }
+        }.assertTrue(e);
     }
     
     
@@ -83,7 +98,7 @@ public class MarkupParserTest {
             printIndent(ctx);
             ctx.print(e.getClass().getSimpleName());
             ctx.print(": ");
-            ctx.println(e.getText().substring(0, 10));
+            ctx.println(e.getText().substring(0, Math.min(10, e.getText().length())));
             printChildren(e, ctx);
             return null;
         }

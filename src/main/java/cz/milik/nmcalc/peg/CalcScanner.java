@@ -18,6 +18,7 @@ public class CalcScanner extends RegExScanner<Token.Types, Token> implements ISc
         addLiteral(Token.Types.KW_FALSE, "false");
         addLiteral(Token.Types.KW_NOTHING, "nothing");
         
+        addPattern(Token.Types.BYTES, "b'([a-fA-F0-9 ]*)'", 1);
         addPattern(Token.Types.IDENTIFIER, "[a-zA-Z_][a-zA-Z0-9_]*");
         addPattern(Token.Types.SYMBOL, "\\$[a-zA-Z0-9_]");
         addPattern(Token.Types.BIN_LITERAL, "[01]+b");

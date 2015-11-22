@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -57,6 +58,29 @@ public class ListValue extends CalcValue {
         values = new ArrayList();
         values.add(head);
         values.addAll(tail);
+    }
+    
+    
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + Objects.hashCode(this.values);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ListValue other = (ListValue) obj;
+        if (!Objects.equals(this.values, other.values)) {
+            return false;
+        }
+        return true;
     }
     
     

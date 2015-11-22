@@ -5,14 +5,13 @@
  */
 package cz.milik.nmcalc.peg;
 
+import cz.milik.nmcalc.parser.Token;
 import cz.milik.nmcalc.utils.IThrowsFunction;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.xml.ws.spi.Provider;
 
 /**
  *
@@ -49,6 +48,8 @@ public interface IPegContext {
     public <T> List<T> getNamedValues(String name, Class<T> aClass);
     
     public <T> T getNamedValue(String name, Class<T> aClass);
+    
+    public Token getNamedToken(String name);
     
     public <R> R executeWithChild(final PegParser<?> parser, final IThrowsFunction<IPegContext, R, PegException> body) throws PegException;
     
@@ -166,6 +167,11 @@ public interface IPegContext {
         @Override
         public <T> T getNamedValue(String name, Class<T> aClass) {
             return getScope().get(name, aClass).unwrap();
+        }
+
+        @Override
+        public Token getNamedToken(String name) {
+            return getNamedValue(name, Token.class);
         }
         
         @Override

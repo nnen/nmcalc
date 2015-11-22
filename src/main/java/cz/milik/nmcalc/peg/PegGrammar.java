@@ -111,10 +111,15 @@ public class PegGrammar<T> {
         public NonterminalProxy(String name) {
             this.name = name;
         }
-
+        
         @Override
         public String getName() {
             return name;
+        }
+
+        @Override
+        protected String getDefaultShortDesc() {
+            return "<" + getName() + ">";
         }
         
         /*

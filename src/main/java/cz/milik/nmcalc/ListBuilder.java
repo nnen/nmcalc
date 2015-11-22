@@ -30,6 +30,12 @@ public class ListBuilder {
         this.items.addAll(items);
     }
     
+    public void addAll(Iterable<? extends ICalcValue> items) {
+        for (ICalcValue item : items) {
+            add(item);
+        }
+    }
+    
     public ICalcValue makeList() {
         ICalcValue result = new ListValue(items, true);
         reset();
