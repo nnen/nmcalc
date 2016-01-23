@@ -6,6 +6,7 @@
 package cz.milik.nmcalc.peg;
 
 import cz.milik.nmcalc.parser.Token;
+import cz.milik.nmcalc.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +36,8 @@ public class PegGrammar<T> {
         // Override in subclass.
     }
     
-    protected PegParser<Token> s(final Token.Types first, final Token.Types... rest) {
-        return token(first, rest);
+    protected PegParser<Token> s(final Token.Types... tokenTypes) {
+        return token(tokenTypes);
     }
     
     protected PegParser<Token> s(final Token.Types first, String name) {
@@ -59,27 +60,8 @@ public class PegGrammar<T> {
     
     protected PegParser<Token> token() { return TOKEN_PARSER; }
     
-    protected PegParser<Token> token(final Token.Types first, final Token.Types... rest) {
-        if (rest.length == 0) {
-            return new PegParser.TokenTypeParser(first, TOKEN_PARSER);
-        }
-        return new PegParser.TokenTypesParser(TOKEN_PARSER, first, rest);
-        /*
-        if (rest.length == 0) {
-            //return new PegParser.TokenTypeParser(first, TOKEN_PARSER);
-            return TOKEN_PARSER.test(
-                t -> {
-                    return t.getType() == first;
-                },
-                String.format("Expect token %s.", first.name())
-            );
-        }
-        final EnumSet<Token.Types> typeSet = EnumSet.of(first, rest);
-        return TOKEN_PARSER.test(
-                t -> typeSet.contains(t.getType()),
-                String.format("Expect one of %s.", StringUtils.join(", ", typeSet.stream().map(tt -> tt.name())))
-        );
-        */
+    protected PegParser<Token> token(final Token.Types... tokenTypes) {
+        return new PegParser.TokenParser(tokenTypes);
     }
     
     protected <U> PegParser<U> or(PegParser<U>... parsers) {

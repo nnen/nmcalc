@@ -8,6 +8,7 @@ package cz.milik.nmcalc;
 import cz.milik.nmcalc.values.CalcValue;
 import cz.milik.nmcalc.values.FunctionValue;
 import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.values.MapValue;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -42,6 +43,12 @@ public class InterpreterTest {
     @After
     public void tearDown() {
         interpreter = null;
+    }
+    
+    protected ICalcValue evaluate(String input) {
+        ICalcValue result = interpreter.evaluate(input);
+        assertNotNull(result);
+        return result;
     }
     
     protected void testEvaluate(String input, ICalcValue expectedResult) {
@@ -111,20 +118,11 @@ public class InterpreterTest {
         System.err.println(result.getClass().getSimpleName());
         System.err.println(result.getRepr(ReprContext.getDefault()));
         assertThat(result, org.hamcrest.CoreMatchers.instanceOf(FunctionValue.class));
-        //assertTrue(result instanceof FunctionValue);
         
         FunctionValue fn = (FunctionValue)result;
         assertEquals(
-                CalcValue.makeSymbol("fn"),
+                "fn",
                 fn.getFunctionName());
-        /*
-        assertEquals(
-                CalcValue.list(
-                        BuiltinCalcValue.MULT,
-                        CalcValue.makeSymbol("x"),
-                        CalcValue.makeSymbol("x")),
-                fn.getFunctionBody());
-                */
     }
     
     @Test
@@ -132,10 +130,19 @@ public class InterpreterTest {
         testEvaluate("(def foo() 7)()", CalcValue.make(7));
         testEvaluate("(def mkadd(x) def addr(y) x + y)(1)(2)", CalcValue.make(3));
     }
-
+    
     @Test
     public void testEvaluateDo() {
         testEvaluate("1; 2; 3", CalcValue.make(3));
+    }
+    
+    @Test
+    public void testEvaluateDict() {
+        ICalcValue result = evaluate("{1: 2}");
+        assertTrue(result instanceof MapValue);
+        MapValue mapValue = (MapValue)result;
+        ICalcValue value = mapValue.getItem(CalcValue.makeFloat("1"));
+        assertEquals(value, CalcValue.make(2));
     }
     
     @Test

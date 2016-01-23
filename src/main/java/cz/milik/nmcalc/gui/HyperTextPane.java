@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc.gui;
 
+import cz.milik.nmcalc.IReprContextProvider;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.IPrintable;
 import cz.milik.nmcalc.text.ITextElement;
@@ -22,15 +23,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -107,6 +107,17 @@ public class HyperTextPane extends JPanel {
         StyleConstants.setItalic(ITALIC, true);
         
         StyleConstants.setBold(BOLD, true);
+    }
+    
+    
+    private IReprContextProvider reprContextProvider = ReprContext.getDefault();
+
+    public IReprContextProvider getReprContextProvider() {
+        return reprContextProvider;
+    }
+
+    public void setReprContextProvider(IReprContextProvider reprContextProvider) {
+        this.reprContextProvider = reprContextProvider;
     }
     
     
@@ -425,7 +436,9 @@ public class HyperTextPane extends JPanel {
                 "blockquote { background-color: #eeeeee; margin: 0px; padding-left: 12pt; border-left: solid 3px black; }"
         );
         document.getStyleSheet().addRule(
-                "th { background-color: #999999; color: white; }\n" +
+                "th { padding: 2pt 6pt 2pt 6pt; background-color: #999999; color: white; }\n" +
+                "td { padding: 2pt 6pt 2pt 6pt; vertical-align: top; }\n" +
+                "td.number_cell { text-align: right; }\n" +
                 "tr.odd_row td { background-color: #dddddd; }"
         );
         document.getStyleSheet().addRule(
@@ -507,6 +520,7 @@ public class HyperTextPane extends JPanel {
     public class PopupMenu extends JPopupMenu {
         JMenuItem saveAsItem;
         JMenuItem clearItem;
+        JCheckBoxMenuItem hyperTextPrintItem;
         
         public PopupMenu() {
             saveAsItem = new JMenuItem(new SaveAsAction());
@@ -516,6 +530,11 @@ public class HyperTextPane extends JPanel {
             
             clearItem = new JMenuItem(new ClearAction());
             add(clearItem);
+            
+            addSeparator();
+            
+            hyperTextPrintItem = new JCheckBoxMenuItem(new HyperTextPrintAction());
+            add(hyperTextPrintItem);
         }
         
         public void doPop(MouseEvent e){
@@ -559,7 +578,34 @@ public class HyperTextPane extends JPanel {
         }
         
     }
+    
+    
+    public class HyperTextPrintAction extends AbstractAction {
 
+        public HyperTextPrintAction() {
+            putValue(Action.NAME, "HyperText print");
+            updateSelectedKey();
+        }
+        
+        protected void updateSelectedKey() {
+            putValue(
+                    Action.SELECTED_KEY,
+                    getReprContextProvider().getReprContext().isHyperTextPrint());
+        }
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            ReprContext rc = getReprContextProvider().getReprContext();
+            if (rc.isHyperTextPrint()) {
+                rc.removeFlags(ReprContext.Flags.HYPERTEXT_PRINT);
+            } else {
+                rc.addFlags(ReprContext.Flags.HYPERTEXT_PRINT);
+            }
+            updateSelectedKey();
+        }
+        
+    }
+    
     
     private final ListenerCollection<IListener> listeners =
             new ListenerCollection(new IListener[] {});

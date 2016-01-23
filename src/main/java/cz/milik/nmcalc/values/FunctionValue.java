@@ -25,21 +25,15 @@ import java.util.Optional;
  *
  * @author jan
  */
-public class FunctionValue extends CalcValue {
+public class FunctionValue extends FunctionBase {
     
     private final Environment staticContext;
-    private final SymbolValue functionName;
-    //private final List<SymbolValue> argumentNames = new ArrayList();
     private final ICalcValue functionBody;
     
     private final List<ArgumentInfo> arguments = new ArrayList();
 
     public Environment getStaticContext() {
         return staticContext;
-    }
-    
-    public SymbolValue getFunctionName() {
-        return functionName;
     }
     
     public ICalcValue getFunctionBody() {
@@ -58,22 +52,13 @@ public class FunctionValue extends CalcValue {
     
     
     public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext) {
-        functionName = aName;
+        super(aName.getValue());
         functionBody = aFunctionBody;
         staticContext = aStaticContext;
     }
-    
-    /*
-    public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext, Collection<? extends SymbolValue> someArgumentNames) {
-        functionName = aName;
-        functionBody = aFunctionBody;
-        argumentNames.addAll(someArgumentNames);
-        staticContext = aStaticContext;
-    }
-    */
     
     public FunctionValue(SymbolValue aName, ICalcValue aFunctionBody, Environment aStaticContext, Collection<ArgumentInfo> someArguments) {
-        functionName = aName;
+        super(aName.getValue());
         functionBody = aFunctionBody;
         arguments.addAll(someArguments);
         staticContext = aStaticContext;
@@ -82,7 +67,7 @@ public class FunctionValue extends CalcValue {
     
     public String getSignatureMarkup() {
         StringBuilder sb = new StringBuilder();
-        sb.append("`").append(functionName.getValue()).append("(");
+        sb.append("`").append(getFunctionName()).append("(");
         Utils.forEach(arguments, arg -> {
             if (arg.isVarArg()) {
                 sb.append("*").append(arg.getName());
@@ -99,7 +84,7 @@ public class FunctionValue extends CalcValue {
     }
     
     public void printSignature(TextWriter out, ReprContext ctx) {
-        out.plain(functionName.getValue() + "(");
+        out.plain(getFunctionName() + "(");
         Utils.forEach(arguments, arg -> {
             if (arg.isVarArg()) {
                 out.plain("*");
@@ -121,8 +106,8 @@ public class FunctionValue extends CalcValue {
     public void print(TextWriter out, ReprContext ctx) {
         out.span("keyword", "def");
         out.plain(" ");
-        if (functionName != null) {
-            out.span("func_name", functionName.getValue());
+        if (getFunctionName() != null) {
+            out.span("func_name", getFunctionName());
         }
         out.plain("(");
         Utils.forEach(arguments, arg -> {
@@ -156,8 +141,8 @@ public class FunctionValue extends CalcValue {
         */
         
         sb.append("def ");
-        if (functionName != null) {
-            sb.append(functionName.getValue());
+        if (getFunctionName() != null) {
+            sb.append(getFunctionName());
         }
         sb.append("(");
         sb.append(StringUtils.join(", ", arguments.stream().map(arg -> arg.getName())));
@@ -221,7 +206,7 @@ public class FunctionValue extends CalcValue {
             
             @Override
             protected void printDescription(TextWriter out, ReprContext ctx) {
-                SymbolValue name = FunctionValue.this.getFunctionName();
+                SymbolValue name = makeSymbol(FunctionValue.this.getFunctionName());
                 List<ArgumentInfo> args = FunctionValue.this.getArguments();
                 if (name == null) {
                     out.plain("executing anonymous function");

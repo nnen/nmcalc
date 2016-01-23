@@ -7,18 +7,20 @@ package cz.milik.nmcalc;
 
 import cz.milik.nmcalc.utils.Utils;
 import cz.milik.nmcalc.values.FloatValue;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  *
  * @author jan
  */
-public class ReprContext {    
+public class ReprContext implements Serializable, IReprContextProvider {
     
     private ReprContext parent;
     
@@ -32,6 +34,8 @@ public class ReprContext {
     
     
     public static enum Flags {
+        HYPERTEXT_PRINT,
+        
         EXPRESSION,
         APPLY_EXPRESSION,
         
@@ -68,24 +72,141 @@ public class ReprContext {
         return false;
     }
     
+    public boolean hasAllFlags(Flags first, Flags... rest)
+    {
+        return hasAllFlags(EnumSet.of(first, rest));
+    }
+    
+    public boolean hasAllFlags(EnumSet<Flags> set)
+    {
+        EnumSet<Flags> disabled = disabledFlags.map(d -> d.clone()).orElse(EnumSet.noneOf(Flags.class));
+        disabled.retainAll(set);
+        if (!disabled.isEmpty())
+        {
+            return false;
+        }
+        
+        if (flags.isPresent())
+        {
+            set = set.clone();
+            set.removeAll(flags.get());
+        }
+        
+        if (set.isEmpty())
+        {
+            return true;
+        }
+        
+        if (parent != null)
+        {
+            return parent.hasAllFlags(set);
+        }
+        
+        return false;
+    }
+    
+    public boolean hasAnyFlags(Flags first, Flags... rest)
+    {
+        return hasAnyFlags(EnumSet.of(first, rest));
+    }
+    
+    public boolean hasAnyFlags(EnumSet<Flags> set)
+    {
+        if (disabledFlags.isPresent())
+        {
+            if (disabledFlags.get().containsAll(set))
+            {
+                return true;
+            }
+            else
+            {
+                set = set.clone();
+                set.removeAll(disabledFlags.get());
+            }
+        }
+        
+        if (flags.isPresent())
+        {
+            EnumSet<Flags> intersection = Utils.intersection(set, flags.get());
+            if (!intersection.isEmpty())
+            {
+                return true;
+            }
+        }
+        
+        if (parent != null)
+        {
+            return parent.hasAnyFlags(set);
+        }
+        
+        return false;
+    }
+    
     public void setFlags(EnumSet<Flags> flags) {
         this.flags = Optional.ofNullable(flags);
     }
     
     public ReprContext addFlags(Flags first, Flags... rest) {
+        EnumSet<Flags> set = EnumSet.of(first, rest);
+        if (disabledFlags.isPresent()) {
+            disabledFlags.get().removeAll(set);
+        }
         if (!flags.isPresent()) {
             flags = Optional.of(EnumSet.noneOf(Flags.class));
         }
-        flags.get().addAll(EnumSet.of(first, rest));
+        flags.get().addAll(set);
         return this;
     }
     
     public ReprContext removeFlags(Flags first, Flags... rest) {
+        EnumSet<Flags> set = EnumSet.of(first, rest);
+        if (flags.isPresent()) {
+            flags.get().removeAll(set);
+        }
         if (!disabledFlags.isPresent()) {
             disabledFlags = Optional.of(EnumSet.noneOf(Flags.class));
         }
-        disabledFlags.get().addAll(EnumSet.of(first, rest));
+        disabledFlags.get().addAll(set);
         return this;
+    }
+    
+    public ReprContext disableFlags(EnumSet<Flags> rest)
+    {
+        if (!disabledFlags.isPresent())
+        {
+            disabledFlags = Optional.of(rest.clone());
+            return this;
+        }
+        disabledFlags.get().addAll(rest);
+        return this;
+    }
+    
+    public ReprContext disableFlags(Flags first, Flags... rest)
+    {
+        return disableFlags(EnumSet.of(first, rest));
+    }
+    
+    public ReprContext withFlags(Flags first, Flags... rest)
+    {
+        if (hasAllFlags(first, rest))
+        {
+            return this;
+        }
+        
+        ReprContext child = new ReprContext(this);
+        child.setFlags(EnumSet.of(first, rest));
+        return child;
+    }
+    
+    public ReprContext withoutFlags(Flags first, Flags... rest)
+    {
+        if (!hasAnyFlags(first, rest))
+        {
+            return this;
+        }
+        ReprContext child = new ReprContext(this);
+        child.disableFlags(first, rest);
+        return child;
     }
     
     
@@ -114,11 +235,16 @@ public class ReprContext {
         }
         return DEFAULT_DECIMAL_FORMAT;
     }
-
+    
     public void setDecimalFormat(DecimalFormat decimalFormat) {
         this.decimalFormat = Optional.ofNullable(decimalFormat);
     }
     
+    
+    public boolean isHyperTextPrint()
+    {
+        return hasFlag(Flags.HYPERTEXT_PRINT);
+    }
     
     public boolean isExpression() {
         return hasFlag(Flags.EXPRESSION);
@@ -221,6 +347,13 @@ public class ReprContext {
     public String formatBinInt(BigInteger value) {
         return value.toString(2) + "b";
     }
+    
+    
+    @Override
+    public ReprContext getReprContext() {
+        return this;
+    }
+    
     
     public static ReprContext getDefault() {
         return new ReprContext();

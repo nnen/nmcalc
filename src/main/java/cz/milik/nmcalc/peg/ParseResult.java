@@ -37,6 +37,13 @@ public class ParseResult<T> {
     }
     
     
+    private final boolean cut;
+    
+    public boolean isCut() {
+        return cut;
+    }
+    
+    
     private final T value;
     
     public T getValue() { return value; }
@@ -83,6 +90,7 @@ public class ParseResult<T> {
         success = true;
         error = false;
         ignored = false;
+        cut = false;
         value = aValue;
         rest = aRest;
         errorMessage = "Ok.";
@@ -96,6 +104,7 @@ public class ParseResult<T> {
         success = true;
         error = false;
         ignored = true;
+        cut = false;
         value = null;
         rest = aRest;
         errorMessage = "Ok.";
@@ -104,12 +113,13 @@ public class ParseResult<T> {
         context = aContext;
     }
     
-    public ParseResult(IPegContext ctx, boolean anError, ITokenSequence aRest, String anErrorMessage, Token anErrorToken)
+    public ParseResult(IPegContext ctx, boolean anError, boolean aCut, ITokenSequence aRest, String anErrorMessage, Token anErrorToken)
     {
         success = false;
         error = anError;
         value = null;
         ignored = false;
+        cut = aCut;
         rest = aRest;
         errorToken = anErrorToken;
         if (anErrorMessage == null) {
@@ -123,11 +133,12 @@ public class ParseResult<T> {
         context = ctx;
     }
     
-    public ParseResult(IPegContext ctx, boolean anError, ITokenSequence aRest, Exception anException, Token anErrorToken)
+    public ParseResult(IPegContext ctx, boolean anError, boolean aCut, ITokenSequence aRest, Exception anException, Token anErrorToken)
     {
         success = false;
         error = anError;
         ignored = false;
+        cut = aCut;
         value = null;
         rest = aRest;
         errorToken = anErrorToken;
@@ -136,17 +147,41 @@ public class ParseResult<T> {
         context = ctx;
     }
     
-    public ParseResult(IPegContext ctx, boolean anError, ITokenSequence aRest, Exception anException, String anErrorMessage, Token anErrorToken)
+    public ParseResult(IPegContext ctx, boolean anError, boolean aCut, ITokenSequence aRest, Exception anException, String anErrorMessage, Token anErrorToken)
     {
         success = false;
         error = anError;
         ignored = false;
+        cut = aCut;
         value = null;
         rest = aRest;
         errorToken = anErrorToken;
         errorMessage = anErrorMessage;
         cause = anException;
         context = ctx;
+    }
+    
+    public ParseResult(boolean success,
+            boolean error,
+            boolean ignored,
+            boolean cut,
+            T value,
+            ITokenSequence rest,
+            Token errorToken,
+            String errorMessage,
+            Exception exception,
+            IPegContext ctx) {
+        this.success = success;
+        this.error = error;
+        this.ignored = ignored;
+        this.cut = cut;
+        
+        this.value = value;
+        this.rest = rest;
+        this.errorToken = errorToken;
+        this.errorMessage = errorMessage;
+        this.cause = exception;
+        this.context = ctx;
     }
     
     
@@ -233,10 +268,11 @@ public class ParseResult<T> {
         return castFailure(getRest());
     }
     
-    public <U> ParseResult<U> castFailure(ITokenSequence rest) {
+    public <U> ParseResult<U> castFailure(ITokenSequence rest, boolean cut) {
         return new ParseResult<>(
                 getContext(),
                 isError(),
+                cut,
                 rest,
                 getCause(),
                 getErrorMessage(),
@@ -244,14 +280,50 @@ public class ParseResult<T> {
         );
     }
     
+    public <U> ParseResult<U> castFailure(ITokenSequence rest) {
+        return castFailure(rest, isCut());
+    }
+    
     public <U> ParseResult<U> makeError() {
         return new ParseResult<>(
                 getContext(),
                 true,
+                isCut(),
                 getRest(),
                 getCause(),
                 getErrorMessage(),
                 getErrorToken()
+        );
+    }
+    
+    
+    public ParseResult<T> toNonCut() {
+        return new ParseResult<>(
+                success,
+                error,
+                ignored,
+                false,
+                value,
+                rest,
+                errorToken,
+                errorMessage,
+                cause,
+                context
+        );
+    }
+    
+    public ParseResult<T> toCut() {
+        return new ParseResult<>(
+                success,
+                error,
+                ignored,
+                true,
+                value,
+                rest,
+                errorToken,
+                errorMessage,
+                cause,
+                context
         );
     }
     

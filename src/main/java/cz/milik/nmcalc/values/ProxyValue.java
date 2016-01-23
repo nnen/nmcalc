@@ -336,6 +336,11 @@ public abstract class ProxyValue implements ICalcValue {
     }
 
     @Override
+    public Context bind(Context ctx, ICalcValue obj) {
+        return getTarget().bind(ctx, obj);
+    }
+    
+    @Override
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function) {
         return getTarget().withNonError(function);
     }

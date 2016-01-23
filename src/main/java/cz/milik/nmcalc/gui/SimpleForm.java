@@ -5,12 +5,15 @@
  */
 package cz.milik.nmcalc.gui;
 
+import cz.milik.nmcalc.IReprContextProvider;
 import cz.milik.nmcalc.values.ErrorValue;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.Interpreter;
+import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.gui.IInputView.IInputViewListener;
 import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
+import cz.milik.nmcalc.utils.IOUtils;
 import cz.milik.nmcalc.utils.Monad;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -26,7 +29,7 @@ import javax.swing.UIManager;
  *
  * @author jan
  */
-public class SimpleForm extends javax.swing.JFrame {
+public class SimpleForm extends javax.swing.JFrame implements IReprContextProvider {
 
     private final CalcParser parser = new CalcParser();
     private final Interpreter interpreter = new Interpreter();
@@ -36,6 +39,23 @@ public class SimpleForm extends javax.swing.JFrame {
     
     private String lastEvaluatedExpression;
     private boolean clearHistoryOnNextCommit = true;
+    
+    
+    private IReprContextProvider reprContext = new ReprContext(ReprContext.getDefault());
+    
+    public IReprContextProvider getReprContextProvider() {
+        return reprContext;
+    }
+    
+    public void setReprContextProvider(IReprContextProvider reprContext) {
+        this.reprContext = reprContext;
+    }
+    
+    @Override
+    public ReprContext getReprContext() {
+        return getReprContextProvider().getReprContext();
+    }
+    
     
     public String getEnvironmentFile() {
         String home = System.getProperty("user.home");
@@ -66,11 +86,13 @@ public class SimpleForm extends javax.swing.JFrame {
             
             @Override
             public void windowClosing(WindowEvent e) {
-                try {
-                    interpreter.serializeEnvironment(getEnvironmentFile());
-                } catch (IOException ex) {
-                    Logger.getLogger(SimpleForm.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                IOUtils.writeFileSafely(
+                        getEnvironmentFile(),
+                        out -> {
+                            interpreter.serializeEnvironment(out);
+                            return true;
+                        }
+                );
             }        
         });
         
@@ -116,6 +138,7 @@ public class SimpleForm extends javax.swing.JFrame {
         	}
         });
         
+        historyView.setReprContextSupplier(this);
         historyView.addHyperTextListener(new HyperTextPane.Adapter() {
             @Override
             public void onLinkActivated(URI uri) {

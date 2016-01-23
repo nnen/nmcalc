@@ -90,6 +90,7 @@ public abstract class PegParser<T> {
             return new ParseResult(
                 ctx,
                 true,
+                false,
                 input,
                 e,
                 input.get(0)
@@ -105,6 +106,7 @@ public abstract class PegParser<T> {
             return new ParseResult(
                 childContext,
                 false,
+                false,
                 input,
                 e,
                 input.get(0)
@@ -114,6 +116,7 @@ public abstract class PegParser<T> {
             return new ParseResult(
                 childContext,
                 true,
+                false,
                 input,
                 e,
                 input.get(0)
@@ -247,12 +250,20 @@ public abstract class PegParser<T> {
         return new SequenceParser<>(parsers);
     }
     
+    public static <T> PegParser<LinkedList<T>> concat(int cutPosition, PegParser<T>... parsers) {
+        return new SequenceParser<>(cutPosition, parsers);
+    }
+    
     public PegParser<LinkedList<T>> concat(PegParser<T> other) {
         return concat(this, other);
     }
     
     public static PegParser<IPegContext> concatAny(PegParser<?>... parsers) {
         return new SequenceCtxParser(parsers);
+    }
+    
+    public static PegParser<IPegContext> concatAny(int cutPosition, PegParser<?>... parsers) {
+        return new SequenceCtxParser(cutPosition, parsers);
     }
     
     public static <U, V> PegParser<Pair<U, V>> pair(PegParser<U> first, PegParser<V> second) {
@@ -343,6 +354,7 @@ public abstract class PegParser<T> {
                 return new ParseResult(
                         ctx,
                         true,
+                        false,
                         input,
                         "Expected non-null result.",
                         input.get(0)
@@ -545,7 +557,14 @@ public abstract class PegParser<T> {
             if (condition.test(result.getValue())) {
                 return result;
             }
-            return new ParseResult(ctx, false, input, "Condition failed.", input.get(0));
+            return new ParseResult(
+                    ctx,
+                    false,
+                    false,
+                    input,
+                    "Condition failed.",
+                    input.get(0)
+            );
         }
 
     }
@@ -605,6 +624,7 @@ public abstract class PegParser<T> {
                 Token t = result.getRest().get(0);
                 return new ParseResult(
                         ctx,
+                        false,
                         false,
                         input,
                         String.format("Expected end of input, but found token %s.", t.toString()),
@@ -785,12 +805,15 @@ public abstract class PegParser<T> {
                     return result;
                 } else if (result.isError()) {
                     return result;
+                } else if (result.isCut()) {
+                    return result.toNonCut();
                 }
                 sb.append(", ");
                 sb.append(result.getErrorMessage());
             }
             return new ParseResult<>(
                     ctx,
+                    false,
                     false,
                     input,
                     String.format(
@@ -809,14 +832,22 @@ public abstract class PegParser<T> {
     
     public static class SequenceParser<T> extends NaryParser<LinkedList<T>, T> {
         
+        private final int cutPosition;
+        
         public SequenceParser(List<PegParser<T>> innerParsers) {
             super(innerParsers);
+            this.cutPosition = -1;
         }
 
         public SequenceParser(PegParser<T>... parsers) {
-            super(parsers);
+            this(-1, parsers);
         }
 
+        public SequenceParser(int cutPosition, PegParser<T>... parsers) {
+            super(parsers);
+            this.cutPosition = cutPosition;
+        }
+        
         @Override
         public String getShortDescription() {
             StringBuilder sb = new StringBuilder();
@@ -833,12 +864,16 @@ public abstract class PegParser<T> {
         @Override
         public ParseResult<LinkedList<T>> parseInContext(ITokenSequence input, IPegContext ctx) throws PegException {
             ParseResult<T> item = new ParseResult(ctx, null, input);
-            //LinkedList<T> list = LinkedList.empty();
             List<T> list = new ArrayList();
             
-            for (PegParser<T> child : innerParsers) {
+            for (int i = 0; i < innerParsers.size(); i++) {
+                PegParser<T> child = innerParsers.get(i);
+                
                 item = child.parse(item);
                 if (!item.isSuccess()) {
+                    if ((cutPosition >= 0) && (i >= cutPosition)) {
+                        return item.castFailure(input, true);
+                    }
                     return item.castFailure(input);
                 }
                 if (!item.isIgnored()) {
@@ -847,35 +882,26 @@ public abstract class PegParser<T> {
             }
             
             return item.map(i -> LinkedList.of(list));
-            
-            //List<T> result = new ArrayList<>();
-            //ITokenSequence rest = input;
-            /*
-            for (PegParser<T> child : innerParsers) {
-                item = child.parse(rest, ctx);
-                if (!item.isSuccess()) {
-                    return item.castFailure();
-                }
-                if (!item.isIgnored()) {
-                    result.add(item.getValue());
-                }
-                rest = item.getRest();
-            }
-            
-            return new ParseResult(ctx, result, rest);*/
         }
 
     }
     
     public static class SequenceCtxParser extends PegParser<IPegContext> {
 
+        private int cutPosition = -1;
+        
         private final List<PegParser<?>> innerParsers;
         
         public SequenceCtxParser(List<PegParser<?>> parsers) {
             innerParsers = parsers;
         }
-
+        
         public SequenceCtxParser(PegParser<?>... parsers) {
+            innerParsers = Arrays.asList(parsers);
+        }
+        
+        public SequenceCtxParser(int cutPosition, PegParser<?>... parsers) {
+            this.cutPosition = cutPosition;
             innerParsers = Arrays.asList(parsers);
         }
 
@@ -897,10 +923,15 @@ public abstract class PegParser<T> {
             ParseResult<?> item;
             ITokenSequence rest = input;
             
-            for (PegParser<?> parser : innerParsers) {
+            for (int i = 0; i < innerParsers.size(); i++) {
+                PegParser<?> parser = innerParsers.get(i);
+                
                 item = parser.parse(rest, ctx);
                 if (!item.isSuccess()) {
-                    return item.castFailure();
+                    if ((cutPosition >= 0) && (i >= cutPosition)) {
+                        return item.castFailure(input, true);
+                    }
+                    return item.castFailure(input);
                 }
                 rest = item.getRest();
             }
@@ -914,18 +945,69 @@ public abstract class PegParser<T> {
     public static class TokenParser extends PegParser<Token> {
 
         //private Token.Types tokenType;
-
+        private final Token.Types tokenTypes[];
+        
+        public TokenParser(Token.Types[] tokenTypes) {
+            this.tokenTypes = tokenTypes;
+        }
+        
+        public TokenParser() {
+            this(null);
+        }
+        
         @Override
         public ParseResult<Token> parseInContext(ITokenSequence input, IPegContext ctx) {
-            //if (input.isEmpty() || input.get(0).getType() != tokenType) {
             if (input.isEmpty()) {
+                if ((tokenTypes != null) && (tokenTypes.length > 0)) {
+                    return new ParseResult(
+                            ctx,
+                            false,
+                            false,
+                            input,
+                            String.format(
+                                    "Expected token %s, found %s.",
+                                    StringUtils.joinStrOr(Arrays.asList(tokenTypes), tt -> tt.getDescription()),
+                                    Token.Types.EOF.getDescription()
+                            ),
+                            input.get(0)
+                    );
+                }
                 return new ParseResult(
                         ctx,
                         false,
+                        false,
                         input,
-                        "Expected a token, found EOF.",
+                        "Expected a token, found " + Token.Types.EOF.getDescription() + ".",
                         input.get(0));
             }
+            
+            if ((tokenTypes != null) && (tokenTypes.length > 0)) {
+                Token token = input.get(0);
+                for (Token.Types tt : tokenTypes) {
+                    if (token.getType() == tt) {
+                        return new ParseResult(
+                                ctx,
+                                token,
+                                input.advance(1)
+                        );
+                    }
+                }
+                return new ParseResult(
+                        ctx,
+                        false,
+                        false,
+                        input,
+                        String.format(
+                                "Expected token %s, found %s.",
+                                StringUtils.joinStrOr(
+                                        Arrays.asList(tokenTypes),
+                                        tt -> tt.getDescription()),
+                                token.getDescription()
+                        ),
+                        token
+                );
+            }
+            
             return new ParseResult(ctx, input.get(0), input.advance(1));
         }
 
@@ -954,13 +1036,18 @@ public abstract class PegParser<T> {
             if (!result.isSuccess()) {
                 return result;
             }
-            if (result.getValue().getType() != tokenType) {
+            Token token = result.getValue();
+            if (token.getType() != tokenType) {
                 return new ParseResult(
                         ctx,
                         false,
+                        false,
                         input,
-                        String.format("Expected token type %s. Got %s.", tokenType.toString(), result.getValue().getType().toString()),
-                        result.getValue());
+                        String.format(
+                                "Expected token %s. Got %s.",
+                                tokenType.getDescription(),
+                                token.getType().getDescription()),
+                        token);
             }
             return result;
         }
@@ -985,11 +1072,12 @@ public abstract class PegParser<T> {
                 return new ParseResult(
                         ctx,
                         false,
+                        false,
                         input,
                         String.format(
                                 "Expected on of %s. Got %s.",
-                                StringUtils.join(", ", tokenTypes.stream().map(tt -> tt.name())),
-                                result.getValue().getType().name()
+                                StringUtils.join(", ", tokenTypes.stream().map(tt -> tt.getDescription())),
+                                result.getValue().getType().getDescription()
                         ),
                         result.getValue()
                 );

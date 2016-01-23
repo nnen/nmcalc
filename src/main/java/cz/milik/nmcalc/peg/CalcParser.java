@@ -191,7 +191,7 @@ public class CalcParser extends PegParser<ASTNode> {
             initializeDef();
             
             nt("ifElse",
-                    concatAny(
+                    concatAny(3,
                             //s(Token.Types.KW_IF),
                             keyword("if"),
                             s("expr", "cond"),
@@ -212,7 +212,7 @@ public class CalcParser extends PegParser<ASTNode> {
             );
             
             nt("match",
-                    concatAny(
+                    concatAny(3,
                             //s(Token.Types.KW_MATCH).ignore(),
                             keyword("match").ignore(),
                             s("expr", "value"),
@@ -248,7 +248,7 @@ public class CalcParser extends PegParser<ASTNode> {
                     })
             );
             
-            nt("do", concatAny(
+            nt("do", concatAny(2,
                     keyword("do").ignore(),
                     s(Token.Types.LBRACE).ignore(),
                     s("expr", "body"),
@@ -260,7 +260,7 @@ public class CalcParser extends PegParser<ASTNode> {
             nt("comparison",
                     concatAny(
                             s("assignment", "first"),
-                            concatAny(
+                            concatAny(1,
                                     or(
                                         s(Token.Types.EQUALS_COMP),
                                         s(Token.Types.LT_COMP),
@@ -299,7 +299,7 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("assignment",
                 concatAny(
-                        concatAny(
+                        concatAny(2,
                                 s(Token.Types.IDENTIFIER, "lhs"),
                                 s(Token.Types.EQUALS, "op")
                         ).maybe(),
@@ -321,7 +321,7 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("cons", concatAny(
                     s("shift", "left"),
-                    concatAny(
+                    concatAny(1,
                             s(Token.Types.CONS).ignore(),
                             s("shift", "right")
                     ).maybe()
@@ -341,7 +341,7 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("shift", concatAny(
                     s("addition", "first"),
-                    concatAny(
+                    concatAny(1,
                             s(
                                     Token.Types.LSHIFT,
                                     Token.Types.RSHIFT
@@ -367,8 +367,9 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("addition", concatAny(
                     s("term", "first"),
-                    concatAny(
-                            s(Token.Types.PLUS,
+                    concatAny(1,
+                            s(
+                                    Token.Types.PLUS,
                                     Token.Types.MINUS
                             ).named("operators"),
                             s("term", "rest")
@@ -392,8 +393,9 @@ public class CalcParser extends PegParser<ASTNode> {
             
             nt("term", concatAny(
                     s("factor", "first"),
-                    concatAny(
-                            s(Token.Types.ASTERISK,
+                    concatAny(1,
+                            s(
+                                    Token.Types.ASTERISK,
                                     Token.Types.SLASH
                             ).named("operators"),
                             s("factor", "rest")
@@ -418,22 +420,22 @@ public class CalcParser extends PegParser<ASTNode> {
             nt("factor", tuple(
                     s("primary", "primary"),
                     or(
-                            s("expr").repeat(
-                                    s(Token.Types.LPAR),
-                                    s(Token.Types.COMMA),
-                                    s(Token.Types.RPAR)
-                            ).pair(value(0)),
-                            concat(
+                            flatten(concat(1,
+                                s(Token.Types.LPAR).ignore(),
+                                s("expr").repeat(s(Token.Types.COMMA)),
+                                s(Token.Types.RPAR).ignore()
+                            )).pair(value(0)),
+                            concat(1,
                                     s(Token.Types.LBRA).ignore(),
                                     s("expr"),
                                     s(Token.Types.RBRA).ignore()
                             ).pair(value(1)),
-                            concat(
+                            concat(1,
                                     s(Token.Types.DOT).ignore(),
                                     s("var")
                             ).pair(value(2))
                     ).repeat().named("postfix"),
-                    concat(
+                    concat(1,
                             s(Token.Types.DOUBLE_ASTERISK).ignore(),
                             s("factor", "exponent")
                     ).named("power").maybe()
@@ -482,55 +484,6 @@ public class CalcParser extends PegParser<ASTNode> {
                 
                 return result;
             }));
-//            .map(ctx -> {
-//                ICalcValue result = ctx.getNamedValue("primary", ICalcValue.class);
-//                
-//                List<Pair<List<ICalcValue>, Integer>> postfix = ctx.getNamedValue("postfix", List.class);
-//                for (Pair<List<ICalcValue>, Integer> pair : postfix) {
-//                    if (pair.getSecond() == 0) {
-//                        result = CalcValue.list(
-//                            result,
-//                            pair.getFirst()
-//                        );
-//                    } else if (pair.getSecond() == 1) {
-//                        result = CalcValue.list(
-//                                BuiltinCalcValue.GET_ITEM,
-//                                result,
-//                                pair.getFirst().get(0)
-//                        );
-//                    } else {
-//                        result = CalcValue.list(BuiltinCalcValue.GET_ATTR,
-//                                result,
-//                                CalcValue.list(
-//                                        BuiltinCalcValue.QUOTE,
-//                                        pair.getFirst().get(0)
-//                                )
-//                        );
-//                    }
-//                }
-//                    
-////                List<ICalcValue> callArgs = ctx.getNamedValue("call", List.class);
-////                //IPegContext callCtx = ctx.getNamedValue("call", IPegContext.class);
-////                //if (callCtx != null) {
-////                if (callArgs != null) {
-////                    result = CalcValue.list(
-////                            result,
-////                            callArgs
-////                            //ctx.getNamedValues("args", ICalcValue.class)
-////                    );
-////                }
-//                
-//                IPegContext powCtx = ctx.getNamedValue("power", IPegContext.class);
-//                if (powCtx != null) {
-//                    result = CalcValue.list(
-//                            MathBuiltins.POW,
-//                            result,
-//                            ctx.getNamedValue("exponent", ICalcValue.class)
-//                    );
-//                }
-//                
-//                return result;
-//            }));
             
             nt("primary", or(
                     concatAny(
@@ -542,7 +495,7 @@ public class CalcParser extends PegParser<ASTNode> {
                                 ctx.getNamedValue("primary", ICalcValue.class)
                         );
                     }),
-                    concatAny(
+                    concatAny(1,
                             s(Token.Types.QUOTE, "quote"),
                             s("primary", "primary")
                     ).map(ctx -> {
@@ -551,14 +504,14 @@ public class CalcParser extends PegParser<ASTNode> {
                                 ctx.getNamedValue("primary", ICalcValue.class)
                         ), ctx.getNamedValue("quote", Token.class));
                     }),
-                    concatAny(
+                    concatAny(1,
                             s(Token.Types.LPAR),
                             s("expr", "expr"),
                             s(Token.Types.RPAR)
                     ).map(ctx -> {
                         return ctx.getNamedValue("expr", ICalcValue.class);
                     }),
-                    concatAny(
+                    concatAny(1,
                             s(Token.Types.LBRA),
                             concatAny(
                                 s("expr", "items"),
@@ -630,7 +583,7 @@ public class CalcParser extends PegParser<ASTNode> {
                     t -> NothingValue.INSTANCE
             ));
             
-            nt("dict_literal", concatAny(
+            nt("dict_literal", concatAny(1,
                     s(Token.Types.LBRACE).ignore(),
                     concatAny(
                         s("dict_literal_item", "first"),
@@ -660,7 +613,7 @@ public class CalcParser extends PegParser<ASTNode> {
                 );
             }));
             
-            nt("dict_literal_item", concatAny(
+            nt("dict_literal_item", concatAny(1,
                     or(
                             concatAny(
                                     s(Token.Types.IDENTIFIER, "ident"),
@@ -696,15 +649,17 @@ public class CalcParser extends PegParser<ASTNode> {
                     s(Token.Types.IDENTIFIER, "argName")
             );
             
-            nt("def", concatAny(
+            nt("def", concatAny(3,
                     keyword("def"),
                     s(Token.Types.IDENTIFIER, "name").maybe(),
                     
+                    s(Token.Types.LPAR).ignore(),
+                    
                     defArg.repeat(
-                            s(Token.Types.LPAR),
-                            s(Token.Types.COMMA),
-                            s(Token.Types.RPAR)
+                            s(Token.Types.COMMA)
                     ).named("args"),
+                    
+                    s(Token.Types.RPAR).ignore(),
                     
                     or (
                             concatAny(

@@ -7,10 +7,10 @@ package cz.milik.nmcalc;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
 import org.hamcrest.core.IsNot;
 
@@ -74,6 +74,35 @@ public abstract class MatcherCombinator<T> extends BaseMatcher<T> {
     }
     
     
+    public static class IsEqual<T> extends MatcherCombinator<T> {
+
+        private final T expected;
+
+        public IsEqual(T expected) {
+            this.expected = expected;
+        }
+        
+        @Override
+        public boolean matches(Object o) {
+            return Objects.equals(expected, o);
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("equal to ");
+            description.appendValue(expected);
+        }
+
+        @Override
+        public void describeMismatch(Object item, Description description) {
+            description.appendValue(item);
+            description.appendText(" is not equal to ");
+            description.appendValue(expected);
+        }
+        
+    }
+    
+    
     public abstract static class UnaryMatcher<T> extends MatcherCombinator<T> {
         protected final Matcher<T> innerMatcher;
 
@@ -91,10 +120,15 @@ public abstract class MatcherCombinator<T> extends BaseMatcher<T> {
         public boolean matches(Object item) {
             return innerMatcher.matches(item);
         }
-
+        
         @Override
         public void describeTo(Description description) {
             innerMatcher.describeTo(description);
+        }
+
+        @Override
+        public void describeMismatch(Object item, Description description) {
+            innerMatcher.describeMismatch(item, description);
         }
     }
     
@@ -130,6 +164,17 @@ public abstract class MatcherCombinator<T> extends BaseMatcher<T> {
             }
             return true;
         }
+        
+        @Override
+        public void describeMismatch(Object item, Description description) {
+            for (Matcher<? extends T> child : children) {
+                if (!child.matches(item)) {
+                    child.describeMismatch(item, description);
+                    return;
+                }
+            }
+        }
+        
     }
     
 }

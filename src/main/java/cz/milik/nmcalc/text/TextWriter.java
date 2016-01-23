@@ -5,10 +5,16 @@
  */
 package cz.milik.nmcalc.text;
 
+import cz.milik.nmcalc.IReprContextProvider;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.text.Text.Fragment;
 import cz.milik.nmcalc.text.Text.Link;
 import cz.milik.nmcalc.values.ICalcValue;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.function.Consumer;
 
@@ -26,6 +32,9 @@ public class TextWriter {
     public ITextElement getResult() {
         return result;
     }
+    
+    
+    private StringBuilder sb = new StringBuilder();
     
     
     private ReprContext defaultReprContext = ReprContext.getDefault();
@@ -77,8 +86,16 @@ public class TextWriter {
         return start(Text.tableRow());
     }
     
+    public TextWriter startTableRow(boolean changesParity) {
+        return start(Text.tableRow(changesParity));
+    }
+    
     public TextWriter startTableCell() {
         return start(Text.tableCell());
+    }
+    
+    public TextWriter startTableCell(boolean header, int columnSpan, Text.HAlignment hAlign) {
+        return start(Text.tableCell(header, columnSpan, hAlign));
     }
     
     public TextWriter tableCell(String fmt, Object... args) {
@@ -87,6 +104,14 @@ public class TextWriter {
     
     public TextWriter tableCell(boolean header, String fmt, Object... args) {
         return append(Text.tableCell(header, fmt, args));
+    }
+    
+    public TextWriter tableCell(boolean header, int columnSpan, String fmt, Object... args) {
+        return append(Text.tableCell(header, columnSpan, fmt, args));
+    }
+    
+    public TextWriter tableCell(boolean header, int columnSpan, Text.HAlignment hAlign, String fmt, Object... args) {
+        return append(Text.tableCell(header, columnSpan, hAlign, fmt, args));
     }
     
     public TextWriter startBold() {
@@ -158,6 +183,10 @@ public class TextWriter {
         return append(Text.value(value));
     }
     
+    public TextWriter append(ICalcValue value, IReprContextProvider ctx) {
+        return append(Text.value(value, ctx));
+    }
+    
     public TextWriter append(IPrintable printable, ReprContext ctx) {
         printable.printDebug(this, ctx);
         return this;
@@ -166,8 +195,156 @@ public class TextWriter {
     public TextWriter append(IPrintable printable) {
         return append(printable, getDefaultReprContext());
     }
-
-
+    
+    
+    public TextWriter appendNull(ReprContext ctx) {
+        monospace("null");
+        return this;
+    }
+    
+    public TextWriter append(Object obj, ReprContext ctx) {
+        if (obj == null) {
+            return appendNull(ctx);
+        }
+        
+        if (obj instanceof IPrintable) {
+            return append((IPrintable)obj, ctx);
+        }
+        
+        if (obj instanceof Map) {
+            return append((Map<?, ?>)obj, ctx);
+        }
+        
+        if (obj instanceof Collection) {
+            return append((Collection<?>)obj, ctx);
+        }
+        
+        monospace(obj.toString());
+        return this;
+    }
+    
+    public TextWriter append(Object[] array, ReprContext ctx) {
+        if (array == null) {
+            appendNull(ctx);
+            return this;
+        }
+        
+        if (ctx.isHyperTextPrint()) {
+            startTable();
+            startTableRow();
+            tableCell(true, 2, "Array");
+            end();
+            startTableRow();
+            tableCell(true, "Index");
+            tableCell(true, "Item");
+            end();
+            for (int i = 0; i < array.length; i++) {
+                startTableCell();
+                monospace(Integer.toString(i));
+                end();
+                startTableCell();
+                append(array[i], ctx);
+                end();
+            }
+            end();
+        } else {
+            monospace("[");
+            for (int i = 0; i < array.length; i++) {
+                if (i == 0) {
+                    monospace(" ");
+                } else {
+                    monospace(", ");
+                }
+                monospace("%d: ", i);
+                append(array[i], ctx);
+            }
+            monospace(" ]");
+        }
+        
+        return this;
+    }
+    
+    public TextWriter append(Collection<?> collection, ReprContext ctx) {
+        if (ctx.isHyperTextPrint()) {
+            startTable();
+            startTableRow();
+            tableCell(true, 2, collection.getClass().getSimpleName());
+            end();
+            startTableRow();
+            tableCell(true, "Index");
+            tableCell(true, "Item");
+            end();
+            int i = 0;
+            for (Object item : collection) {
+                startTableRow();
+                startTableCell();
+                monospace(Integer.toString(i));
+                end();
+                startTableCell();
+                append(item, ctx);
+                end();
+                end();
+            }
+            end();
+        } else {
+            plain("[");
+            boolean first = true;
+            for (Object item : collection) {
+                if (first) {
+                    first = false;
+                    plain(" ");
+                } else {
+                    plain(", ");
+                }
+                append(item, ctx);
+            }
+            plain(" ]");
+        }
+        return this;
+    }
+    
+    public TextWriter append(Map<?, ?> map, ReprContext ctx) {
+        if (ctx.isHyperTextPrint()) {
+            List<Entry<?, ?>> entries = new ArrayList(map.entrySet());
+            startTable();
+            startTableRow();
+            tableCell(true, 2, map.getClass().getSimpleName());
+            end();
+            startTableRow();
+            tableCell(true, "Key");
+            tableCell(true, "Value");
+            end();
+            for (Entry<?, ?> entry : entries) {
+                startTableRow();
+                startTableCell();
+                append(entry.getKey(), ctx);
+                end();
+                startTableCell();
+                append(entry.getKey(), ctx);
+                end();
+                end();
+            }
+            end();
+        } else {
+            plain("{");
+            boolean first = true;
+            for (Entry<?, ?> entry : map.entrySet()) {
+                if (first) {
+                    first = false;
+                    plain(" ");
+                } else {
+                    plain(", ");
+                }
+                append(entry.getKey(), ctx);
+                plain(": ");
+                append(entry.getValue(), ctx);
+            }
+            plain(" }");
+        }
+        return this;
+    }
+    
+    
     public static ITextElement print(IPrintable printable, ReprContext ctx) {
         TextWriter tw = new TextWriter();
         if (printable == null) {
@@ -175,6 +352,12 @@ public class TextWriter {
         } else {
             printable.print(tw, ctx);
         }
+        return tw.getResult();
+    }
+    
+    public static ITextElement print(Object obj, ReprContext ctx) {
+        TextWriter tw = new TextWriter();
+        tw.append(obj, ctx);
         return tw.getResult();
     }
 }

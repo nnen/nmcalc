@@ -101,6 +101,8 @@ public interface ICalcValue extends java.io.Serializable, IPrintable {
     public Context applySpecial(Context ctx, List<? extends ICalcValue> arguments);
     public Context unapply(Context ctx, ICalcValue value);
     
+    public Context bind(Context ctx, ICalcValue obj);
+    
     public Context substitute(Context ctx, ICalcValue value, ICalcValue replacement);
     
     public ICalcValue withNonError(Function<ICalcValue, ICalcValue> function);

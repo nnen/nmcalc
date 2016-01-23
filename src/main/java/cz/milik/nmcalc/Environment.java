@@ -81,6 +81,8 @@ public class Environment implements Serializable, IPrintable {
         setVariable(value.getName(), value);
     }
     
+    public boolean hasVariables() { return !variables.isEmpty(); }
+    
     
     public void setVariables(Iterable<BuiltinCalcValue> values) {
         for (BuiltinCalcValue value : values) {

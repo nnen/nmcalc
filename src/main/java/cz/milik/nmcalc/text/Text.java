@@ -5,6 +5,7 @@
  */
 package cz.milik.nmcalc.text;
 
+import cz.milik.nmcalc.IReprContextProvider;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import java.net.MalformedURLException;
@@ -13,14 +14,39 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author jan
  */
 public abstract class Text implements IText {
+    
+    public enum HAlignment {
+        NONE,
+        LEFT,
+        CENTER,
+        RIGHT,
+    }
+    
+    
+    private boolean parityChange = false;
+
+    public boolean isParityChange() {
+        return parityChange;
+    }
+
+    public void setParityChange(boolean parityChange) {
+        this.parityChange = parityChange;
+    }
+    
+    
+    public Text() {
+    }
+
+    public Text(boolean parityChange) {
+        this.parityChange = parityChange;
+    }
+    
 
     @Override
     public String getText() {
@@ -135,6 +161,10 @@ public abstract class Text implements IText {
         return new Table();
     }
     
+    public static TableRow tableRow(boolean changesParity) {
+        return new TableRow(changesParity);
+    }
+    
     public static TableRow tableRow() {
         return new TableRow();
     }
@@ -153,6 +183,22 @@ public abstract class Text implements IText {
     
     public static TableCell tableCell(boolean header, String fmt, Object... args) {
         return new TableCell(header, plain(String.format(fmt, args)));
+    }
+    
+    public static TableCell tableCell(int columnSpan, String fmt, Object... args) {
+        return new TableCell(false, columnSpan, plain(String.format(fmt, args)));
+    }
+    
+    public static TableCell tableCell(boolean header, int columnSpan, String fmt, Object... args) {
+        return new TableCell(header, columnSpan, plain(String.format(fmt, args)));
+    }
+    
+    public static TableCell tableCell(boolean header, int columnSpan, HAlignment hAlignment, ITextElement... children) {
+        return new TableCell(header, columnSpan, hAlignment, children);
+    }
+    
+    public static TableCell tableCell(boolean header, int columnSpan, HAlignment hAlignment, String fmt, Object... args) {
+        return new TableCell(header, columnSpan, hAlignment, plain(String.format(fmt, args)));
     }
     
     public static Headline headline(String value, int level) {
@@ -177,7 +223,11 @@ public abstract class Text implements IText {
     
     
     public static CalcValue value(ICalcValue value) {
-        return new CalcValue(value, null);
+        return Text.value(value, null);
+    }
+    
+    public static CalcValue value(ICalcValue value, IReprContextProvider reprContext) {
+        return new CalcValue(value, reprContext);
     }
     
     
@@ -185,6 +235,13 @@ public abstract class Text implements IText {
         private final List<ITextElement> children = new ArrayList();
         
         public ParentElement(ITextElement... children) {
+            for (ITextElement child : children) {
+                addChild(child);
+            }
+        }
+
+        public ParentElement(boolean parityChange, ITextElement... children) {
+            super(parityChange);
             for (ITextElement child : children) {
                 addChild(child);
             }
@@ -199,7 +256,15 @@ public abstract class Text implements IText {
         public void addChild(ITextElement child) {
             children.add(child);
         }
-    
+
+        @Override
+        public ITextElement getLastChild() {
+            if (children.isEmpty()) {
+                return null;
+            }
+            return children.get(children.size() - 1);
+        }
+        
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -303,6 +368,14 @@ public abstract class Text implements IText {
     
     
     public static class TableRow extends ParentElement {
+        public TableRow(ITextElement... children) {
+            this(true, children);
+        }
+        
+        public TableRow(boolean parityChange, ITextElement... children) {
+            super(parityChange, children);
+        }
+        
         @Override
         public <C, R> R visit(ITextElementVisitor<C, R> visitor, C ctx) {
             return visitor.visitTableRow(this, ctx);
@@ -322,13 +395,45 @@ public abstract class Text implements IText {
         }
         
         
+        private int columnSpan = 1;
+
+        public int getColumnSpan() {
+            return columnSpan;
+        }
+
+        public void setColumnSpan(int columnSpan) {
+            this.columnSpan = columnSpan;
+        }
+        
+        
+        private HAlignment hAlignment = HAlignment.NONE;
+        
+        public HAlignment gethAlignment() {
+            return hAlignment;
+        }
+        
+        public void sethAlignment(HAlignment hAlignment) {
+            this.hAlignment = hAlignment;
+        }
+        
+        
         public TableCell(ITextElement... children) {
-            super(children);
+            this(false, children);
         }
         
         public TableCell(boolean header, ITextElement... children) {
+            this(header, 1, children);
+        }
+        
+        public TableCell(boolean header, int columnSpan, ITextElement... children) {
+            this(header, columnSpan, HAlignment.NONE, children);
+        }
+        
+        public TableCell(boolean header, int columnSpan, HAlignment hAlignment, ITextElement... children) {
             super(children);
             this.header = header;
+            this.columnSpan = columnSpan;
+            this.hAlignment = hAlignment;
         }
         
         
@@ -539,23 +644,27 @@ public abstract class Text implements IText {
         }
         
         
-        private ReprContext reprContext = ReprContext.getDefault();
-
+        private IReprContextProvider reprContextProvider = ReprContext.getDefault();
+        
+        public IReprContextProvider getReprContextProvdier() {
+            return reprContextProvider;
+        }
+        
+        public void setReprContextProvider(IReprContextProvider reprContext) {
+            this.reprContextProvider = reprContext;
+        }
+        
         public ReprContext getReprContext() {
-            return reprContext;
-        }
-
-        public void setReprContext(ReprContext reprContext) {
-            this.reprContext = reprContext;
+            return reprContextProvider.getReprContext();
         }
         
         
-        public CalcValue(ICalcValue value, ReprContext ctx) {
+        public CalcValue(ICalcValue value, IReprContextProvider ctx) {
             setValue(value);
             if (ctx == null) {
                 ctx = ReprContext.getDefault();
             }
-            setReprContext(ctx);
+            setReprContextProvider(ctx);
         }
         
         
@@ -564,7 +673,7 @@ public abstract class Text implements IText {
             if (getValue() == null) {
                 return "null";
             }
-            return getValue().getRepr(getReprContext());
+            return getValue().getRepr(getReprContext().getReprContext());
         }
         
         @Override

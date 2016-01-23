@@ -9,7 +9,8 @@ import cz.milik.nmcalc.Context;
 import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.ReprContext;
-import cz.milik.nmcalc.values.ICalcValue;
+import cz.milik.nmcalc.text.Text;
+import cz.milik.nmcalc.text.TextWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,6 +23,26 @@ import java.util.Set;
 public class MapValue extends CalcValue {
 
     private final Map<ICalcValue, ICalcValue> values = new HashMap();
+    
+    
+    /*
+    @Override
+    public boolean isValueEqual(ICalcValue other, Context ctx) {
+        if (!(other instanceof MapValue)) {
+            return false;
+        }
+        if (length() != other.length()) {
+            return false;
+        }
+        try {
+            for (ICalcValue key : values.keySet()) {
+                //ICalcValue otherValue = other.get
+            }
+        } catch (NMCalcException e) {
+            return false;
+        }
+    }
+    */
     
     
     @Override
@@ -44,7 +65,7 @@ public class MapValue extends CalcValue {
         ctx.setReturnedValue(item);
         return ctx;
     }
-
+    
     @Override
     public void setItem(ICalcValue index, ICalcValue value) throws NMCalcException {
         values.put(index, value);
@@ -86,6 +107,49 @@ public class MapValue extends CalcValue {
         
         sb.append(" }");
         return sb.toString();
+    }
+    
+    
+    @Override
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        super.print(out, ctx);
+    }
+    
+    @Override
+    public void print(TextWriter out, ReprContext ctx) {
+        if (ctx.isHyperTextPrint()) {
+            out.startTable();
+            out.startTableRow();
+            out.tableCell(true, 2, "Map");
+            out.end();
+            for (Entry<ICalcValue, ICalcValue> entry : values.entrySet()) {
+                out.startTableRow();
+                out.startTableCell(true, 1, Text.HAlignment.NONE);
+                entry.getKey().print(out, ctx);
+                out.end();
+                out.startTableCell();
+                entry.getValue().print(out, ctx);
+                out.end();
+                out.end();
+            }
+            out.end();
+            return;
+        }
+        
+        out.monospace("{");
+        boolean isFirst = true;
+        for (Entry<ICalcValue, ICalcValue> entry : values.entrySet()) {
+            if (isFirst) {
+                isFirst = false;
+                out.monospace(" ");
+            } else {
+                out.monospace(", ");
+            }
+            entry.getKey().print(out, ctx);
+            out.monospace(": ");
+            entry.getValue().print(out, ctx);
+        }
+        out.monospace(" }");
     }
     
     

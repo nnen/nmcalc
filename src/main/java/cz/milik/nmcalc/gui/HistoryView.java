@@ -5,11 +5,13 @@
  */
 package cz.milik.nmcalc.gui;
 
+import cz.milik.nmcalc.IReprContextProvider;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.ReprContext;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.text.ITextElement;
 import cz.milik.nmcalc.text.TextWriter;
+import java.util.function.Supplier;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -18,7 +20,7 @@ import javax.swing.text.StyleConstants;
  *
  * @author jan
  */
-public class HistoryView extends javax.swing.JPanel {
+public class HistoryView extends javax.swing.JPanel implements IReprContextProvider {
 
     private MutableAttributeSet lhsStyle = new SimpleAttributeSet();
     private MutableAttributeSet lhsParStyle = new SimpleAttributeSet();
@@ -27,18 +29,22 @@ public class HistoryView extends javax.swing.JPanel {
     private MutableAttributeSet rhsParStyle = new SimpleAttributeSet();
     
     
-    private ReprContext reprContext = new ReprContext();
+    private IReprContextProvider reprContextSupplier = ReprContext.getDefault();
+    
+    public IReprContextProvider getReprContextSupplier() {
+        return reprContextSupplier;
+    }
+    
+    public void setReprContextSupplier(IReprContextProvider reprContextSupplier) {
+        this.reprContextSupplier = reprContextSupplier;
+    }
     
     {
-        reprContext.addFlags(ReprContext.Flags.PRETTY_PRINT_HELP);
+        //reprContext.addFlags(ReprContext.Flags.PRETTY_PRINT_HELP);
     }
     
     public ReprContext getReprContext() {
-        return reprContext;
-    }
-    
-    public void setReprContext(ReprContext reprContext) {
-        this.reprContext = reprContext;
+        return getReprContextSupplier().getReprContext();
     }
     
     
@@ -60,6 +66,8 @@ public class HistoryView extends javax.swing.JPanel {
      */
     public HistoryView() {
         initComponents();
+        
+        textPane.setReprContextProvider(this);
     }
 
     /**
@@ -86,24 +94,6 @@ public class HistoryView extends javax.swing.JPanel {
         textPane.prepend(element);
     }
     
-    /*
-    public void append(ICalcValue expr, ICalcValue value) {
-        //append(expr.getRepr(getReprContext()), value);
-        
-        TextWriter tw = new TextWriter();
-        
-        tw.startBlockQuote();
-        //tw.monospace(">>> ");
-        tw.append(Text.value(expr));
-        tw.end();
-        tw.startPar();
-        tw.append(Text.value(value));
-        tw.end();
-        
-        textPane.append(tw.getResult());
-    }
-    */
-    
     public void append(String expr, ICalcValue value) {
         TextWriter tw = new TextWriter();
         
@@ -119,40 +109,11 @@ public class HistoryView extends javax.swing.JPanel {
             textPane.append(tw.getResult());
         } else {
             tw.startPar();
-            tw.append(value);
+            tw.append(value, getReprContextSupplier());
             tw.end();
             textPane.append(tw.getResult());
         }
     }
-    
-    /*
-    public void append(String expr, String value) {
-        append(">>> ");
-        append(expr + "\n", lhsStyle, lhsParStyle);
-        int pos = append(value + "\n", rhsStyle, rhsParStyle);
-        
-        try {
-            Rectangle rect = outputPane.modelToView(pos);
-            outputPane.scrollRectToVisible(rect);
-        } catch (BadLocationException ex) {
-            Logger.getLogger(HistoryView.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    */
-    
-    /*
-    public void appendHelp(String expr, String value) {
-        MarkupParser parser = new MarkupParser();
-        ITextElement element = parser.parse(value);
-        
-        append(">>> ");
-        append(expr + "\n", lhsStyle, lhsParStyle);
-        
-        //append(value + "\n", null, null);
-        
-        HyperTextPane.append(outputPane.getStyledDocument(), element);
-    }
-    */
     
     public void prependMarkup(String markup) {
         textPane.prependMarkup(markup);

@@ -11,6 +11,7 @@ import cz.milik.nmcalc.ICalcValueVisitor;
 import cz.milik.nmcalc.NMCalcException;
 import cz.milik.nmcalc.Process;
 import cz.milik.nmcalc.ReprContext;
+import cz.milik.nmcalc.text.Text;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.StringUtils;
 import java.math.BigDecimal;
@@ -113,6 +114,31 @@ public class ListValue extends CalcValue {
             
             return;
         }
+        
+        if (ctx.isHyperTextPrint())
+        {
+            out.startTable();
+            out.startTableRow();
+            out.tableCell(true, 2, "List");
+            out.end();
+            out.startTableRow();
+            out.tableCell(true, "Index");
+            out.tableCell(true, "Value");
+            out.end();
+            for (int i = 0; i < values.size(); i++)
+            {
+                out.startTableRow();
+                out.tableCell(true, 1, Text.HAlignment.RIGHT, "%d", i);
+                out.startTableCell();
+                ICalcValue item = values.get(i);
+                item.print(out, ctx);
+                out.end();
+                out.end();
+            }
+            out.end();
+            return;
+        }
+        
         out.plain("[");
         boolean first = true;
         for (ICalcValue item : values) {
@@ -126,6 +152,12 @@ public class ListValue extends CalcValue {
         out.plain("]");
         //super.print(out, ctx); //To change body of generated methods, choose Tools | Templates.
     }
+    
+    @Override
+    public void printDebug(TextWriter out, ReprContext ctx) {
+        super.print(out, ctx);
+    }
+    
     
     @Override
     public String getRepr(ReprContext ctx) {

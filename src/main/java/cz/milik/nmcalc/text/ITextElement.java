@@ -12,10 +12,16 @@ import java.util.List;
  * @author jan
  */
 public interface ITextElement {
+    public boolean isParityChange();
+    
     public String getText();
     
     public List<ITextElement> getChildren();
     public void addChild(ITextElement child);
+    
+    default ITextElement getLastChild() {
+        return null;
+    }
     
     public String toHTML();
     

@@ -11,6 +11,8 @@ import cz.milik.nmcalc.values.ErrorValue;
 import cz.milik.nmcalc.values.CalcValue;
 import cz.milik.nmcalc.values.ICalcValue;
 import cz.milik.nmcalc.utils.IMonad;
+import cz.milik.nmcalc.values.SymbolValue;
+import java.io.Serializable;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +23,7 @@ import java.util.logging.Logger;
  *
  * @author jan
  */
-public class Context implements IPrintable {
+public class Context implements IPrintable, Serializable {
     
     private final Context parent;
     
@@ -145,6 +147,10 @@ public class Context implements IPrintable {
         out.startTable();
         
         out.startTableRow();
+        out.tableCell(true, 3, "Stack Trace");
+        out.end();
+        
+        out.startTableRow();
         out.tableCell(true, "Frame");
         out.tableCell(true, "PC");
         out.tableCell(true, "Description");
@@ -169,15 +175,17 @@ public class Context implements IPrintable {
             
             Environment env = current.getEnvironment();
             if (env != lastEnv) {
-                out.startTableRow();
-                out.startTableCell();
-                out.end();
-                out.startTableCell();
-                out.end();
-                out.startTableCell();
-                env.printDebug(out, ctx);
-                out.end();
-                out.end();
+                if (env.hasVariables()) {
+                    out.startTableRow(false);
+                    out.startTableCell();
+                    out.end();
+                    out.startTableCell();
+                    out.end();
+                    out.startTableCell();
+                    env.printDebug(out, ctx);
+                    out.end();
+                    out.end();
+                }
                 lastEnv = env;
             }
             
@@ -290,6 +298,12 @@ public class Context implements IPrintable {
                 this,
                 null
         );
+    }
+    
+    
+    public SymbolValue makeSymbol(String value)
+    {
+        return new SymbolValue(value);
     }
     
     

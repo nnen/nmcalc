@@ -16,11 +16,13 @@ import cz.milik.nmcalc.SerializationContext;
 import cz.milik.nmcalc.TextLoc;
 import cz.milik.nmcalc.text.TextWriter;
 import cz.milik.nmcalc.utils.LinkedList;
+import cz.milik.nmcalc.utils.Pair;
 import cz.milik.nmcalc.utils.StringUtils;
 import cz.milik.nmcalc.utils.Utils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -28,13 +30,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author jan
  */
 public abstract class CalcValue implements ICalcValue {
-
+    
+    private static final Logger LOGGER = Logger.getLogger(CalcValue.class.getName());
+    
+    
     public static ICalcValue make(float value) {
         return new FloatValue(value);
     }
@@ -45,6 +52,10 @@ public abstract class CalcValue implements ICalcValue {
     
     public static ICalcValue make(BigDecimal value) {
         return new FloatValue(value);
+    }
+    
+    public static ICalcValue makeFloat(String value) {
+        return make(new BigDecimal(value));
     }
     
     public static ICalcValue make(BigInteger value) {
@@ -114,6 +125,22 @@ public abstract class CalcValue implements ICalcValue {
 
     public static ICalcValue dict() {
         return new MapValue();
+    }
+    
+    public static ICalcValue dict(Iterable<Pair<ICalcValue, ICalcValue>> items) {
+        MapValue result = new MapValue();
+        for (Pair<ICalcValue, ICalcValue> item : items) {
+            try {
+                result.setItem(item.getFirst(), item.getSecond());
+            } catch (NMCalcException e) {
+                LOGGER.log(Level.SEVERE, null, e);
+            }
+        }
+        return result;
+    }
+    
+    public static ICalcValue dict(Pair<ICalcValue, ICalcValue>... items) {
+        return dict(Arrays.asList(items));
     }
     
     public static ICalcValue quote(ICalcValue value) {
@@ -661,6 +688,13 @@ public abstract class CalcValue implements ICalcValue {
         } else {
             ctx.setReturnedValue(CalcValue.nothing());
         }
+        return ctx;
+    }
+    
+    
+    @Override
+    public Context bind(Context ctx, ICalcValue obj) {
+        ctx.setReturnedValue(this);
         return ctx;
     }
     

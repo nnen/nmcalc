@@ -32,7 +32,7 @@ public class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
     }
     
     protected void startBlock() {
-        oddEvenStack.push(true);
+        oddEvenStack.push(false);
     }
     
     protected void endBlock() {
@@ -61,13 +61,43 @@ public class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
     protected void visitChildren(ITextElement e, StringBuilder ctx) {
         startBlock();
         for (ITextElement child : e.getChildren()) {
+            if (child.isParityChange()) {
+                switchOddEven();
+            }
             child.visit(this, ctx);
-            switchOddEven();
         }
         endBlock();
     }
-
-    protected Object block(ITextElement e, StringBuilder sb, String tagName, String... otherTagNames) {
+    
+    protected Object blockWithAttributes(ITextElement e, StringBuilder sb, String tagName, String[] attributes) {
+        if (attributes == null) {
+            attributes = new String[] {};
+        }
+        
+        if ((attributes.length % 2) != 0) {
+            throw new IllegalArgumentException(String.format("Argument 'attributes' must have even number of items, but is: %d", attributes.length));
+        }
+        
+        sb.append("<").append(tagName);
+        for (int i = 0; i < attributes.length / 2; i++) {
+            String value = attributes[(i * 2) + 1];
+            if (value == null) {
+                continue;
+            }
+            sb.append(" ");
+            sb.append(attributes[i * 2]);
+            sb.append("=\"");
+            sb.append(value);
+            sb.append("\"");
+        }
+        sb.append(">");
+        visitChildren(e, sb);
+        sb.append("</").append(tagName).append(">");
+        
+        return null;
+    }
+    
+    protected Object block(ITextElement e, StringBuilder sb, String tagName, String... otherTagNames) {        
         sb.append("<").append(tagName).append(">");
         for (int i = 0; i < otherTagNames.length; i++) {
             sb.append("<").append(otherTagNames[i]).append(">");
@@ -84,12 +114,7 @@ public class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
         if (StringUtils.isNullOrEmpty(cssCls)) {
             return block(e, sb, tagName);
         }
-        
-        sb.append("<").append(tagName).append(" class=\"").append(cssCls).append("\">");
-        visitChildren(e, sb);
-        sb.append("</").append(tagName).append(">");
-        
-        return null;
+        return blockWithAttributes(e, sb, tagName, new String[] { "class", cssCls });
     }
     
     protected void start(StringBuilder sb, String tagName, String clsName) {
@@ -142,13 +167,34 @@ public class HTMLBuilder implements ITextElementVisitor<StringBuilder, Object> {
         }
         return blockWithClass(element, ctx, "tr", "even_row");
     }
-
+    
     @Override
     public Object visitTableCell(Text.TableCell element, StringBuilder ctx) {
-        if (element.isHeader()) {
-            return block(element, ctx, "th");
+        String tagName = element.isHeader() ? "th" : "td";
+        String style = null;
+        switch (element.gethAlignment()) {
+            case LEFT:
+                style = "text-align: left";
+                break;
+            case CENTER:
+                style = "text-align: center";
+                break;
+            case RIGHT:
+                style = "text-align: right";
+                break;
+        }
+        if (element.getColumnSpan() > 1) {
+            return blockWithAttributes(
+                    element, ctx, tagName,
+                    new String[] {
+                        "valign", "top",
+                        "style", style,
+                        "colspan",
+                        Integer.toString(element.getColumnSpan())});
         } else {
-            return block(element, ctx, "td");
+            return blockWithAttributes(
+                    element, ctx, tagName,
+                    new String[] { "valign", "top", "style", style });
         }
     }
 

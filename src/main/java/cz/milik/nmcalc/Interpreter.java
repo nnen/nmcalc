@@ -15,6 +15,7 @@ import cz.milik.nmcalc.peg.CalcParser;
 import cz.milik.nmcalc.peg.ParseResult;
 import cz.milik.nmcalc.utils.ListenerCollection;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -30,6 +31,10 @@ public class Interpreter {
     
     private Context defaultContext = Context.createRoot();
     private Environment defaultEnvironment = BuiltinCalcValue.getBuiltins().createChild();
+
+    public Context getDefaultContext() {
+        return defaultContext;
+    }
     
     
     private ListBuilder listBuilder = new ListBuilder();
@@ -63,6 +68,10 @@ public class Interpreter {
         );
     }
     
+    public ICalcValue parse(String input) {
+        return parse(input, getDefaultContext());
+    }
+    
     
     public Context evaluate(String input, Context ctx) {
         ICalcValue value = parse(input, ctx);
@@ -70,15 +79,8 @@ public class Interpreter {
     }
     
     public ICalcValue evaluate(String input) {
-        ICalcValue value = parse(input, null);
+        ICalcValue value = parse(input);
         return eval(value);
-        /*
-        ParseResult<ICalcValue> node = parser.parseList(input);
-        if (node.isSuccess()) {
-            return eval(node.getValue());
-        }
-        return new ErrorValue("Syntax error: " + node.toString());
-                */
     }
     
     public ICalcValue eval(ICalcValue value) {
@@ -128,6 +130,10 @@ public class Interpreter {
     
     public void serializeEnvironment(String fileName) throws IOException {
         defaultEnvironment.serialize(fileName);
+    }
+    
+    public void serializeEnvironment(OutputStream out) throws IOException {
+        defaultEnvironment.serialize(out);
     }
     
     public void deserializeEnvironment(String fileName) throws IOException, ClassNotFoundException {

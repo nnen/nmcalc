@@ -5,6 +5,8 @@
  */
 package cz.milik.nmcalc.parser;
 
+import java.util.function.Function;
+
 /**
  *
  * @author jan
@@ -13,33 +15,33 @@ public class Token {
     
     public enum Types
     {
-        UNKNOWN,
+        UNKNOWN(null, "unknown token"),
         
-        FLOAT,
-        HEX_LITERAL,
-        OCT_LITERAL,
-        BIN_LITERAL,
-        IDENTIFIER,
-        SYMBOL,
-        STRING,
-        BYTES,
-        BUILTIN,
+        FLOAT(null, "float literal"),
+        HEX_LITERAL(null, "hex literal"),
+        OCT_LITERAL(null, "octal literal"),
+        BIN_LITERAL(null, "binary literal"),
+        IDENTIFIER(null, "identifier"),
+        SYMBOL(null, "symbol literal"),
+        STRING(null, "string literal"),
+        BYTES(null, "byte array literal"),
+        BUILTIN(null, "builtin literal"),
         
         EQUALS,
-        EQUALS_COMP,
-        LT_COMP,
-        GT_COMP,
+        EQUALS_COMP(null, "== operator"),
+        LT_COMP(null, "< operator"),
+        GT_COMP(null, "> operator"),
         
-        CONS,
-        ARROW,
+        CONS(null, ":: operator"),
+        ARROW(null, "-> operator"),
         
         PLUS('+'),
         MINUS('-'),
         ASTERISK('*'),
         DOUBLE_ASTERISK,
         SLASH('/'),
-        LSHIFT,
-        RSHIFT,
+        LSHIFT(null, "<< operator"),
+        RSHIFT(null, ">> operator"),
         
         LPAR('('),
         RPAR(')'),
@@ -63,25 +65,42 @@ public class Token {
         KW_FALSE("false"),
         KW_NOTHING("nothing"),
         
-        EOF;
+        EOF(null, "end of input");
         
         public final boolean isKeyword;
         public final String keyword;
         public final boolean isSingleCharacter;
         public final char singleCharacter;
         
+        private final String description;
+        private final Function<Token, String> descriptionFn;
+        
         private Types(char c) {
             this.keyword = null;
             this.isKeyword = false;
             isSingleCharacter = true;
             singleCharacter = c;
+            description = "'" + Character.toString(c) + "'";
+            descriptionFn = null;
         }
         
-        private Types(String keyword) {
+        private Types(String keyword, String description) {
             this.keyword = keyword;
             this.isKeyword = (keyword != null);
             isSingleCharacter = false;
             singleCharacter = ' ';
+            if (description != null) {
+                this.description = description;
+            } else if (keyword != null) {
+                this.description = "keyword '" + keyword + "'";
+            } else {
+                this.description = null;
+            }
+            descriptionFn = null;
+        }
+        
+        private Types(String keyword) {
+            this(keyword, null);
         }
         
         private Types() {
@@ -89,6 +108,22 @@ public class Token {
             keyword = null;
             isSingleCharacter = false;
             singleCharacter = ' ';
+            description = null;
+            descriptionFn = null;
+        }
+        
+        public String getDescription() {
+            if (description == null) {
+                return name();
+            }
+            return description;
+        }
+        
+        public String getDescription(Token token) {
+            if (descriptionFn != null) {
+                return descriptionFn.apply(token);
+            }
+            return getDescription();
         }
         
     }
@@ -121,6 +156,10 @@ public class Token {
         //return "Token{" + "type=" + type + ", offset=" + offset + ", value=\"" + value + "\"}";
     }
     
+    public String getDescription() {
+        return getType().getDescription(this);
+    }
+    
     public String parseStringLiteral() {
         StringBuilder sb = new StringBuilder();
         boolean escaped = false;
@@ -128,7 +167,26 @@ public class Token {
         for (int i = 0; i < value.length() - 2; i++) {
             char c = value.charAt(1 + i);
             if (escaped) {
-                sb.append(c);
+                switch (c) {
+                    case 'n':
+                        sb.append('\n');
+                        break;
+                    case 'b':
+                        sb.append('\b');
+                        break;
+                    case 'r':
+                        sb.append('\r');
+                        break;
+                    case 'f':
+                        sb.append('\f');
+                        break;
+                    case 't':
+                        sb.append('\t');
+                        break;
+                    default:
+                        sb.append(c);
+                        break;
+                }
                 escaped = false;
             } else if (c == '\\') {
                 escaped = true;

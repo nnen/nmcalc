@@ -16,6 +16,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -73,6 +74,32 @@ public class Utils {
         return result;
     }
  
+    
+    public static <T> T[] arrayOf(T first, T... rest) {
+        Object[] result = new Object[rest.length + 1];
+        result[0] = first;
+        for (int i = 0; i < rest.length; i++) {
+            result[i + 1] = rest[i];
+        }
+        return (T[])result;
+    }
+    
+    
+    public static <T extends Enum<T>> EnumSet<T> intersection(EnumSet<T> a, EnumSet<T> b)
+    {
+        if (a.containsAll(b))
+        {
+            return b;
+        }
+        if (b.containsAll(a))
+        {
+            return a;
+        }
+        EnumSet<T> c = a.clone();
+        c.retainAll(b);
+        return c;
+    }
+    
     
     public static void closeSilently(Object obj, Closeable stream) {
         if (stream == null) {
